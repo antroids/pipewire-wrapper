@@ -10,6 +10,7 @@ pub enum Error {
     WrongTimeFormat,
     CannotCreateInstance,
     NullPointer,
+    PodParseError(&'static str),
 }
 
 impl Debug for Error {
@@ -36,6 +37,7 @@ impl Display for Error {
             Error::WrongTimeFormat => write!(f, "WrongTimeFormat"),
             Error::CannotCreateInstance => write!(f, "CannotCreateInstance"),
             Error::NullPointer => write!(f, "NullPointer"),
+            Error::PodParseError(message) => write!(f, "PodParseError({})", message),
         }
     }
 }

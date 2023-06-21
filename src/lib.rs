@@ -2,6 +2,7 @@
 
 extern crate core;
 
+use std::fmt::Debug;
 use std::os::fd::RawFd;
 use std::ptr::NonNull;
 
@@ -17,8 +18,6 @@ pub mod error;
 pub mod impl_api;
 pub mod spa;
 pub mod wrapper;
-
-type RCP<T> = std::sync::Arc<T>;
 
 type Result<T> = std::result::Result<T, error::Error>;
 

@@ -2,6 +2,7 @@ use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
 use pipewire_wrapper::core_api::proxy::Proxied;
 use std::ffi::CString;
+use std::fmt::Debug;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -13,6 +14,9 @@ use pipewire_wrapper::core_api::port::info::PortInfoRef;
 use pipewire_wrapper::core_api::port::PortRef;
 use pipewire_wrapper::core_api::Pipewire;
 use pipewire_wrapper::spa::param::ParamType;
+use pipewire_wrapper::spa::type_;
+use pipewire_wrapper::spa::type_::pod::{BasicType, BasicTypePod, PodObjectRef, PodRef};
+use pipewire_wrapper::spa::type_::{PodWrapper, Type};
 use pipewire_wrapper::wrapper::RawWrapper;
 
 #[test]
@@ -181,11 +185,19 @@ fn test_port_params() {
                 let registry = core.get_registry(0, 0).unwrap();
                 if let Ok(port_proxy) = registry.bind(port_id, PortRef::get_type_info(), 0, 0) {
                     let port: &PortRef = port_proxy.as_object().unwrap();
-                    let port_param_callback = |seq, id, index, next, param| {
-                        println!(
-                            "Port params seq {} id {:?} index {} next {}",
-                            seq, id, index, next
-                        );
+                    let port_param_callback = |seq, id, index, next, param: &PodRef| {
+                        if let Ok(basic_pod) = param.downcast() {
+                            match basic_pod {
+                                BasicType::OBJECT(obj) => println!(
+                                    "Port params seq {} id {:?} index {} next {} obj {:?}",
+                                    seq, id, index, next, obj
+                                ),
+                                _ => println!(
+                                    "Port params seq {} id {:?} index {} next {} param {:?}",
+                                    seq, id, index, next, param
+                                ),
+                            }
+                        }
                     };
                     let port_info_callback = |port_info: &PortInfoRef| {
                         println!("Port info");

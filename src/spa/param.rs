@@ -37,6 +37,58 @@ enum_wrapper!(
     PROCESS_LATENCY: spa_sys::SPA_PARAM_ProcessLatency,
 );
 
+enum_wrapper!(
+    ParamBuffers,
+    spa_sys::spa_param_buffers,
+    START: spa_sys::SPA_PARAM_BUFFERS_START,
+    BUFFERS: spa_sys::SPA_PARAM_BUFFERS_buffers,
+    BLOCKS: spa_sys::SPA_PARAM_BUFFERS_blocks,
+    SIZE: spa_sys::SPA_PARAM_BUFFERS_size,
+    STRIDE: spa_sys::SPA_PARAM_BUFFERS_stride,
+    ALIGN: spa_sys::SPA_PARAM_BUFFERS_align,
+    DATA_TYPE: spa_sys::SPA_PARAM_BUFFERS_dataType,
+);
+
+enum_wrapper!(
+    ParamMeta,
+    spa_sys::spa_param_meta,
+    START: spa_sys::SPA_PARAM_META_START,
+    TYPE: spa_sys::SPA_PARAM_META_type,
+    SIZE: spa_sys::SPA_PARAM_META_size,
+);
+
+enum_wrapper!(
+    ParamIO,
+    spa_sys::spa_param_io,
+    START: spa_sys::SPA_PARAM_IO_START,
+    ID: spa_sys::SPA_PARAM_IO_id,
+    SIZE: spa_sys::SPA_PARAM_IO_size,
+);
+
+enum_wrapper!(
+    ParamAvailability,
+    spa_sys::spa_param_availability,
+    UNKNOWN: spa_sys::SPA_PARAM_AVAILABILITY_unknown,
+    NO: spa_sys::SPA_PARAM_AVAILABILITY_no,
+    YES: spa_sys::SPA_PARAM_AVAILABILITY_yes,
+);
+
+enum_wrapper!(
+    ParamProfile,
+    spa_sys::spa_param_profile,
+    START: spa_sys::SPA_PARAM_PROFILE_START,
+    INDEX: spa_sys::SPA_PARAM_PROFILE_index,
+    NAME: spa_sys::SPA_PARAM_PROFILE_name,
+    DESCRIPTION: spa_sys::SPA_PARAM_PROFILE_description,
+    PRIORITY: spa_sys::SPA_PARAM_PROFILE_priority,
+    AVAILABLE: spa_sys::SPA_PARAM_PROFILE_available,
+    INFO: spa_sys::SPA_PARAM_PROFILE_info,
+    CLASSES: spa_sys::SPA_PARAM_PROFILE_classes,
+    SAVE: spa_sys::SPA_PARAM_PROFILE_save,
+);
+
+// todo ...
+
 #[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct ParamInfoRef {

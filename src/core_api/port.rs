@@ -9,7 +9,7 @@ use crate::core_api::type_info::TypeInfo;
 use crate::core_api::Pipewire;
 use crate::i32_as_void_result;
 use crate::spa::param::ParamType;
-use crate::spa::pod::PodRef;
+use crate::spa::type_::pod::PodRef;
 
 pub mod events;
 pub mod info;
