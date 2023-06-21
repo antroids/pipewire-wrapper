@@ -1,0 +1,23 @@
+[package]
+name = "pipewire-wrapper"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dev-dependencies]
+trybuild = "1.0.80"
+
+[workspace]
+members = [
+    "pipewire-wrapper-macro-impl",
+    "pipewire-wrapper-proc-macro"
+]
+
+[dependencies]
+pipewire-macro-impl = { version = "0", path = "pipewire-wrapper-macro-impl" }
+pipewire-proc-macro = { version = "0", path = "pipewire-wrapper-proc-macro" }
+
+spa_sys = { package = "libspa-sys", version = "0.6.0" }
+pw_sys = { package = "pipewire-sys", version = "0.6.0" }
+bitflags = "2.3.1"
