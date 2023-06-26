@@ -1,22 +1,20 @@
-use pipewire_wrapper::core_api::core::Core;
-use pipewire_wrapper::core_api::main_loop::MainLoop;
-use pipewire_wrapper::core_api::proxy::Proxied;
 use std::ffi::CString;
-use std::fmt::Debug;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use pipewire_wrapper::core_api::core::Core;
+use pipewire_wrapper::core_api::main_loop::MainLoop;
 use pipewire_wrapper::core_api::port::events::PortEvents;
 use pipewire_wrapper::core_api::port::info::PortInfoRef;
 use pipewire_wrapper::core_api::port::PortRef;
+use pipewire_wrapper::core_api::proxy::Proxied;
 use pipewire_wrapper::core_api::Pipewire;
 use pipewire_wrapper::spa::param::ParamType;
-use pipewire_wrapper::spa::type_;
-use pipewire_wrapper::spa::type_::pod::{BasicType, BasicTypePod, PodObjectRef, PodRef};
-use pipewire_wrapper::spa::type_::{PodWrapper, Type};
+use pipewire_wrapper::spa::type_::pod::object::ObjectType;
+use pipewire_wrapper::spa::type_::pod::{BasicType, PodRef, ReadablePod};
+use pipewire_wrapper::spa::type_::Type;
 use pipewire_wrapper::wrapper::RawWrapper;
 
 #[test]
@@ -188,14 +186,47 @@ fn test_port_params() {
                     let port_param_callback = |seq, id, index, next, param: &PodRef| {
                         if let Ok(basic_pod) = param.downcast() {
                             match basic_pod {
-                                BasicType::OBJECT(obj) => println!(
-                                    "Port params seq {} id {:?} index {} next {} obj {:?}",
-                                    seq, id, index, next, obj
-                                ),
-                                _ => println!(
-                                    "Port params seq {} id {:?} index {} next {} param {:?}",
-                                    seq, id, index, next, param
-                                ),
+                                BasicType::OBJECT(obj) => {
+                                    // println!(
+                                    //     "Port params seq {} id {:?} index {} next {} param {:?} obj {:?}",
+                                    //     seq, id, index, next, param, obj
+                                    // );
+                                    match obj.body_type() {
+                                        Type::OBJECT_PROP_INFO | Type::OBJECT_PROPS => {
+                                            if let ObjectType::OBJECT_PROP_INFO(iter) = obj.value().unwrap()
+                                            {
+                                                for prop_info in iter {
+                                                    println!("Prop info {:?}", prop_info);
+                                                }
+                                            }
+                                        }
+                                        _ => {
+                                            println!(
+                                            "Port params seq {} id {:?} index {} next {} obj {:?}",
+                                            seq, id, index, next, obj
+                                        )
+                                        }
+                                    }
+                                }
+                                BasicType::NONE(pod) => println!("{:?}", pod),
+                                BasicType::BOOL(pod) => println!("{:?}", pod),
+                                BasicType::ID(pod) => println!("{:?}", pod),
+                                BasicType::INT(pod) => println!("{:?}", pod),
+                                BasicType::LONG(pod) => println!("{:?}", pod),
+                                BasicType::FLOAT(pod) => println!("{:?}", pod),
+                                BasicType::DOUBLE(pod) => println!("{:?}", pod),
+                                BasicType::STRING(pod) => println!("{:?}", pod),
+                                BasicType::BYTES(pod) => println!("{:?}", pod),
+                                BasicType::RECTANGLE(pod) => println!("{:?}", pod),
+                                BasicType::FRACTION(pod) => println!("{:?}", pod),
+                                BasicType::BITMAP(pod) => println!("{:?}", pod),
+                                BasicType::ARRAY(pod) => println!("{:?}", pod),
+                                BasicType::POD(pod) => println!("{:?}", pod),
+                                _ => ()
+                                //     println!(
+                                //     "Port params seq {} id {:?} index {} next {} param {:?}",
+                                //     seq, id, index, next, param
+                                // ),
                             }
                         }
                     };

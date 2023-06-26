@@ -18,14 +18,16 @@ const ARG_INTERFACE: &'static str = "interface";
 
 struct WrappedRawStructInfo {
     struct_ident: Ident,
+    struct_generics: Generics,
     raw_field: Field,
 }
 
 impl Parse for WrappedRawStructInfo {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         match parse_wrapped_struct_info(input, ATTR_RAW) {
-            Ok((struct_ident, _, raw_field)) => Ok(WrappedRawStructInfo {
+            Ok((struct_ident, struct_generics, raw_field)) => Ok(WrappedRawStructInfo {
                 struct_ident,
+                struct_generics,
                 raw_field,
             }),
             Err(error) => Err(error),
@@ -179,11 +181,12 @@ pub fn derive_raw_wrapper(input: TokenStream) -> TokenStream {
     };
 
     let struct_ident = &struct_info.struct_ident;
+    let struct_generics = &struct_info.struct_generics;
     let raw_field_ident = &struct_info.raw_field.ident;
     let raw_field_type = &struct_info.raw_field.ty;
 
     quote!(
-        impl crate::wrapper::RawWrapper for #struct_ident {
+        impl #struct_generics crate::wrapper::RawWrapper for #struct_ident #struct_generics {
             type CType = #raw_field_type;
 
             fn as_raw_ptr(&self) -> *mut Self::CType {
@@ -199,7 +202,14 @@ pub fn derive_raw_wrapper(input: TokenStream) -> TokenStream {
             }
 
             unsafe fn mut_from_raw_ptr<'a>(raw: *mut Self::CType) -> &'a mut Self {
-                &mut *(raw as *mut #struct_ident)
+                &mut *(raw as *mut #struct_ident #struct_generics)
+            }
+        }
+
+        impl #struct_generics From<#raw_field_type> for #struct_ident #struct_generics {
+            fn from(value: #raw_field_type) -> Self {
+                use crate::wrapper::RawWrapper;
+                Self::from_raw(value)
             }
         }
     )
@@ -223,12 +233,14 @@ pub fn derive_wrapper(input: TokenStream) -> TokenStream {
 
         impl #struct_generics AsRef<#raw_wrapper_field_type> for #struct_ident #struct_generics {
             fn as_ref(&self) -> &<Self as crate::wrapper::Wrapper>::RawWrapperType {
+                use crate::wrapper::RawWrapper;
                 unsafe { self.#raw_wrapper_field_ident.as_ref() }
             }
         }
 
         impl #struct_generics AsMut<#raw_wrapper_field_type> for #struct_ident #struct_generics {
             fn as_mut(&mut self) -> &mut <Self as crate::wrapper::Wrapper>::RawWrapperType {
+                use crate::wrapper::RawWrapper;
                 unsafe { self.#raw_wrapper_field_ident.as_mut() }
             }
         }
@@ -237,12 +249,14 @@ pub fn derive_wrapper(input: TokenStream) -> TokenStream {
             type Target = <Self as crate::wrapper::Wrapper>::RawWrapperType;
 
             fn deref(&self) -> &Self::Target {
+                use crate::wrapper::RawWrapper;
                 unsafe { self.#raw_wrapper_field_ident.as_ref() }
             }
         }
 
         impl #struct_generics std::ops::DerefMut for #struct_ident #struct_generics {
             fn deref_mut(&mut self) -> &mut Self::Target {
+                use crate::wrapper::RawWrapper;
                 unsafe { self.#raw_wrapper_field_ident.as_mut() }
             }
         }

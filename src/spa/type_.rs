@@ -1,15 +1,149 @@
-use crate::spa::type_::pod::*;
-use crate::wrapper::RawWrapper;
-use pipewire_macro_impl::enum_wrapper;
-use pipewire_proc_macro::RawWrapper;
-use spa_sys::spa_pod;
 use std::any::TypeId;
 use std::fmt::{Debug, Formatter};
 use std::mem::size_of;
 use std::ptr::addr_of;
+use std::time::Duration;
+
+use spa_sys::spa_pod;
+
+use pipewire_macro_impl::enum_wrapper;
+use pipewire_proc_macro::RawWrapper;
+
+use crate::spa::type_::pod::*;
+use crate::wrapper::RawWrapper;
 
 pub mod pod;
 pub mod pointer;
+
+#[derive(RawWrapper, Debug)]
+#[repr(transparent)]
+pub struct TimespecRef {
+    #[raw]
+    raw: spa_sys::timespec,
+}
+
+impl TryFrom<Duration> for TimespecRef {
+    type Error = crate::error::Error;
+
+    fn try_from(value: Duration) -> Result<Self, Self::Error> {
+        Ok(Self {
+            raw: spa_sys::timespec {
+                tv_sec: value
+                    .as_secs()
+                    .try_into()
+                    .map_err(|_| crate::error::Error::WrongTimeFormat)?,
+                tv_nsec: value
+                    .subsec_nanos()
+                    .try_into()
+                    .map_err(|_| crate::error::Error::WrongTimeFormat)?,
+            },
+        })
+    }
+}
+
+#[derive(RawWrapper, Debug)]
+#[repr(transparent)]
+pub struct RectangleRef {
+    #[raw]
+    raw: spa_sys::spa_rectangle,
+}
+
+impl From<(u32, u32)> for RectangleRef {
+    fn from(value: (u32, u32)) -> Self {
+        RectangleRef::from_raw(spa_sys::spa_rectangle {
+            width: value.0,
+            height: value.1,
+        })
+    }
+}
+
+impl RectangleRef {
+    pub fn width(&self) -> u32 {
+        self.raw.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.raw.height
+    }
+}
+
+#[derive(RawWrapper, Debug)]
+#[repr(transparent)]
+pub struct PointRef {
+    #[raw]
+    raw: spa_sys::spa_point,
+}
+
+impl From<(i32, i32)> for PointRef {
+    fn from(value: (i32, i32)) -> Self {
+        PointRef::from_raw(spa_sys::spa_point {
+            x: value.0,
+            y: value.1,
+        })
+    }
+}
+
+impl PointRef {
+    pub fn x(&self) -> i32 {
+        self.raw.x
+    }
+
+    pub fn y(&self) -> i32 {
+        self.raw.y
+    }
+}
+
+#[derive(RawWrapper, Debug)]
+#[repr(transparent)]
+pub struct RegionRef {
+    #[raw]
+    raw: spa_sys::spa_region,
+}
+
+impl From<(PointRef, RectangleRef)> for RegionRef {
+    fn from(value: (PointRef, RectangleRef)) -> Self {
+        RegionRef::from_raw(spa_sys::spa_region {
+            position: value.0.raw,
+            size: value.1.raw,
+        })
+    }
+}
+
+impl RegionRef {
+    pub fn position(&self) -> PointRef {
+        PointRef::from_raw(self.raw.position)
+    }
+
+    pub fn size(&self) -> RectangleRef {
+        RectangleRef::from_raw(self.raw.size)
+    }
+}
+
+#[derive(RawWrapper, Debug)]
+#[repr(transparent)]
+pub struct FractionRef {
+    #[raw]
+    raw: spa_sys::spa_fraction,
+}
+
+impl From<(u32, u32)> for FractionRef {
+    fn from(value: (u32, u32)) -> Self {
+        FractionRef::from_raw(spa_sys::spa_fraction {
+            num: value.0,
+            denom: value.1,
+        })
+    }
+}
+
+impl FractionRef {
+    pub fn num(&self) -> u32 {
+        self.raw.num
+    }
+
+    pub fn denom(&self) -> u32 {
+        self.raw.denom
+    }
+}
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
@@ -210,16 +344,6 @@ pub struct IORateMatchRef {
 // todo ...
 
 enum_wrapper!(
-    ChoiceType,
-    spa_sys::spa_choice_type,
-    NONE: spa_sys::SPA_CHOICE_None,
-    RANGE: spa_sys::SPA_CHOICE_Range,
-    STEP: spa_sys::SPA_CHOICE_Step,
-    ENUM: spa_sys::SPA_CHOICE_Enum,
-    FLAGS: spa_sys::SPA_CHOICE_Flags,
-);
-
-enum_wrapper!(
     Meta,
     spa_sys::spa_meta_type,
     INVALID: spa_sys::SPA_META_Invalid,
@@ -369,10 +493,3 @@ enum_wrapper!(
     VENDOR_PIPEWIRE: spa_sys::SPA_TYPE_VENDOR_PipeWire,
     VENDOR_OTHER: spa_sys::SPA_TYPE_VENDOR_Other,
 );
-
-#[repr(u32)]
-#[allow(non_camel_case_types)]
-pub enum ObjectType {
-    OBJECT_PROP_INFO(PodPropRef) = Type::OBJECT_PROP_INFO.raw,
-    OBJECT_PROPS(Pod) = Type::OBJECT_PROPS.raw,
-}
