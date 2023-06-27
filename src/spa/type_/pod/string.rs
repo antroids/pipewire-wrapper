@@ -3,9 +3,7 @@ use std::fmt::{Debug, Formatter};
 
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod,
-};
+use crate::spa::type_::pod::{Pod, PodError, PodResult, PodSubtype, PodValueParser, ReadablePod};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
@@ -15,7 +13,7 @@ pub struct PodStringRef {
     raw: spa_sys::spa_pod_string,
 }
 
-impl SizedPod for PodStringRef {
+impl Pod for PodStringRef {
     fn pod_size(&self) -> usize {
         self.upcast().pod_size()
     }
@@ -27,7 +25,7 @@ impl<'a> PodValueParser<*const c_char> for &'a PodStringRef {
     fn parse(size: u32, value: *const c_char) -> PodResult<Self::To> {
         unsafe {
             if *value.offset((size - 1) as isize) != 0 {
-                Err(PodError::DataIsTooShort)
+                Err(PodError::StringIsNotNullTerminated)
             } else {
                 Ok(CStr::from_ptr(value))
             }
@@ -56,7 +54,7 @@ impl<'a> ReadablePod for &'a PodStringRef {
     }
 }
 
-impl BasicTypePod for PodStringRef {
+impl PodSubtype for PodStringRef {
     fn static_type() -> Type {
         Type::STRING
     }

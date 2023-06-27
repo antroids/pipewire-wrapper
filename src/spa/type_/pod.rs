@@ -19,7 +19,8 @@ use string::PodStringRef;
 use struct_::PodStructRef;
 
 use crate::spa::type_::object::PodObjectRef;
-use crate::spa::type_::pod::object::Prop;
+use crate::spa::type_::pod::object::prop::Prop;
+use crate::spa::type_::pod::restricted::{PodSubtype, PodValueParser};
 use crate::spa::type_::{FractionRef, RectangleRef, Type};
 use crate::wrapper::RawWrapper;
 
@@ -28,7 +29,6 @@ pub mod bitmap;
 pub mod bytes;
 pub mod choice;
 pub mod control;
-pub mod format;
 pub mod id;
 pub mod iterator;
 pub mod object;
@@ -54,7 +54,7 @@ macro_rules! primitive_type_pod_impl {
     };
 
     ($pod_ref_type:ty, $pod_type:expr, $value_raw_type:ty, $value_type:ty, $value_ident:ident, $convert_value_expr:expr) => {
-        impl PodValueParser<*const u8> for $pod_ref_type {
+        impl restricted::PodValueParser<*const u8> for $pod_ref_type {
             type To = $value_type;
 
             fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
@@ -62,12 +62,15 @@ macro_rules! primitive_type_pod_impl {
             }
         }
 
-        impl PodValueParser<$value_raw_type> for $pod_ref_type {
+        impl restricted::PodValueParser<$value_raw_type> for $pod_ref_type {
             type To = $value_type;
 
             fn parse(size: u32, value: $value_raw_type) -> PodResult<Self::To> {
                 if (size as usize) < size_of::<$value_raw_type>() {
-                    Err(PodError::DataIsTooShort)
+                    Err(PodError::DataIsTooShort(
+                        size_of::<$value_raw_type>(),
+                        size as usize,
+                    ))
                 } else {
                     let $value_ident = value;
                     Ok($convert_value_expr)
@@ -83,13 +86,13 @@ macro_rules! primitive_type_pod_impl {
             }
         }
 
-        impl SizedPod for $pod_ref_type {
+        impl Pod for $pod_ref_type {
             fn pod_size(&self) -> usize {
                 self.upcast().pod_size()
             }
         }
 
-        impl BasicTypePod for $pod_ref_type {
+        impl restricted::PodSubtype for $pod_ref_type {
             fn static_type() -> Type {
                 $pod_type
             }
@@ -114,9 +117,8 @@ macro_rules! primitive_type_pod_impl {
     };
 }
 
-#[derive(Debug)]
 pub enum PodError {
-    DataIsTooShort,
+    DataIsTooShort(usize, usize),
     UnknownPodTypeToDowncast,
     WrongPodTypeToCast,
     StringIsNotNullTerminated,
@@ -128,29 +130,37 @@ pub enum PodError {
 
 impl From<PodError> for crate::Error {
     fn from(value: PodError) -> Self {
-        Self::PodParseError(match value {
-            PodError::DataIsTooShort => "POD data size is too small for that type",
-            PodError::UnknownPodTypeToDowncast => "Cannot downcast Pod, child type is unknown",
-            PodError::WrongPodTypeToCast => "Cannot cast Pod to this type",
-            PodError::StringIsNotNullTerminated => "String is not null terminated",
-            PodError::IndexIsOutOfRange => "Index is out of range",
-            PodError::ChoiceElementMissing => "Cannot find required element for choice type",
-            PodError::UnexpectedChoiceElement => "Unexpected element in the choice type",
-            PodError::UnsupportedChoiceElementType => "Unsupported choice element type",
-        })
+        Self::PodParseError(value)
+    }
+}
+
+impl Debug for PodError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PodError::DataIsTooShort(expected, actual) => write!(
+                f,
+                "POD data size is too small for that type, expected {} > actual {}",
+                expected, actual
+            ),
+            PodError::UnknownPodTypeToDowncast => {
+                write!(f, "Cannot downcast Pod, child type is unknown")
+            }
+            PodError::WrongPodTypeToCast => write!(f, "Cannot cast Pod to this type"),
+            PodError::StringIsNotNullTerminated => write!(f, "String is not null terminated"),
+            PodError::IndexIsOutOfRange => write!(f, "Index is out of range"),
+            PodError::ChoiceElementMissing => {
+                write!(f, "Cannot find required element for choice type")
+            }
+            PodError::UnexpectedChoiceElement => write!(f, "Unexpected element in the choice type"),
+            PodError::UnsupportedChoiceElementType => write!(f, "Unsupported choice element type"),
+        }
     }
 }
 
 type PodResult<T> = Result<T, PodError>;
 
-pub trait SizedPod {
+pub trait Pod {
     fn pod_size(&self) -> usize;
-}
-
-pub trait PodValueParser<F: Copy> {
-    type To: Debug;
-
-    fn parse(size: u32, value: F) -> PodResult<Self::To>;
 }
 
 pub trait ReadablePod {
@@ -159,33 +169,57 @@ pub trait ReadablePod {
     fn value(&self) -> PodResult<Self::Value>;
 }
 
-pub trait BasicTypePod: RawWrapper + SizedPod + Debug {
-    fn static_type() -> Type;
+pub(crate) mod restricted {
+    use std::fmt::Debug;
+    use std::ptr::addr_of;
 
-    fn upcast(&self) -> &PodRef {
-        unsafe { PodRef::from_raw_ptr(self as *const _ as *const spa_pod) }
+    use spa_sys::spa_pod;
+
+    use crate::spa::type_::pod::{Pod, PodError, PodRef, PodResult};
+    use crate::spa::type_::Type;
+    use crate::wrapper::RawWrapper;
+
+    pub trait PodValueParser<F: Copy> {
+        type To: Debug;
+
+        fn parse(size: u32, value: F) -> PodResult<Self::To>;
     }
 
-    unsafe fn cast<T>(&self) -> PodResult<&T>
-    where
-        T: BasicTypePod,
-    {
-        if T::static_type() == self.upcast().type_() {
-            Ok(T::from_raw_ptr(addr_of!(*self) as *const _))
-        } else {
-            Err(PodError::WrongPodTypeToCast)
+    pub trait PodSubtype: RawWrapper + Pod + Debug {
+        fn static_type() -> Type;
+
+        fn upcast(&self) -> &PodRef {
+            unsafe { PodRef::from_raw_ptr(self as *const _ as *const spa_pod) }
         }
-    }
 
-    unsafe fn content_slice(&self) -> &[u8] {
-        let content_ptr: *const u8 = self.content_ptr();
-        let content_size = self.upcast().size() as usize;
-        std::slice::from_raw_parts(content_ptr, content_size)
-    }
+        fn cast<T>(&self) -> PodResult<&T>
+        where
+            T: PodSubtype,
+        {
+            if T::static_type() == self.upcast().type_() {
+                unsafe { Ok(self.cast_unchecked()) }
+            } else {
+                Err(PodError::WrongPodTypeToCast)
+            }
+        }
 
-    unsafe fn content_ptr<T>(&self) -> *const T {
-        let self_ptr = self as *const Self;
-        self_ptr.offset(1).cast()
+        unsafe fn cast_unchecked<T>(&self) -> &T
+        where
+            T: PodSubtype,
+        {
+            T::from_raw_ptr(addr_of!(*self) as *const _)
+        }
+
+        unsafe fn content_slice(&self) -> &[u8] {
+            let content_ptr: *const u8 = self.content_ptr();
+            let content_size = self.upcast().size() as usize;
+            std::slice::from_raw_parts(content_ptr, content_size)
+        }
+
+        unsafe fn content_ptr<T>(&self) -> *const T {
+            let self_ptr = self as *const Self;
+            self_ptr.offset(1).cast()
+        }
     }
 }
 
@@ -234,13 +268,13 @@ impl PodRef {
     }
 }
 
-impl SizedPod for PodRef {
+impl Pod for PodRef {
     fn pod_size(&self) -> usize {
         size_of::<PodRef>() + self.as_raw().size as usize
     }
 }
 
-impl<'a> PodValueParser<*const u8> for &'a PodRef {
+impl<'a> restricted::PodValueParser<*const u8> for &'a PodRef {
     type To = BasicType<'a>;
 
     fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
@@ -248,7 +282,7 @@ impl<'a> PodValueParser<*const u8> for &'a PodRef {
     }
 }
 
-impl<'a> PodValueParser<&'a PodRef> for &'a PodRef {
+impl<'a> restricted::PodValueParser<&'a PodRef> for &'a PodRef {
     type To = BasicType<'a>;
 
     fn parse(size: u32, value: &'a PodRef) -> PodResult<Self::To> {
@@ -264,7 +298,7 @@ impl<'a> ReadablePod for &'a PodRef {
     }
 }
 
-impl BasicTypePod for PodRef {
+impl restricted::PodSubtype for PodRef {
     fn static_type() -> Type {
         Type::POD
     }
@@ -309,26 +343,26 @@ pub enum BasicType<'a> {
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
 pub enum BasicTypeValue<'a> {
-    NONE(<&'a PodRef as PodValueParser<*const u8>>::To) = Type::NONE.raw,
-    BOOL(<PodBoolRef as PodValueParser<*const u8>>::To) = Type::BOOL.raw,
-    ID(<PodIdRef as PodValueParser<*const u8>>::To) = Type::ID.raw,
-    INT(<PodIntRef as PodValueParser<*const u8>>::To) = Type::INT.raw,
-    LONG(<PodLongRef as PodValueParser<*const u8>>::To) = Type::LONG.raw,
-    FLOAT(<PodFloatRef as PodValueParser<*const u8>>::To) = Type::FLOAT.raw,
-    DOUBLE(<PodDoubleRef as PodValueParser<*const u8>>::To) = Type::DOUBLE.raw,
-    STRING(<&'a PodStringRef as PodValueParser<*const u8>>::To) = Type::STRING.raw,
-    BYTES(<&'a PodBytesRef as PodValueParser<*const u8>>::To) = Type::BYTES.raw,
-    RECTANGLE(<PodRectangleRef as PodValueParser<*const u8>>::To) = Type::RECTANGLE.raw,
-    FRACTION(<PodFractionRef as PodValueParser<*const u8>>::To) = Type::FRACTION.raw,
-    BITMAP(<&'a PodBitmapRef as PodValueParser<*const u8>>::To) = Type::BITMAP.raw,
-    ARRAY(<&'a PodArrayRef as PodValueParser<*const u8>>::To) = Type::ARRAY.raw,
+    NONE(<&'a PodRef as restricted::PodValueParser<*const u8>>::To) = Type::NONE.raw,
+    BOOL(<PodBoolRef as restricted::PodValueParser<*const u8>>::To) = Type::BOOL.raw,
+    ID(<PodIdRef as restricted::PodValueParser<*const u8>>::To) = Type::ID.raw,
+    INT(<PodIntRef as restricted::PodValueParser<*const u8>>::To) = Type::INT.raw,
+    LONG(<PodLongRef as restricted::PodValueParser<*const u8>>::To) = Type::LONG.raw,
+    FLOAT(<PodFloatRef as restricted::PodValueParser<*const u8>>::To) = Type::FLOAT.raw,
+    DOUBLE(<PodDoubleRef as restricted::PodValueParser<*const u8>>::To) = Type::DOUBLE.raw,
+    STRING(<&'a PodStringRef as restricted::PodValueParser<*const u8>>::To) = Type::STRING.raw,
+    BYTES(<&'a PodBytesRef as restricted::PodValueParser<*const u8>>::To) = Type::BYTES.raw,
+    RECTANGLE(<PodRectangleRef as restricted::PodValueParser<*const u8>>::To) = Type::RECTANGLE.raw,
+    FRACTION(<PodFractionRef as restricted::PodValueParser<*const u8>>::To) = Type::FRACTION.raw,
+    BITMAP(<&'a PodBitmapRef as restricted::PodValueParser<*const u8>>::To) = Type::BITMAP.raw,
+    ARRAY(<&'a PodArrayRef as restricted::PodValueParser<*const u8>>::To) = Type::ARRAY.raw,
     // STRUCT(<&'a PodStructRef as  PodValueParser<*const u8>>::To)=Type::STRUCT.raw,
     // OBJECT(<&'a PodObjectRef  as PodValueParser<*const u8>>::To)=Type::OBJECT.raw,
     // SEQUENCE(<&'a PodSequenceRef as  PodValueParser<*const u8>>::To)=Type::SEQUENCE.raw,
     // POINTER(<&'a PodPointerRef as  PodValueParser<*const u8>>::To)=Type::POINTER.raw,
     // FD(<PodFdRef as  PodValueParser<*const u8>>::To)=Type::FD.raw,
     // CHOICE(<&'a PodChoiceRef as PodValueParser<*const u8>>::To) = Type::CHOICE.raw,
-    POD(<&'a PodRef as PodValueParser<*const u8>>::To) = Type::POD.raw,
+    POD(<&'a PodRef as restricted::PodValueParser<*const u8>>::To) = Type::POD.raw,
 }
 
 #[derive(RawWrapper)]

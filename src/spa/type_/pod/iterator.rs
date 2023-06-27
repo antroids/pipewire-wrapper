@@ -2,15 +2,15 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::mem::size_of;
 
-use crate::spa::type_::pod::{BasicTypePod, PodValueParser, SizedPod};
+use crate::spa::type_::pod::{Pod, PodSubtype, PodValueParser};
 
-pub struct PodIterator<'a, C: BasicTypePod, E: SizedPod> {
+pub struct PodIterator<'a, C: PodSubtype, E: Pod> {
     container: &'a C,
     first_element_ptr: *const E,
     current_element_ptr: *const E,
 }
 
-impl<'a, C: BasicTypePod, E: SizedPod> PodIterator<'a, C, E> {
+impl<'a, C: PodSubtype, E: Pod> PodIterator<'a, C, E> {
     const ALIGN: usize = 8;
 
     pub fn new(container: &'a C) -> Self {
@@ -42,7 +42,7 @@ impl<'a, C: BasicTypePod, E: SizedPod> PodIterator<'a, C, E> {
     }
 }
 
-impl<'a, C: BasicTypePod, E: SizedPod + 'a> Iterator for PodIterator<'a, C, E> {
+impl<'a, C: PodSubtype, E: Pod + 'a> Iterator for PodIterator<'a, C, E> {
     type Item = &'a E;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -58,7 +58,7 @@ impl<'a, C: BasicTypePod, E: SizedPod + 'a> Iterator for PodIterator<'a, C, E> {
     }
 }
 
-impl<'a, C: BasicTypePod, E: SizedPod + 'a> Debug for PodIterator<'_, C, E> {
+impl<'a, C: PodSubtype, E: Pod + 'a> Debug for PodIterator<'_, C, E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodIterator").finish()
     }

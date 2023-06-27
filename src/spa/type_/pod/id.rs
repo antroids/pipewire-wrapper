@@ -2,10 +2,8 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::mem::size_of;
 
-use crate::spa::type_::pod::object::Prop;
-use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod,
-};
+use crate::spa::type_::pod::object::prop::Prop;
+use crate::spa::type_::pod::{Pod, PodError, PodResult, PodSubtype, PodValueParser, ReadablePod};
 use crate::spa::type_::Type;
 
 #[repr(transparent)]
@@ -61,7 +59,7 @@ impl<T: PodIdType> PodValueParser<u32> for PodIdRef<T> {
 
     fn parse(size: u32, value: u32) -> PodResult<Self::To> {
         if (size as usize) < size_of::<u32>() {
-            Err(PodError::DataIsTooShort)
+            Err(PodError::DataIsTooShort(size_of::<u32>(), size as usize))
         } else {
             Ok(value.into())
         }
@@ -76,13 +74,13 @@ impl<T: PodIdType> ReadablePod for PodIdRef<T> {
     }
 }
 
-impl<T: PodIdType> SizedPod for PodIdRef<T> {
+impl<T: PodIdType> Pod for PodIdRef<T> {
     fn pod_size(&self) -> usize {
         self.upcast().pod_size()
     }
 }
 
-impl<T: PodIdType> BasicTypePod for PodIdRef<T> {
+impl<T: PodIdType> PodSubtype for PodIdRef<T> {
     fn static_type() -> Type {
         Type::ID
     }

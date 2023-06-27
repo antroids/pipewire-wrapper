@@ -3,7 +3,7 @@ use std::slice;
 
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::{BasicTypePod, PodResult, PodValueParser, ReadablePod, SizedPod};
+use crate::spa::type_::pod::{Pod, PodResult, PodSubtype, PodValueParser, ReadablePod};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
@@ -13,7 +13,7 @@ pub struct PodBitmapRef {
     raw: spa_sys::spa_pod_bitmap,
 }
 
-impl SizedPod for PodBitmapRef {
+impl Pod for PodBitmapRef {
     fn pod_size(&self) -> usize {
         self.upcast().pod_size()
     }
@@ -35,7 +35,7 @@ impl<'a> ReadablePod for &'a PodBitmapRef {
     }
 }
 
-impl BasicTypePod for PodBitmapRef {
+impl PodSubtype for PodBitmapRef {
     fn static_type() -> Type {
         Type::BITMAP
     }

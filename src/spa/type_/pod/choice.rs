@@ -6,16 +6,25 @@ use std::ptr::addr_of;
 use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::spa::type_::pod::choice::enum_::{PodEnumRef, PodEnumValue};
+use crate::spa::type_::pod::choice::flags::{PodFlagsRef, PodFlagsValue};
+use crate::spa::type_::pod::choice::range::{PodRangeRef, PodRangeValue};
+use crate::spa::type_::pod::choice::step::{PodStepRef, PodStepValue};
 use crate::spa::type_::pod::id::PodIdRef;
 use crate::spa::type_::pod::iterator::PodValueIterator;
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::{
-    BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFloatRef, PodFractionRef,
-    PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodValueParser, ReadablePod,
-    SizedPod,
+    BasicTypeValue, Pod, PodBoolRef, PodDoubleRef, PodError, PodFloatRef, PodFractionRef,
+    PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodSubtype, PodValueParser,
+    ReadablePod,
 };
 use crate::spa::type_::{PointRef, Type};
 use crate::wrapper::RawWrapper;
+
+pub mod enum_;
+pub mod flags;
+pub mod range;
+pub mod step;
 
 enum_wrapper!(
     ChoiceType,
@@ -33,11 +42,11 @@ pub enum ChoiceStructType<T>
 where
     T: PodValueParser<*const u8>,
 {
-    NONE(T::To) = ChoiceType::NONE.raw,                      // value
-    RANGE(T::To, T::To, T::To) = ChoiceType::RANGE.raw,      // (default, min, max)
-    STEP(T::To, T::To, T::To, T::To) = ChoiceType::STEP.raw, // (default, min, max, step)
-    ENUM(T::To, Vec<T::To>) = ChoiceType::ENUM.raw,          // (default, alternatives)
-    FLAGS(T::To, Vec<T::To>) = ChoiceType::FLAGS.raw,        // (default, possible flags)
+    NONE(Option<T::To>) = ChoiceType::NONE.raw, // value
+    RANGE(PodRangeValue<T::To>) = ChoiceType::RANGE.raw, // (default, min, max)
+    STEP(PodStepValue<T::To>) = ChoiceType::STEP.raw, // (default, min, max, step)
+    ENUM(PodEnumValue<T::To>) = ChoiceType::ENUM.raw, // (default, alternatives)
+    FLAGS(PodFlagsValue<T::To>) = ChoiceType::FLAGS.raw, // (default, possible flags)
 }
 
 #[repr(u32)]
@@ -111,13 +120,13 @@ impl<'a> ReadablePod for &'a PodChoiceRef {
     }
 }
 
-impl SizedPod for PodChoiceRef {
+impl Pod for PodChoiceRef {
     fn pod_size(&self) -> usize {
         self.upcast().pod_size()
     }
 }
 
-impl BasicTypePod for PodChoiceRef {
+impl PodSubtype for PodChoiceRef {
     fn static_type() -> Type {
         Type::CHOICE
     }
@@ -126,54 +135,24 @@ impl BasicTypePod for PodChoiceRef {
 fn parse_choice<T>(size: u32, value: &PodChoiceBodyRef) -> PodResult<ChoiceStructType<T>>
 where
     T: PodValueParser<*const u8>,
+    T: PodSubtype,
 {
-    let choice_type = value.type_();
-    let mut iter: PodValueIterator<T> = PodValueIterator::new(
-        unsafe { value.content_ptr().cast() },
-        size as usize,
-        value.child().size() as usize,
-    );
-    match choice_type {
+    match value.type_() {
         ChoiceType::NONE => {
-            let value = iter.next().ok_or(PodError::DataIsTooShort)?;
-            if iter.next().is_some() {
-                Err(PodError::UnexpectedChoiceElement)
-            } else {
-                Ok(ChoiceStructType::NONE(value))
-            }
+            let mut iter: PodValueIterator<T> = PodValueIterator::new(
+                unsafe { value.content_ptr().cast() },
+                size as usize,
+                value.child().size() as usize,
+            );
+            Ok(ChoiceStructType::NONE(iter.next()))
         }
         ChoiceType::RANGE => {
-            let default = iter.next().ok_or(PodError::DataIsTooShort)?;
-            let min = iter.next().ok_or(PodError::DataIsTooShort)?;
-            let max = iter.next().ok_or(PodError::DataIsTooShort)?;
-            if iter.next().is_some() {
-                Err(PodError::UnexpectedChoiceElement)
-            } else {
-                Ok(ChoiceStructType::RANGE(default, min, max))
-            }
+            PodRangeRef::<T>::parse(size, value).map(|r| ChoiceStructType::RANGE(r))
         }
-        ChoiceType::STEP => {
-            let default = iter.next().ok_or(PodError::DataIsTooShort)?;
-            let min = iter.next().ok_or(PodError::DataIsTooShort)?;
-            let max = iter.next().ok_or(PodError::DataIsTooShort)?;
-            let step = iter.next().ok_or(PodError::DataIsTooShort)?;
-            if iter.next().is_some() {
-                Err(PodError::UnexpectedChoiceElement)
-            } else {
-                Ok(ChoiceStructType::STEP(default, min, max, step))
-            }
-        }
-        ChoiceType::ENUM => {
-            let default = iter.next().ok_or(PodError::DataIsTooShort)?;
-            let mut alternatives = Vec::new();
-            iter.for_each(|a| alternatives.push(a));
-            Ok(ChoiceStructType::ENUM(default, alternatives))
-        }
+        ChoiceType::STEP => PodStepRef::<T>::parse(size, value).map(|r| ChoiceStructType::STEP(r)),
+        ChoiceType::ENUM => PodEnumRef::<T>::parse(size, value).map(|r| ChoiceStructType::ENUM(r)),
         ChoiceType::FLAGS => {
-            let default = iter.next().ok_or(PodError::DataIsTooShort)?;
-            let mut alternatives = Vec::new();
-            iter.for_each(|a| alternatives.push(a));
-            Ok(ChoiceStructType::FLAGS(default, alternatives))
+            PodFlagsRef::<T>::parse(size, value).map(|r| ChoiceStructType::FLAGS(r))
         }
         _ => Err(PodError::UnknownPodTypeToDowncast),
     }
@@ -191,7 +170,7 @@ impl<'a> PodValueParser<&'a PodChoiceBodyRef> for &'a PodChoiceRef {
             Type::LONG => Ok(ChoiceValueType::LONG(parse_choice(size, value)?)),
             Type::FLOAT => Ok(ChoiceValueType::FLOAT(parse_choice(size, value)?)),
             Type::DOUBLE => Ok(ChoiceValueType::DOUBLE(parse_choice(size, value)?)),
-            Type::STRING => Ok(ChoiceValueType::STRING(parse_choice(size, value)?)),
+            //Type::STRING => Ok(ChoiceValueType::STRING(parse_choice(size, value)?)),
             Type::RECTANGLE => Ok(ChoiceValueType::RECTANGLE(parse_choice(size, value)?)),
             Type::FRACTION => Ok(ChoiceValueType::FRACTION(parse_choice(size, value)?)),
             _ => Err(PodError::UnsupportedChoiceElementType),

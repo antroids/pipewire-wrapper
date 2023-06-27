@@ -192,7 +192,7 @@ fn test_port_params() {
                                     //     seq, id, index, next, param, obj
                                     // );
                                     match obj.body_type() {
-                                        Type::OBJECT_PROP_INFO | Type::OBJECT_PROPS => {
+                                        Type::OBJECT_PROP_INFO | Type::OBJECT_PROPS | Type::OBJECT_FORMAT => {
                                             println!("Obj {:?}", obj)
                                         }
                                         _ => (),

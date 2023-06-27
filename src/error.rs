@@ -1,5 +1,7 @@
 use std::fmt::{Debug, Display, Formatter, Pointer};
 
+use crate::spa::type_::pod::PodError;
+
 pub enum Error {
     ErrorCode(u32),
     ErrorMessage(&'static str),
@@ -10,7 +12,7 @@ pub enum Error {
     WrongTimeFormat,
     CannotCreateInstance,
     NullPointer,
-    PodParseError(&'static str),
+    PodParseError(PodError),
 }
 
 impl Debug for Error {
@@ -37,7 +39,7 @@ impl Display for Error {
             Error::WrongTimeFormat => write!(f, "WrongTimeFormat"),
             Error::CannotCreateInstance => write!(f, "CannotCreateInstance"),
             Error::NullPointer => write!(f, "NullPointer"),
-            Error::PodParseError(message) => write!(f, "PodParseError({})", message),
+            Error::PodParseError(pod_error) => write!(f, "PodParseError({:?})", pod_error),
         }
     }
 }

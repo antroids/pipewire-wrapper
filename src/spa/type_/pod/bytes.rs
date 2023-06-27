@@ -3,7 +3,7 @@ use std::slice;
 
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::{BasicTypePod, PodResult, PodValueParser, ReadablePod, SizedPod};
+use crate::spa::type_::pod::{Pod, PodResult, PodSubtype, PodValueParser, ReadablePod};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
@@ -13,7 +13,7 @@ pub struct PodBytesRef {
     raw: spa_sys::spa_pod_bytes,
 }
 
-impl SizedPod for PodBytesRef {
+impl Pod for PodBytesRef {
     fn pod_size(&self) -> usize {
         self.upcast().pod_size()
     }
@@ -35,7 +35,7 @@ impl<'a> ReadablePod for &'a PodBytesRef {
     }
 }
 
-impl BasicTypePod for PodBytesRef {
+impl PodSubtype for PodBytesRef {
     fn static_type() -> Type {
         Type::BYTES
     }
