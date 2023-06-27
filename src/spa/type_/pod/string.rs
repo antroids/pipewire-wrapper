@@ -6,6 +6,7 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::type_::pod::{
     BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod,
 };
+use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
@@ -15,8 +16,8 @@ pub struct PodStringRef {
 }
 
 impl SizedPod for PodStringRef {
-    fn size_bytes(&self) -> usize {
-        self.upcast().size_bytes()
+    fn pod_size(&self) -> usize {
+        self.upcast().pod_size()
     }
 }
 
@@ -48,14 +49,18 @@ impl<'a> ReadablePod for &'a PodStringRef {
     fn value(&self) -> PodResult<Self::Value> {
         unsafe {
             Self::parse(
-                self.upcast().content_size(),
+                self.upcast().size(),
                 self.upcast().content_ptr() as *const c_char,
             )
         }
     }
 }
 
-impl BasicTypePod for PodStringRef {}
+impl BasicTypePod for PodStringRef {
+    fn static_type() -> Type {
+        Type::STRING
+    }
+}
 
 impl Debug for PodStringRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

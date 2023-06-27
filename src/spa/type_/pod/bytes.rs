@@ -4,6 +4,7 @@ use std::slice;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::type_::pod::{BasicTypePod, PodResult, PodValueParser, ReadablePod, SizedPod};
+use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
@@ -13,8 +14,8 @@ pub struct PodBytesRef {
 }
 
 impl SizedPod for PodBytesRef {
-    fn size_bytes(&self) -> usize {
-        self.upcast().size_bytes()
+    fn pod_size(&self) -> usize {
+        self.upcast().pod_size()
     }
 }
 
@@ -30,11 +31,15 @@ impl<'a> ReadablePod for &'a PodBytesRef {
     type Value = &'a [u8];
 
     fn value(&self) -> PodResult<Self::Value> {
-        unsafe { Self::parse(self.upcast().content_size(), self.upcast().content_ptr()) }
+        unsafe { Self::parse(self.upcast().size(), self.upcast().content_ptr()) }
     }
 }
 
-impl BasicTypePod for PodBytesRef {}
+impl BasicTypePod for PodBytesRef {
+    fn static_type() -> Type {
+        Type::BYTES
+    }
+}
 
 impl Debug for PodBytesRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

@@ -193,19 +193,9 @@ fn test_port_params() {
                                     // );
                                     match obj.body_type() {
                                         Type::OBJECT_PROP_INFO | Type::OBJECT_PROPS => {
-                                            if let ObjectType::OBJECT_PROP_INFO(iter) = obj.value().unwrap()
-                                            {
-                                                for prop_info in iter {
-                                                    println!("Prop info {:?}", prop_info);
-                                                }
-                                            }
+                                            println!("Obj {:?}", obj)
                                         }
-                                        _ => {
-                                            println!(
-                                            "Port params seq {} id {:?} index {} next {} obj {:?}",
-                                            seq, id, index, next, obj
-                                        )
-                                        }
+                                        _ => (),
                                     }
                                 }
                                 BasicType::NONE(pod) => println!("{:?}", pod),

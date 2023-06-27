@@ -7,6 +7,7 @@ use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::type_::pod::id::PodIdRef;
+use crate::spa::type_::pod::iterator::PodValueIterator;
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::{
     BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFloatRef, PodFractionRef,
@@ -105,25 +106,33 @@ impl<'a> ReadablePod for &'a PodChoiceRef {
     type Value = ChoiceValueType<'a>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        let content_size = self.size_bytes() - size_of::<PodChoiceRef>();
+        let content_size = self.pod_size() - size_of::<PodChoiceRef>();
         Self::parse(content_size as u32, self.body())
     }
 }
 
 impl SizedPod for PodChoiceRef {
-    fn size_bytes(&self) -> usize {
-        self.upcast().size_bytes()
+    fn pod_size(&self) -> usize {
+        self.upcast().pod_size()
     }
 }
 
-impl BasicTypePod for PodChoiceRef {}
+impl BasicTypePod for PodChoiceRef {
+    fn static_type() -> Type {
+        Type::CHOICE
+    }
+}
 
 fn parse_choice<T>(size: u32, value: &PodChoiceBodyRef) -> PodResult<ChoiceStructType<T>>
 where
     T: PodValueParser<*const u8>,
 {
     let choice_type = value.type_();
-    let mut iter: ChoiceIterator<T> = ChoiceIterator::new(value, size);
+    let mut iter: PodValueIterator<T> = PodValueIterator::new(
+        unsafe { value.content_ptr().cast() },
+        size as usize,
+        value.child().size() as usize,
+    );
     match choice_type {
         ChoiceType::NONE => {
             let value = iter.next().ok_or(PodError::DataIsTooShort)?;
@@ -195,58 +204,5 @@ impl<'a> PodValueParser<*const u8> for &'a PodChoiceRef {
 
     fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
         unsafe { Self::parse(size, &*(value as *const PodChoiceBodyRef)) }
-    }
-}
-
-pub struct ChoiceIterator<'a, T: PodValueParser<*const u8>> {
-    body: &'a PodChoiceBodyRef,
-    size: u32,
-    first_element_ptr: *const u8,
-    current_element_ptr: *const u8,
-    phantom: PhantomData<T>,
-}
-
-impl<'a, T: PodValueParser<*const u8>> ChoiceIterator<'a, T> {
-    pub fn new(body: &'a PodChoiceBodyRef, size: u32) -> Self {
-        let first_element_ptr = unsafe { body.content_ptr() };
-        Self {
-            body,
-            size,
-            first_element_ptr,
-            current_element_ptr: first_element_ptr,
-            phantom: PhantomData::default(),
-        }
-    }
-
-    unsafe fn inside(&self, ptr: *const u8) -> bool {
-        let max_offset = self.size as isize;
-        let offset = ptr.offset_from(self.first_element_ptr);
-        offset < max_offset && (offset + self.body.raw.child.size as isize) <= max_offset
-    }
-
-    unsafe fn next_ptr(&self, ptr: *const u8) -> *const u8 {
-        ptr.offset(self.body.raw.child.size as isize)
-    }
-}
-
-impl<T: PodValueParser<*const u8>> Debug for ChoiceIterator<'_, T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ChoiceIterator").finish()
-    }
-}
-
-impl<'a, T: PodValueParser<*const u8>> Iterator for ChoiceIterator<'a, T> {
-    type Item = T::To;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        unsafe {
-            let current_element_ptr = self.current_element_ptr;
-            if self.inside(current_element_ptr) {
-                self.current_element_ptr = self.next_ptr(current_element_ptr);
-                T::parse(self.body.raw.child.size, current_element_ptr).ok()
-            } else {
-                None
-            }
-        }
     }
 }

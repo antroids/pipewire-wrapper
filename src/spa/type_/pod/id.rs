@@ -48,8 +48,6 @@ impl PodIdType for u32 {}
 
 impl PodIdType for Type {}
 
-impl PodIdType for Prop {}
-
 impl<T: PodIdType> PodValueParser<*const u8> for PodIdRef<T> {
     type To = T;
 
@@ -79,12 +77,16 @@ impl<T: PodIdType> ReadablePod for PodIdRef<T> {
 }
 
 impl<T: PodIdType> SizedPod for PodIdRef<T> {
-    fn size_bytes(&self) -> usize {
-        self.upcast().size_bytes()
+    fn pod_size(&self) -> usize {
+        self.upcast().pod_size()
     }
 }
 
-impl<T: PodIdType> BasicTypePod for PodIdRef<T> {}
+impl<T: PodIdType> BasicTypePod for PodIdRef<T> {
+    fn static_type() -> Type {
+        Type::ID
+    }
+}
 
 impl<T: PodIdType> Debug for PodIdRef<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
