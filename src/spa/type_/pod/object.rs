@@ -16,6 +16,7 @@ use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::iterator::PodIterator;
 use crate::spa::type_::pod::object::format::ObjectFormatType;
 use crate::spa::type_::pod::object::param_buffers::ParamBuffersType;
+use crate::spa::type_::pod::object::param_io::ParamIoType;
 use crate::spa::type_::pod::object::param_meta::ParamMetaType;
 use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::string::PodStringRef;
@@ -29,6 +30,7 @@ use crate::wrapper::RawWrapper;
 
 pub mod format;
 pub mod param_buffers;
+pub mod param_io;
 pub mod param_meta;
 pub mod prop;
 pub mod prop_info;
@@ -103,6 +105,9 @@ impl Debug for PodObjectRef {
                         ObjectType::OBJECT_PARAM_META(iter) => {
                             iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
                         }
+                        ObjectType::OBJECT_PARAM_IO(iter) => {
+                            iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
+                        }
                     }),
                 )
                 .finish()
@@ -134,6 +139,7 @@ impl<'a> ReadablePod for &'a PodObjectRef {
             Type::OBJECT_FORMAT => ObjectType::OBJECT_FORMAT(PodIterator::new(self)),
             Type::OBJECT_PARAM_BUFFERS => ObjectType::OBJECT_PARAM_BUFFERS(PodIterator::new(self)),
             Type::OBJECT_PARAM_META => ObjectType::OBJECT_PARAM_META(PodIterator::new(self)),
+            Type::OBJECT_PARAM_IO => ObjectType::OBJECT_PARAM_IO(PodIterator::new(self)),
             _ => {
                 todo!()
             }
@@ -243,4 +249,5 @@ pub enum ObjectType<'a> {
     OBJECT_PARAM_BUFFERS(ObjectPropsIterator<'a, ParamBuffersType<'a>>) =
         Type::OBJECT_PARAM_BUFFERS.raw,
     OBJECT_PARAM_META(ObjectPropsIterator<'a, ParamMetaType<'a>>) = Type::OBJECT_PARAM_META.raw,
+    OBJECT_PARAM_IO(ObjectPropsIterator<'a, ParamIoType<'a>>) = Type::OBJECT_PARAM_IO.raw,
 }
