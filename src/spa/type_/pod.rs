@@ -88,10 +88,6 @@ macro_rules! primitive_type_pod_impl {
             }
         }
 
-        impl ValuePod for $pod_ref_type {
-            type Value = $value_type;
-        }
-
         impl restricted::PodSubtype for $pod_ref_type {
             fn static_type() -> Type {
                 $pod_type
@@ -161,10 +157,6 @@ type PodResult<T> = Result<T, PodError>;
 
 pub trait Pod {
     fn pod_size(&self) -> usize;
-}
-
-pub trait ValuePod {
-    type Value;
 }
 
 pub trait ReadablePod {
@@ -274,10 +266,6 @@ impl Pod for PodRef {
     fn pod_size(&self) -> usize {
         size_of::<PodRef>() + self.as_raw().size as usize
     }
-}
-
-impl<'a> ValuePod for &'a PodRef {
-    type Value = BasicType<'a>;
 }
 
 impl<'a> restricted::PodValueParser<*const u8> for &'a PodRef {
