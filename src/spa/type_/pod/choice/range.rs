@@ -16,6 +16,18 @@ pub struct PodRangeValue<T> {
     max: T,
 }
 
+impl<T> PodRangeValue<T> {
+    pub fn default(&self) -> &T {
+        &self.default
+    }
+    pub fn min(&self) -> &T {
+        &self.min
+    }
+    pub fn max(&self) -> &T {
+        &self.max
+    }
+}
+
 #[repr(transparent)]
 pub struct PodRangeRef<T> {
     raw: spa_sys::spa_pod,

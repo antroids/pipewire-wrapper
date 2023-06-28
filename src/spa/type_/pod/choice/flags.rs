@@ -15,6 +15,15 @@ pub struct PodFlagsValue<T> {
     alternatives: Vec<T>,
 }
 
+impl<T> PodFlagsValue<T> {
+    pub fn default(&self) -> &T {
+        &self.default
+    }
+    pub fn alternatives(&self) -> &Vec<T> {
+        &self.alternatives
+    }
+}
+
 #[repr(transparent)]
 pub struct PodFlagsRef<T> {
     raw: spa_sys::spa_pod,

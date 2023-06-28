@@ -192,11 +192,10 @@ fn test_port_params() {
                         }
                     };
                     let port_info_callback = |port_info: &PortInfoRef| {
-                        println!("Port info");
+                        println!("Port info {:?}", port_info.props());
                         for param in port_info.params() {
-                            let param_type = ParamType::from_raw(param.id());
-                            println!("Param info {:?} type {:?}", param, param_type);
-                            port.enum_params(0, param_type, 0, u32::MAX, None).unwrap();
+                            println!("Param info {:?}", param);
+                            port.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();
                         }
                     };
                     let mut port_listener = port.add_listener();

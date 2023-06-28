@@ -17,6 +17,21 @@ pub struct PodStepValue<T> {
     step: T,
 }
 
+impl<T> PodStepValue<T> {
+    pub fn default(&self) -> &T {
+        &self.default
+    }
+    pub fn min(&self) -> &T {
+        &self.min
+    }
+    pub fn max(&self) -> &T {
+        &self.max
+    }
+    pub fn step(&self) -> &T {
+        &self.step
+    }
+}
+
 #[repr(transparent)]
 pub struct PodStepRef<T> {
     raw: spa_sys::spa_pod,

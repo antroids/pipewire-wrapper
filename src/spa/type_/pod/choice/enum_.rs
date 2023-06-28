@@ -15,6 +15,15 @@ pub struct PodEnumValue<T> {
     alternatives: Vec<T>,
 }
 
+impl<T> PodEnumValue<T> {
+    pub fn default(&self) -> &T {
+        &self.default
+    }
+    pub fn alternatives(&self) -> &Vec<T> {
+        &self.alternatives
+    }
+}
+
 #[repr(transparent)]
 pub struct PodEnumRef<T> {
     raw: spa_sys::spa_pod,

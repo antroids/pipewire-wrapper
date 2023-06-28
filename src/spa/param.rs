@@ -5,6 +5,8 @@ use bitflags::bitflags;
 use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::wrapper::RawWrapper;
+
 bitflags! {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     #[repr(transparent)]
@@ -19,7 +21,6 @@ bitflags! {
 enum_wrapper!(
     ParamType,
     spa_sys::spa_param_type,
-    ALL: spa_sys::SPA_PARAM_Invalid,
     INVALID: spa_sys::SPA_PARAM_Invalid,
     PROP_INFO: spa_sys::SPA_PARAM_PropInfo,
     PROPS: spa_sys::SPA_PARAM_Props,
@@ -49,8 +50,8 @@ pub struct ParamInfoRef {
 }
 
 impl ParamInfoRef {
-    pub fn id(&self) -> u32 {
-        self.raw.id
+    pub fn id(&self) -> ParamType {
+        ParamType::from_raw(self.raw.id)
     }
 
     pub fn flags(&self) -> Flags {
