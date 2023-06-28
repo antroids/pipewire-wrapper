@@ -197,7 +197,8 @@ fn test_port_params() {
                                         | Type::OBJECT_FORMAT
                                         | Type::OBJECT_PARAM_BUFFERS
                                         | Type::OBJECT_PARAM_META
-                                        | Type::OBJECT_PARAM_IO => {
+                                        | Type::OBJECT_PARAM_IO
+                                        | Type::OBJECT_PARAM_PROFILE => {
                                             println!("Obj {:?}", obj)
                                         }
                                         body_type => {
