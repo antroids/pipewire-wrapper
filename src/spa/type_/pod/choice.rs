@@ -42,11 +42,11 @@ pub enum ChoiceStructType<T>
 where
     T: PodValueParser<*const u8>,
 {
-    NONE(Option<T::Value>) = ChoiceType::NONE.raw, // value
-    RANGE(PodRangeValue<T::Value>) = ChoiceType::RANGE.raw, // (default, min, max)
-    STEP(PodStepValue<T::Value>) = ChoiceType::STEP.raw, // (default, min, max, step)
-    ENUM(PodEnumValue<T::Value>) = ChoiceType::ENUM.raw, // (default, alternatives)
-    FLAGS(PodFlagsValue<T::Value>) = ChoiceType::FLAGS.raw, // (default, possible flags)
+    NONE(Option<T::Value>) = ChoiceType::NONE.raw,
+    RANGE(PodRangeValue<T::Value>) = ChoiceType::RANGE.raw,
+    STEP(PodStepValue<T::Value>) = ChoiceType::STEP.raw,
+    ENUM(PodEnumValue<T::Value>) = ChoiceType::ENUM.raw,
+    FLAGS(PodFlagsValue<T::Value>) = ChoiceType::FLAGS.raw,
 }
 
 #[repr(u32)]

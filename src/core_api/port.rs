@@ -1,8 +1,8 @@
-use crate::wrapper::RawWrapper;
-use pipewire_macro_impl::{enum_wrapper, spa_interface_call};
-use pipewire_proc_macro::{proxied, RawWrapper, Wrapper};
 use std::pin::Pin;
 use std::ptr::{null_mut, NonNull};
+
+use pipewire_macro_impl::{enum_wrapper, spa_interface_call};
+use pipewire_proc_macro::{proxied, RawWrapper, Wrapper};
 
 use crate::core_api::port::events::PortEvents;
 use crate::core_api::type_info::TypeInfo;
@@ -10,12 +10,13 @@ use crate::core_api::Pipewire;
 use crate::i32_as_void_result;
 use crate::spa::param::ParamType;
 use crate::spa::type_::pod::PodRef;
+use crate::wrapper::RawWrapper;
 
 pub mod events;
 pub mod info;
 
 enum_wrapper!(
-    Direction,
+    Direction, // todo use from SPA
     spa_sys::spa_direction,
     INPUT: spa_sys::SPA_DIRECTION_INPUT,
     OUTPUT: spa_sys::SPA_DIRECTION_OUTPUT,
