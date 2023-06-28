@@ -13,6 +13,12 @@ pub struct PodBitmapRef {
     raw: spa_sys::spa_pod_bitmap,
 }
 
+impl PodBitmapRef {
+    fn content_size(&self) -> usize {
+        self.raw.pod.size as usize
+    }
+}
+
 impl Pod for PodBitmapRef {
     fn pod_size(&self) -> usize {
         self.upcast().pod_size()
@@ -20,8 +26,11 @@ impl Pod for PodBitmapRef {
 }
 
 impl<'a> PodValueParser<*const u8> for &'a PodBitmapRef {
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
-        unsafe { Ok(slice::from_raw_parts(value, size as usize)) }
+    fn parse(
+        content_size: usize,
+        header_or_value: *const u8,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        unsafe { Ok(slice::from_raw_parts(header_or_value, content_size)) }
     }
 }
 
@@ -29,7 +38,7 @@ impl<'a> ReadablePod for &'a PodBitmapRef {
     type Value = &'a [u8];
 
     fn value(&self) -> PodResult<Self::Value> {
-        unsafe { Self::parse(self.raw.pod.size, self.upcast().content_ptr()) }
+        unsafe { Self::parse(self.content_size(), self.upcast().content_ptr()) }
     }
 }
 

@@ -22,6 +22,12 @@ pub struct PodRangeRef<T> {
     phantom: PhantomData<T>,
 }
 
+impl<T> PodRangeRef<T> {
+    fn content_size(&self) -> usize {
+        self.raw.size as usize
+    }
+}
+
 impl<T> crate::wrapper::RawWrapper for PodRangeRef<T>
 where
     T: PodValueParser<*const u8>,
@@ -73,8 +79,11 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(size: u32, value: &'a PodChoiceBodyRef) -> PodResult<Self::Value> {
-        Self::parse(size, addr_of!(value.raw.child).cast())
+    fn parse(
+        content_size: usize,
+        header_or_value: &'a PodChoiceBodyRef,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        Self::parse(content_size, addr_of!(header_or_value.raw.child).cast())
     }
 }
 
@@ -83,13 +92,18 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(size: u32, value: &'a PodRangeRef<T>) -> PodResult<Self::Value> {
-        if T::static_type() == value.upcast().type_() {
-            let size = size as usize;
-            let element_size = value.raw.size as usize;
-            if size >= element_size * 3 {
-                let mut iter: PodValueIterator<T> =
-                    PodValueIterator::new(unsafe { value.content_ptr() }, size, element_size);
+    fn parse(
+        content_size: usize,
+        header_or_value: &'a PodRangeRef<T>,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        if T::static_type() == header_or_value.upcast().type_() {
+            let element_size = header_or_value.raw.size as usize;
+            if content_size >= element_size * 3 {
+                let mut iter: PodValueIterator<T> = PodValueIterator::new(
+                    unsafe { header_or_value.content_ptr() },
+                    content_size,
+                    element_size,
+                );
                 let default = iter.next().unwrap();
                 let min = iter.next().unwrap();
                 let max = iter.next().unwrap();
@@ -99,7 +113,7 @@ where
                     Ok(PodRangeValue { default, min, max })
                 }
             } else {
-                Err(PodError::DataIsTooShort(element_size * 3, size))
+                Err(PodError::DataIsTooShort(element_size * 3, content_size))
             }
         } else {
             Err(PodError::WrongPodTypeToCast)
@@ -112,8 +126,16 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
-        unsafe { Self::parse(size, PodRangeRef::from_raw_ptr(value.cast())) }
+    fn parse(
+        content_size: usize,
+        header_or_value: *const u8,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        unsafe {
+            Self::parse(
+                content_size,
+                PodRangeRef::from_raw_ptr(header_or_value.cast()),
+            )
+        }
     }
 }
 
@@ -125,8 +147,7 @@ where
     type Value = PodRangeValue<T::Value>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        let content_size = self.pod_size() - size_of::<PodRangeRef<T>>();
-        Self::parse(content_size as u32, self)
+        Self::parse(self.content_size(), self)
     }
 }
 

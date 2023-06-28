@@ -21,6 +21,12 @@ pub struct PodEnumRef<T> {
     phantom: PhantomData<T>,
 }
 
+impl<T> PodEnumRef<T> {
+    fn content_size(&self) -> usize {
+        self.raw.size as usize
+    }
+}
+
 impl<T> crate::wrapper::RawWrapper for PodEnumRef<T>
 where
     T: PodValueParser<*const u8>,
@@ -72,15 +78,20 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(size: u32, value: &'a PodEnumRef<T>) -> PodResult<Self::Value> {
-        if T::static_type() == value.upcast().type_() {
-            let size = size as usize;
-            let element_size = value.raw.size as usize;
-            let mut iter: PodValueIterator<T> =
-                PodValueIterator::new(unsafe { value.content_ptr() }, size, element_size);
+    fn parse(
+        content_size: usize,
+        header_or_value: &'a PodEnumRef<T>,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        if T::static_type() == header_or_value.upcast().type_() {
+            let element_size = header_or_value.raw.size as usize;
+            let mut iter: PodValueIterator<T> = PodValueIterator::new(
+                unsafe { header_or_value.content_ptr() },
+                content_size,
+                element_size,
+            );
             let default = iter
                 .next()
-                .ok_or(PodError::DataIsTooShort(element_size, size))?;
+                .ok_or(PodError::DataIsTooShort(element_size, content_size))?;
             let mut alternatives = Vec::new();
             iter.for_each(|a| alternatives.push(a));
             Ok(PodEnumValue {
@@ -98,8 +109,11 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(size: u32, value: &'a PodChoiceBodyRef) -> PodResult<Self::Value> {
-        Self::parse(size, addr_of!(value.raw.child).cast())
+    fn parse(
+        content_size: usize,
+        header_or_value: &'a PodChoiceBodyRef,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        Self::parse(content_size, addr_of!(header_or_value.raw.child).cast())
     }
 }
 
@@ -108,8 +122,16 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
-        unsafe { Self::parse(size, PodEnumRef::from_raw_ptr(value.cast())) }
+    fn parse(
+        content_size: usize,
+        header_or_value: *const u8,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        unsafe {
+            Self::parse(
+                content_size,
+                PodEnumRef::from_raw_ptr(header_or_value.cast()),
+            )
+        }
     }
 }
 
@@ -121,8 +143,7 @@ where
     type Value = PodEnumValue<T::Value>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        let content_size = self.pod_size() - size_of::<PodEnumRef<T>>();
-        Self::parse(content_size as u32, self)
+        Self::parse(self.content_size(), self)
     }
 }
 

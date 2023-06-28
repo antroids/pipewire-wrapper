@@ -44,6 +44,10 @@ impl PodControlRef {
     fn value_pod(&self) -> &PodRef {
         unsafe { PodRef::from_raw_ptr(addr_of!(self.raw.value)) }
     }
+
+    fn content_size(&self) -> usize {
+        self.raw.value.size as usize
+    }
 }
 
 #[repr(u32)]
@@ -60,25 +64,42 @@ impl<'a> ReadablePod for &'a PodControlRef {
     type Value = ControlType<'a>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        todo!()
+        Self::parse(self.content_size(), *self)
     }
 }
 
 impl<'a> PodValueParser<&'a PodControlRef> for &'a PodControlRef {
-    fn parse(_size: u32, value: &'a PodControlRef) -> PodResult<<Self as ReadablePod>::Value> {
-        match value.type_() {
+    fn parse(
+        _content_size: usize,
+        header_or_value: &'a PodControlRef,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        match header_or_value.type_() {
             Type::INVALID => Ok(ControlType::INVALID),
-            Type::PROPERTIES => Ok(ControlType::PROPERTIES(PodIterator::new(value))),
-            Type::MIDI => value.value_pod().cast().map(|r| ControlType::MIDI(r)),
-            Type::OSC => value.value_pod().cast().map(|r| ControlType::OSC(r)),
+            Type::PROPERTIES => Ok(ControlType::PROPERTIES(PodIterator::new(header_or_value))),
+            Type::MIDI => header_or_value
+                .value_pod()
+                .cast()
+                .map(|r| ControlType::MIDI(r)),
+            Type::OSC => header_or_value
+                .value_pod()
+                .cast()
+                .map(|r| ControlType::OSC(r)),
             type_ => Err(PodError::UnexpectedControlType(type_.raw)),
         }
     }
 }
 
 impl<'a> PodValueParser<*const u8> for &'a PodControlRef {
-    fn parse(_size: u32, value: *const u8) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe { Self::parse(_size, PodControlRef::from_raw_ptr(value.cast())) }
+    fn parse(
+        content_size: usize,
+        header_or_value: *const u8,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        unsafe {
+            Self::parse(
+                content_size,
+                PodControlRef::from_raw_ptr(header_or_value.cast()),
+            )
+        }
     }
 }
 

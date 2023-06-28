@@ -105,7 +105,7 @@ impl<'a, E: PodValueParser<*const u8> + 'a> Iterator for PodValueIterator<'a, E>
             let current_element_ptr = self.current_element_ptr;
             if self.inside(current_element_ptr) {
                 self.current_element_ptr = self.next_element_ptr();
-                E::parse(self.element_size as u32, current_element_ptr.cast()).ok()
+                E::parse(self.element_size, current_element_ptr.cast()).ok()
             } else {
                 None
             }

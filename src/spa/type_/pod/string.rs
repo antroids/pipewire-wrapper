@@ -19,21 +19,33 @@ impl Pod for PodStringRef {
     }
 }
 
+impl PodStringRef {
+    fn content_size(&self) -> usize {
+        self.raw.pod.size as usize
+    }
+}
+
 impl<'a> PodValueParser<*const c_char> for &'a PodStringRef {
-    fn parse(size: u32, value: *const c_char) -> PodResult<Self::Value> {
+    fn parse(
+        content_size: usize,
+        header_or_value: *const c_char,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
         unsafe {
-            if *value.offset((size - 1) as isize) != 0 {
+            if *header_or_value.offset((content_size - 1) as isize) != 0 {
                 Err(PodError::StringIsNotNullTerminated)
             } else {
-                Ok(CStr::from_ptr(value))
+                Ok(CStr::from_ptr(header_or_value))
             }
         }
     }
 }
 
 impl<'a> PodValueParser<*const u8> for &'a PodStringRef {
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
-        Self::parse(size, value as *const c_char)
+    fn parse(
+        content_size: usize,
+        header_or_value: *const u8,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        Self::parse(content_size, header_or_value as *const c_char)
     }
 }
 
@@ -43,7 +55,7 @@ impl<'a> ReadablePod for &'a PodStringRef {
     fn value(&self) -> PodResult<Self::Value> {
         unsafe {
             Self::parse(
-                self.raw.pod.size,
+                self.content_size(),
                 self.upcast().content_ptr() as *const c_char,
             )
         }

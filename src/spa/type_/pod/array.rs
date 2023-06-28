@@ -100,8 +100,7 @@ where
     type Value = PodValueIterator<'a, T>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        let content_size = self.pod_size() - size_of::<PodArrayRef>();
-        Self::parse(content_size as u32, self.body())
+        Self::parse(self.body_size(), self.body())
     }
 }
 
@@ -128,8 +127,13 @@ where
         unsafe { PodArrayBodyRef::from_raw_ptr(addr_of!(self.raw.body)) }
     }
 
+    fn body_size(&self) -> usize {
+        self.raw.pod.size as usize
+    }
+
     fn elements(&self) -> u32 {
-        self.raw.pod.size / self.raw.body.child.size
+        ((self.body_size() - size_of::<PodArrayBodyRef>()) / self.raw.body.child.size as usize)
+            as u32
     }
 
     pub fn element(&self, index: u32) -> PodResult<T::Value> {
@@ -142,8 +146,7 @@ where
             let ptr = unsafe {
                 first_element_ptr.offset(index as isize * self.body().child().pod_size() as isize)
             };
-            let size = self.raw.pod.size;
-            T::parse(size, ptr)
+            T::parse(self.body_size(), ptr)
         }
     }
 }
@@ -153,12 +156,15 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(s: u32, b: &'a PodArrayBodyRef) -> PodResult<Self::Value> {
+    fn parse(
+        content_size: usize,
+        header_or_value: &'a PodArrayBodyRef,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
         unsafe {
             Ok(PodValueIterator::new(
-                b.content_ptr().cast(),
-                s as usize,
-                b.child().size() as usize,
+                header_or_value.content_ptr().cast(),
+                content_size - size_of::<PodArrayBodyRef>(),
+                header_or_value.child().size() as usize,
             ))
         }
     }
@@ -169,7 +175,10 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
-        unsafe { Self::parse(size, &*(value as *const PodArrayBodyRef)) }
+    fn parse(
+        content_size: usize,
+        header_or_value: *const u8,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        unsafe { Self::parse(content_size, &*(header_or_value as *const PodArrayBodyRef)) }
     }
 }

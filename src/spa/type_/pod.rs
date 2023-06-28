@@ -56,18 +56,15 @@ macro_rules! primitive_type_pod_impl {
 
     ($pod_ref_type:ty, $pod_type:expr, $value_raw_type:ty, $value_type:ty, $value_ident:ident, $convert_value_expr:expr) => {
         impl restricted::PodValueParser<*const u8> for $pod_ref_type {
-            fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
+            fn parse(size: usize, value: *const u8) -> PodResult<Self::Value> {
                 unsafe { Self::parse(size, *(value as *const $value_raw_type)) }
             }
         }
 
         impl restricted::PodValueParser<$value_raw_type> for $pod_ref_type {
-            fn parse(size: u32, value: $value_raw_type) -> PodResult<Self::Value> {
-                if (size as usize) < size_of::<$value_raw_type>() {
-                    Err(PodError::DataIsTooShort(
-                        size_of::<$value_raw_type>(),
-                        size as usize,
-                    ))
+            fn parse(size: usize, value: $value_raw_type) -> PodResult<Self::Value> {
+                if size < size_of::<$value_raw_type>() {
+                    Err(PodError::DataIsTooShort(size_of::<$value_raw_type>(), size))
                 } else {
                     let $value_ident = value;
                     Ok($convert_value_expr)
@@ -79,7 +76,7 @@ macro_rules! primitive_type_pod_impl {
             type Value = $value_type;
 
             fn value(&self) -> PodResult<Self::Value> {
-                Self::parse(self.upcast().size(), self.value())
+                Self::parse(self.upcast().size() as usize, self.value())
             }
         }
 
@@ -181,7 +178,15 @@ pub(crate) mod restricted {
     use crate::wrapper::RawWrapper;
 
     pub trait PodValueParser<F: Copy>: ReadablePod {
-        fn parse(content_size: u32, header_or_value: F) -> PodResult<<Self as ReadablePod>::Value>;
+        /// Parse Pod value from F.
+        /// * `content_size` size in bytes of the provided data with body structure.
+        /// Body structure size should be subtracted to get elements size.
+        /// * `header_or_value` header or value, used to parse value.
+        /// Can be first value, body structure or pointer to the value itself.
+        fn parse(
+            content_size: usize,
+            header_or_value: F,
+        ) -> PodResult<<Self as ReadablePod>::Value>;
     }
 
     pub trait PodSubtype: RawWrapper + Pod + Debug {
@@ -274,14 +279,25 @@ impl Pod for PodRef {
 }
 
 impl<'a> restricted::PodValueParser<*const u8> for &'a PodRef {
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
-        unsafe { Self::parse(size, PodRef::from_raw_ptr(value as *const spa_sys::spa_pod)) }
+    fn parse(
+        content_size: usize,
+        header_or_value: *const u8,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        unsafe {
+            Self::parse(
+                content_size,
+                PodRef::from_raw_ptr(header_or_value as *const spa_sys::spa_pod),
+            )
+        }
     }
 }
 
 impl<'a> restricted::PodValueParser<&'a PodRef> for &'a PodRef {
-    fn parse(size: u32, value: &'a PodRef) -> PodResult<Self::Value> {
-        value.downcast()
+    fn parse(
+        content_size: usize,
+        header_or_value: &'a PodRef,
+    ) -> PodResult<<Self as ReadablePod>::Value> {
+        header_or_value.downcast()
     }
 }
 
@@ -289,7 +305,7 @@ impl<'a> ReadablePod for &'a PodRef {
     type Value = BasicType<'a>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        Self::parse(self.size(), *self)
+        Self::parse(self.size() as usize, *self)
     }
 }
 
