@@ -192,31 +192,20 @@ fn test_port_params() {
                                     //     seq, id, index, next, param, obj
                                     // );
                                     match obj.body_type() {
-                                        Type::OBJECT_PROP_INFO | Type::OBJECT_PROPS | Type::OBJECT_FORMAT => {
+                                        Type::OBJECT_PROP_INFO
+                                        | Type::OBJECT_PROPS
+                                        | Type::OBJECT_FORMAT => {
                                             println!("Obj {:?}", obj)
                                         }
-                                        _ => (),
+                                        body_type => {
+                                            println!("Unsupported object body type {:?}", body_type)
+                                        }
                                     }
                                 }
-                                BasicType::NONE(pod) => println!("{:?}", pod),
-                                BasicType::BOOL(pod) => println!("{:?}", pod),
-                                BasicType::ID(pod) => println!("{:?}", pod),
-                                BasicType::INT(pod) => println!("{:?}", pod),
-                                BasicType::LONG(pod) => println!("{:?}", pod),
-                                BasicType::FLOAT(pod) => println!("{:?}", pod),
-                                BasicType::DOUBLE(pod) => println!("{:?}", pod),
-                                BasicType::STRING(pod) => println!("{:?}", pod),
-                                BasicType::BYTES(pod) => println!("{:?}", pod),
-                                BasicType::RECTANGLE(pod) => println!("{:?}", pod),
-                                BasicType::FRACTION(pod) => println!("{:?}", pod),
-                                BasicType::BITMAP(pod) => println!("{:?}", pod),
-                                BasicType::ARRAY(pod) => println!("{:?}", pod),
-                                BasicType::POD(pod) => println!("{:?}", pod),
-                                _ => ()
-                                //     println!(
-                                //     "Port params seq {} id {:?} index {} next {} param {:?}",
-                                //     seq, id, index, next, param
-                                // ),
+                                _ => println!(
+                                    "Port params seq {} id {:?} index {} next {} param {:?}",
+                                    seq, id, index, next, param
+                                ),
                             }
                         }
                     };

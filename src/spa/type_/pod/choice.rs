@@ -115,8 +115,7 @@ impl<'a> ReadablePod for &'a PodChoiceRef {
     type Value = ChoiceValueType<'a>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        let content_size = self.pod_size() - size_of::<PodChoiceRef>();
-        Self::parse(content_size as u32, self.body())
+        Self::parse(self.raw.pod.size, self.body())
     }
 }
 

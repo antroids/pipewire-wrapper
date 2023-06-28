@@ -29,7 +29,7 @@ impl<'a> ReadablePod for &'a PodBytesRef {
     type Value = &'a [u8];
 
     fn value(&self) -> PodResult<Self::Value> {
-        unsafe { Self::parse(self.upcast().size(), self.upcast().content_ptr()) }
+        unsafe { Self::parse(self.raw.pod.size, self.upcast().content_ptr()) }
     }
 }
 

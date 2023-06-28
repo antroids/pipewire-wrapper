@@ -43,7 +43,7 @@ impl<'a> ReadablePod for &'a PodStringRef {
     fn value(&self) -> PodResult<Self::Value> {
         unsafe {
             Self::parse(
-                self.upcast().size(),
+                self.raw.pod.size,
                 self.upcast().content_ptr() as *const c_char,
             )
         }

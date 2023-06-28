@@ -20,6 +20,7 @@ use struct_::PodStructRef;
 
 use crate::spa::type_::object::PodObjectRef;
 use crate::spa::type_::pod::object::prop::Prop;
+use crate::spa::type_::pod::pointer::PodPointerRef;
 use crate::spa::type_::pod::restricted::{PodSubtype, PodValueParser};
 use crate::spa::type_::{FractionRef, RectangleRef, Type};
 use crate::wrapper::RawWrapper;
@@ -122,6 +123,7 @@ pub enum PodError {
     ChoiceElementMissing,
     UnexpectedChoiceElement,
     UnsupportedChoiceElementType,
+    UnexpectedControlType(u32),
 }
 
 impl From<PodError> for crate::Error {
@@ -149,6 +151,9 @@ impl Debug for PodError {
             }
             PodError::UnexpectedChoiceElement => write!(f, "Unexpected element in the choice type"),
             PodError::UnsupportedChoiceElementType => write!(f, "Unsupported choice element type"),
+            PodError::UnexpectedControlType(type_) => {
+                write!(f, "Unexpected control type {}", type_)
+            }
         }
     }
 }
@@ -176,7 +181,7 @@ pub(crate) mod restricted {
     use crate::wrapper::RawWrapper;
 
     pub trait PodValueParser<F: Copy>: ReadablePod {
-        fn parse(size: u32, value: F) -> PodResult<<Self as ReadablePod>::Value>;
+        fn parse(content_size: u32, header_or_value: F) -> PodResult<<Self as ReadablePod>::Value>;
     }
 
     pub trait PodSubtype: RawWrapper + Pod + Debug {
@@ -251,8 +256,8 @@ impl PodRef {
                 Type::ARRAY => self.cast().map(|r| BasicType::ARRAY(r)),
                 Type::STRUCT => self.cast().map(|r| BasicType::STRUCT(r)),
                 Type::OBJECT => self.cast().map(|r| BasicType::OBJECT(r)),
-                //Type::SEQUENCE => self.cast().map(|r| BasicType::SEQUENCE(r)),
-                //Type::POINTER => self.cast().map(|r| BasicType::POINTER(r)),
+                Type::SEQUENCE => self.cast().map(|r| BasicType::SEQUENCE(r)),
+                Type::POINTER => self.cast().map(|r| BasicType::POINTER(r)),
                 Type::FD => self.cast().map(|r| BasicType::FD(r)),
                 Type::CHOICE => self.cast().map(|r| BasicType::CHOICE(r)),
                 Type::POD => self.cast().map(|r| BasicType::POD(r)),
@@ -349,8 +354,8 @@ pub enum BasicTypeValue<'a> {
     // STRUCT(<&'a PodStructRef as ReadablePod>::Value)=Type::STRUCT.raw,
     // OBJECT(<&'a PodObjectRef  as ReadablePod>::Value)=Type::OBJECT.raw,
     // SEQUENCE(<&'a PodSequenceRef as ReadablePod>::Value)=Type::SEQUENCE.raw,
-    // POINTER(<&'a PodPointerRef as ReadablePod>::Value)=Type::POINTER.raw,
-    // FD(<PodFdRef as ReadablePod>::Value)=Type::FD.raw,
+    POINTER(<&'a PodPointerRef as ReadablePod>::Value) = Type::POINTER.raw,
+    FD(<PodFdRef as ReadablePod>::Value) = Type::FD.raw,
     // CHOICE(<&'a PodChoiceRef as ReadablePod>::Value) = Type::CHOICE.raw,
     POD(<&'a PodRef as ReadablePod>::Value) = Type::POD.raw,
 }
@@ -431,13 +436,6 @@ primitive_type_pod_impl!(
     v,
     FractionRef::from_raw(v)
 );
-
-#[derive(RawWrapper, Debug)]
-#[repr(transparent)]
-pub struct PodPointerRef {
-    #[raw]
-    raw: spa_sys::spa_pod_pointer,
-}
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
