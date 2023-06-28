@@ -194,7 +194,8 @@ fn test_port_params() {
                                     match obj.body_type() {
                                         Type::OBJECT_PROP_INFO
                                         | Type::OBJECT_PROPS
-                                        | Type::OBJECT_FORMAT => {
+                                        | Type::OBJECT_FORMAT
+                                        | Type::OBJECT_PARAM_BUFFERS => {
                                             println!("Obj {:?}", obj)
                                         }
                                         body_type => {
