@@ -121,6 +121,7 @@ pub enum PodError {
     UnexpectedChoiceElement,
     UnsupportedChoiceElementType,
     UnexpectedControlType(u32),
+    UnexpectedObjectType(u32),
 }
 
 impl From<PodError> for crate::Error {
@@ -150,6 +151,9 @@ impl Debug for PodError {
             PodError::UnsupportedChoiceElementType => write!(f, "Unsupported choice element type"),
             PodError::UnexpectedControlType(type_) => {
                 write!(f, "Unexpected control type {}", type_)
+            }
+            PodError::UnexpectedObjectType(type_) => {
+                write!(f, "Unexpected object type {}", type_)
             }
         }
     }

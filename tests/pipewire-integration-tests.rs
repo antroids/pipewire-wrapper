@@ -185,34 +185,10 @@ fn test_port_params() {
                     let port: &PortRef = port_proxy.as_object().unwrap();
                     let port_param_callback = |seq, id, index, next, param: &PodRef| {
                         if let Ok(basic_pod) = param.downcast() {
-                            match basic_pod {
-                                BasicType::OBJECT(obj) => {
-                                    // println!(
-                                    //     "Port params seq {} id {:?} index {} next {} param {:?} obj {:?}",
-                                    //     seq, id, index, next, param, obj
-                                    // );
-                                    match obj.body_type() {
-                                        Type::OBJECT_PROP_INFO
-                                        | Type::OBJECT_PROPS
-                                        | Type::OBJECT_FORMAT
-                                        | Type::OBJECT_PARAM_BUFFERS
-                                        | Type::OBJECT_PARAM_META
-                                        | Type::OBJECT_PARAM_IO
-                                        | Type::OBJECT_PARAM_PROFILE
-                                        | Type::OBJECT_PARAM_PORT_CONFIG
-                                        | Type::OBJECT_PARAM_ROUTE => {
-                                            println!("Obj {:?}", obj)
-                                        }
-                                        body_type => {
-                                            println!("Unsupported object body type {:?}", body_type)
-                                        }
-                                    }
-                                }
-                                _ => println!(
-                                    "Port params seq {} id {:?} index {} next {} param {:?}",
-                                    seq, id, index, next, param
-                                ),
-                            }
+                            println!(
+                                "Port params seq {} id {:?} index {} next {} param {:?}",
+                                seq, id, index, next, basic_pod
+                            )
                         }
                     };
                     let port_info_callback = |port_info: &PortInfoRef| {

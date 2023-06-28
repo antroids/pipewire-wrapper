@@ -17,10 +17,13 @@ use crate::spa::type_::pod::iterator::PodIterator;
 use crate::spa::type_::pod::object::format::ObjectFormatType;
 use crate::spa::type_::pod::object::param_buffers::ParamBuffersType;
 use crate::spa::type_::pod::object::param_io::ParamIoType;
+use crate::spa::type_::pod::object::param_latency::{ParamLatency, ParamLatencyType};
 use crate::spa::type_::pod::object::param_meta::ParamMetaType;
 use crate::spa::type_::pod::object::param_port_config::ParamPortConfigType;
+use crate::spa::type_::pod::object::param_process_latency::ParamProcessLatencyType;
 use crate::spa::type_::pod::object::param_profile::ParamProfileType;
 use crate::spa::type_::pod::object::param_route::ParamRouteType;
+use crate::spa::type_::pod::object::profiler::ProfilerType;
 use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
@@ -34,10 +37,13 @@ use crate::wrapper::RawWrapper;
 pub mod format;
 pub mod param_buffers;
 pub mod param_io;
+pub mod param_latency;
 pub mod param_meta;
 pub mod param_port_config;
+pub mod param_process_latency;
 pub mod param_profile;
 pub mod param_route;
+pub mod profiler;
 pub mod prop;
 pub mod prop_info;
 
@@ -123,6 +129,15 @@ impl Debug for PodObjectRef {
                         ObjectType::OBJECT_PARAM_ROUTE(iter) => {
                             iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
                         }
+                        ObjectType::OBJECT_PROFILER(iter) => {
+                            iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
+                        }
+                        ObjectType::OBJECT_PARAM_LATENCY(iter) => {
+                            iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
+                        }
+                        ObjectType::OBJECT_PARAM_PROCESS_LATENCY(iter) => {
+                            iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
+                        }
                     }),
                 )
                 .finish()
@@ -160,9 +175,12 @@ impl<'a> ReadablePod for &'a PodObjectRef {
                 ObjectType::OBJECT_PARAM_PORT_CONFIG(PodIterator::new(self))
             }
             Type::OBJECT_PARAM_ROUTE => ObjectType::OBJECT_PARAM_ROUTE(PodIterator::new(self)),
-            _ => {
-                todo!()
+            Type::OBJECT_PROFILER => ObjectType::OBJECT_PROFILER(PodIterator::new(self)),
+            Type::OBJECT_PARAM_LATENCY => ObjectType::OBJECT_PARAM_LATENCY(PodIterator::new(self)),
+            Type::OBJECT_PARAM_PROCESS_LATENCY => {
+                ObjectType::OBJECT_PARAM_PROCESS_LATENCY(PodIterator::new(self))
             }
+            type_ => return Err(PodError::UnexpectedObjectType(type_.raw)),
         })
     }
 }
@@ -275,4 +293,9 @@ pub enum ObjectType<'a> {
     OBJECT_PARAM_PORT_CONFIG(ObjectPropsIterator<'a, ParamPortConfigType<'a>>) =
         Type::OBJECT_PARAM_PORT_CONFIG.raw,
     OBJECT_PARAM_ROUTE(ObjectPropsIterator<'a, ParamRouteType<'a>>) = Type::OBJECT_PARAM_ROUTE.raw,
+    OBJECT_PROFILER(ObjectPropsIterator<'a, ProfilerType<'a>>) = Type::OBJECT_PROFILER.raw,
+    OBJECT_PARAM_LATENCY(ObjectPropsIterator<'a, ParamLatencyType<'a>>) =
+        Type::OBJECT_PARAM_LATENCY.raw,
+    OBJECT_PARAM_PROCESS_LATENCY(ObjectPropsIterator<'a, ParamProcessLatencyType<'a>>) =
+        Type::OBJECT_PARAM_PROCESS_LATENCY.raw,
 }

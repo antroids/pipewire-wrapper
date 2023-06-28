@@ -13,7 +13,6 @@ use crate::spa::type_::pod::*;
 use crate::wrapper::RawWrapper;
 
 pub mod pod;
-pub mod pointer;
 
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
