@@ -3,6 +3,8 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
 
+use bitflags::{bitflags, Flags};
+
 use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 use prop::ObjectPropType;
@@ -141,6 +143,18 @@ pub struct PodPropRef<'a, T: PodPropKeyType<'a>> {
     phantom_type: PhantomData<&'a T>,
 }
 
+bitflags! {
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    #[repr(transparent)]
+    pub struct PodPropFlags: u32 {
+        const READONLY = spa_sys::SPA_POD_PROP_FLAG_READONLY;
+        const HARDWARE = spa_sys::SPA_POD_PROP_FLAG_HARDWARE;
+        const HINT_DICT = spa_sys::SPA_POD_PROP_FLAG_HINT_DICT;
+        const MANDATORY = spa_sys::SPA_POD_PROP_FLAG_MANDATORY;
+        const DONT_FIXATE = spa_sys::SPA_POD_PROP_FLAG_DONT_FIXATE;
+    }
+}
+
 impl<'a, T: PodPropKeyType<'a>> RawWrapper for PodPropRef<'a, T> {
     type CType = spa_sys::spa_pod_prop;
 
@@ -175,8 +189,8 @@ impl<'a, T: PodPropKeyType<'a>> PodPropRef<'a, T> {
         self.raw.key
     }
 
-    pub fn flags(&self) -> u32 {
-        self.raw.flags
+    pub fn flags(&self) -> PodPropFlags {
+        PodPropFlags::from_bits_retain(self.raw.flags)
     }
 
     pub fn pod(&self) -> &PodRef {
