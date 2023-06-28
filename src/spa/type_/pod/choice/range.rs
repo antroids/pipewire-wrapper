@@ -73,9 +73,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type To = PodRangeValue<T::To>;
-
-    fn parse(size: u32, value: &'a PodChoiceBodyRef) -> PodResult<Self::To> {
+    fn parse(size: u32, value: &'a PodChoiceBodyRef) -> PodResult<Self::Value> {
         Self::parse(size, addr_of!(value.raw.child).cast())
     }
 }
@@ -85,9 +83,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type To = PodRangeValue<T::To>;
-
-    fn parse(size: u32, value: &'a PodRangeRef<T>) -> PodResult<Self::To> {
+    fn parse(size: u32, value: &'a PodRangeRef<T>) -> PodResult<Self::Value> {
         if T::static_type() == value.upcast().type_() {
             let size = size as usize;
             let element_size = value.raw.size as usize;
@@ -116,9 +112,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type To = PodRangeValue<T::To>;
-
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
         unsafe { Self::parse(size, PodRangeRef::from_raw_ptr(value.cast())) }
     }
 }
@@ -128,7 +122,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type Value = PodRangeValue<T::To>;
+    type Value = PodRangeValue<T::Value>;
 
     fn value(&self) -> PodResult<Self::Value> {
         let content_size = self.pod_size() - size_of::<PodRangeRef<T>>();

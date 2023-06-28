@@ -47,17 +47,13 @@ impl PodIdType for u32 {}
 impl PodIdType for Type {}
 
 impl<T: PodIdType> PodValueParser<*const u8> for PodIdRef<T> {
-    type To = T;
-
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
         unsafe { Self::parse(size, *(value as *const u32)) }
     }
 }
 
 impl<T: PodIdType> PodValueParser<u32> for PodIdRef<T> {
-    type To = T;
-
-    fn parse(size: u32, value: u32) -> PodResult<Self::To> {
+    fn parse(size: u32, value: u32) -> PodResult<Self::Value> {
         if (size as usize) < size_of::<u32>() {
             Err(PodError::DataIsTooShort(size_of::<u32>(), size as usize))
         } else {

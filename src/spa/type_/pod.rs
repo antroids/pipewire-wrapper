@@ -55,17 +55,13 @@ macro_rules! primitive_type_pod_impl {
 
     ($pod_ref_type:ty, $pod_type:expr, $value_raw_type:ty, $value_type:ty, $value_ident:ident, $convert_value_expr:expr) => {
         impl restricted::PodValueParser<*const u8> for $pod_ref_type {
-            type To = $value_type;
-
-            fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+            fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
                 unsafe { Self::parse(size, *(value as *const $value_raw_type)) }
             }
         }
 
         impl restricted::PodValueParser<$value_raw_type> for $pod_ref_type {
-            type To = $value_type;
-
-            fn parse(size: u32, value: $value_raw_type) -> PodResult<Self::To> {
+            fn parse(size: u32, value: $value_raw_type) -> PodResult<Self::Value> {
                 if (size as usize) < size_of::<$value_raw_type>() {
                     Err(PodError::DataIsTooShort(
                         size_of::<$value_raw_type>(),
@@ -90,6 +86,10 @@ macro_rules! primitive_type_pod_impl {
             fn pod_size(&self) -> usize {
                 self.upcast().pod_size()
             }
+        }
+
+        impl ValuePod for $pod_ref_type {
+            type Value = $value_type;
         }
 
         impl restricted::PodSubtype for $pod_ref_type {
@@ -163,8 +163,12 @@ pub trait Pod {
     fn pod_size(&self) -> usize;
 }
 
-pub trait ReadablePod {
+pub trait ValuePod {
     type Value;
+}
+
+pub trait ReadablePod {
+    type Value: Debug;
 
     fn value(&self) -> PodResult<Self::Value>;
 }
@@ -175,14 +179,12 @@ pub(crate) mod restricted {
 
     use spa_sys::spa_pod;
 
-    use crate::spa::type_::pod::{Pod, PodError, PodRef, PodResult};
+    use crate::spa::type_::pod::{Pod, PodError, PodRef, PodResult, ReadablePod};
     use crate::spa::type_::Type;
     use crate::wrapper::RawWrapper;
 
-    pub trait PodValueParser<F: Copy> {
-        type To: Debug;
-
-        fn parse(size: u32, value: F) -> PodResult<Self::To>;
+    pub trait PodValueParser<F: Copy>: ReadablePod {
+        fn parse(size: u32, value: F) -> PodResult<<Self as ReadablePod>::Value>;
     }
 
     pub trait PodSubtype: RawWrapper + Pod + Debug {
@@ -274,18 +276,18 @@ impl Pod for PodRef {
     }
 }
 
-impl<'a> restricted::PodValueParser<*const u8> for &'a PodRef {
-    type To = BasicType<'a>;
+impl<'a> ValuePod for &'a PodRef {
+    type Value = BasicType<'a>;
+}
 
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+impl<'a> restricted::PodValueParser<*const u8> for &'a PodRef {
+    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
         unsafe { Self::parse(size, PodRef::from_raw_ptr(value as *const spa_sys::spa_pod)) }
     }
 }
 
 impl<'a> restricted::PodValueParser<&'a PodRef> for &'a PodRef {
-    type To = BasicType<'a>;
-
-    fn parse(size: u32, value: &'a PodRef) -> PodResult<Self::To> {
+    fn parse(size: u32, value: &'a PodRef) -> PodResult<Self::Value> {
         value.downcast()
     }
 }
@@ -343,26 +345,26 @@ pub enum BasicType<'a> {
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
 pub enum BasicTypeValue<'a> {
-    NONE(<&'a PodRef as restricted::PodValueParser<*const u8>>::To) = Type::NONE.raw,
-    BOOL(<PodBoolRef as restricted::PodValueParser<*const u8>>::To) = Type::BOOL.raw,
-    ID(<PodIdRef as restricted::PodValueParser<*const u8>>::To) = Type::ID.raw,
-    INT(<PodIntRef as restricted::PodValueParser<*const u8>>::To) = Type::INT.raw,
-    LONG(<PodLongRef as restricted::PodValueParser<*const u8>>::To) = Type::LONG.raw,
-    FLOAT(<PodFloatRef as restricted::PodValueParser<*const u8>>::To) = Type::FLOAT.raw,
-    DOUBLE(<PodDoubleRef as restricted::PodValueParser<*const u8>>::To) = Type::DOUBLE.raw,
-    STRING(<&'a PodStringRef as restricted::PodValueParser<*const u8>>::To) = Type::STRING.raw,
-    BYTES(<&'a PodBytesRef as restricted::PodValueParser<*const u8>>::To) = Type::BYTES.raw,
-    RECTANGLE(<PodRectangleRef as restricted::PodValueParser<*const u8>>::To) = Type::RECTANGLE.raw,
-    FRACTION(<PodFractionRef as restricted::PodValueParser<*const u8>>::To) = Type::FRACTION.raw,
-    BITMAP(<&'a PodBitmapRef as restricted::PodValueParser<*const u8>>::To) = Type::BITMAP.raw,
-    ARRAY(<&'a PodArrayRef as restricted::PodValueParser<*const u8>>::To) = Type::ARRAY.raw,
-    // STRUCT(<&'a PodStructRef as  PodValueParser<*const u8>>::To)=Type::STRUCT.raw,
-    // OBJECT(<&'a PodObjectRef  as PodValueParser<*const u8>>::To)=Type::OBJECT.raw,
-    // SEQUENCE(<&'a PodSequenceRef as  PodValueParser<*const u8>>::To)=Type::SEQUENCE.raw,
-    // POINTER(<&'a PodPointerRef as  PodValueParser<*const u8>>::To)=Type::POINTER.raw,
-    // FD(<PodFdRef as  PodValueParser<*const u8>>::To)=Type::FD.raw,
-    // CHOICE(<&'a PodChoiceRef as PodValueParser<*const u8>>::To) = Type::CHOICE.raw,
-    POD(<&'a PodRef as restricted::PodValueParser<*const u8>>::To) = Type::POD.raw,
+    NONE(<&'a PodRef as ReadablePod>::Value) = Type::NONE.raw,
+    BOOL(<PodBoolRef as ReadablePod>::Value) = Type::BOOL.raw,
+    ID(<PodIdRef as ReadablePod>::Value) = Type::ID.raw,
+    INT(<PodIntRef as ReadablePod>::Value) = Type::INT.raw,
+    LONG(<PodLongRef as ReadablePod>::Value) = Type::LONG.raw,
+    FLOAT(<PodFloatRef as ReadablePod>::Value) = Type::FLOAT.raw,
+    DOUBLE(<PodDoubleRef as ReadablePod>::Value) = Type::DOUBLE.raw,
+    STRING(<&'a PodStringRef as ReadablePod>::Value) = Type::STRING.raw,
+    BYTES(<&'a PodBytesRef as ReadablePod>::Value) = Type::BYTES.raw,
+    RECTANGLE(<PodRectangleRef as ReadablePod>::Value) = Type::RECTANGLE.raw,
+    FRACTION(<PodFractionRef as ReadablePod>::Value) = Type::FRACTION.raw,
+    BITMAP(<&'a PodBitmapRef as ReadablePod>::Value) = Type::BITMAP.raw,
+    ARRAY(<&'a PodArrayRef as ReadablePod>::Value) = Type::ARRAY.raw,
+    // STRUCT(<&'a PodStructRef as ReadablePod>::Value)=Type::STRUCT.raw,
+    // OBJECT(<&'a PodObjectRef  as ReadablePod>::Value)=Type::OBJECT.raw,
+    // SEQUENCE(<&'a PodSequenceRef as ReadablePod>::Value)=Type::SEQUENCE.raw,
+    // POINTER(<&'a PodPointerRef as ReadablePod>::Value)=Type::POINTER.raw,
+    // FD(<PodFdRef as ReadablePod>::Value)=Type::FD.raw,
+    // CHOICE(<&'a PodChoiceRef as ReadablePod>::Value) = Type::CHOICE.raw,
+    POD(<&'a PodRef as ReadablePod>::Value) = Type::POD.raw,
 }
 
 #[derive(RawWrapper)]

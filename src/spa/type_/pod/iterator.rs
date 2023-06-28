@@ -98,7 +98,7 @@ impl<'a, E: PodValueParser<*const u8>> PodValueIterator<'a, E> {
 }
 
 impl<'a, E: PodValueParser<*const u8> + 'a> Iterator for PodValueIterator<'a, E> {
-    type Item = E::To;
+    type Item = E::Value;
 
     fn next(&mut self) -> Option<Self::Item> {
         unsafe {

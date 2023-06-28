@@ -132,7 +132,7 @@ where
         self.raw.pod.size / self.raw.body.child.size
     }
 
-    pub fn element(&self, index: u32) -> PodResult<T::To> {
+    pub fn element(&self, index: u32) -> PodResult<T::Value> {
         if T::static_type() != self.body().child().type_() {
             Err(PodError::WrongPodTypeToCast)
         } else if self.elements() >= index {
@@ -153,9 +153,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type To = PodValueIterator<'a, T>;
-
-    fn parse(s: u32, b: &'a PodArrayBodyRef) -> PodResult<Self::To> {
+    fn parse(s: u32, b: &'a PodArrayBodyRef) -> PodResult<Self::Value> {
         unsafe {
             Ok(PodValueIterator::new(
                 b.content_ptr().cast(),
@@ -171,9 +169,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type To = PodValueIterator<'a, T>;
-
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
         unsafe { Self::parse(size, &*(value as *const PodArrayBodyRef)) }
     }
 }

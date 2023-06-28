@@ -20,9 +20,7 @@ impl Pod for PodBitmapRef {
 }
 
 impl<'a> PodValueParser<*const u8> for &'a PodBitmapRef {
-    type To = &'a [u8];
-
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
         unsafe { Ok(slice::from_raw_parts(value, size as usize)) }
     }
 }

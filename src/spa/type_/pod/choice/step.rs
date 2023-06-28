@@ -74,9 +74,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type To = PodStepValue<T::To>;
-
-    fn parse(size: u32, value: &'a PodChoiceBodyRef) -> PodResult<Self::To> {
+    fn parse(size: u32, value: &'a PodChoiceBodyRef) -> PodResult<Self::Value> {
         Self::parse(size, addr_of!(value.raw.child).cast())
     }
 }
@@ -86,9 +84,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type To = PodStepValue<T::To>;
-
-    fn parse(size: u32, value: &'a PodStepRef<T>) -> PodResult<Self::To> {
+    fn parse(size: u32, value: &'a PodStepRef<T>) -> PodResult<Self::Value> {
         if T::static_type() == value.upcast().type_() {
             let size = size as usize;
             let element_size = value.raw.size as usize;
@@ -96,7 +92,7 @@ where
                 let mut iter: PodValueIterator<T> = PodValueIterator::new(
                     unsafe { value.content_ptr() },
                     size as usize,
-                    size_of::<T::To>(),
+                    size_of::<T::Value>(),
                 );
                 let default = iter.next().unwrap();
                 let min = iter.next().unwrap();
@@ -126,9 +122,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type To = PodStepValue<T::To>;
-
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
         unsafe { Self::parse(size, PodStepRef::from_raw_ptr(value.cast())) }
     }
 }
@@ -138,7 +132,7 @@ where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    type Value = PodStepValue<T::To>;
+    type Value = PodStepValue<T::Value>;
 
     fn value(&self) -> PodResult<Self::Value> {
         let content_size = self.pod_size() - size_of::<PodStepRef<T>>();

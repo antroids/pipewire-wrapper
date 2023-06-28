@@ -20,9 +20,7 @@ impl Pod for PodStringRef {
 }
 
 impl<'a> PodValueParser<*const c_char> for &'a PodStringRef {
-    type To = &'a CStr;
-
-    fn parse(size: u32, value: *const c_char) -> PodResult<Self::To> {
+    fn parse(size: u32, value: *const c_char) -> PodResult<Self::Value> {
         unsafe {
             if *value.offset((size - 1) as isize) != 0 {
                 Err(PodError::StringIsNotNullTerminated)
@@ -34,9 +32,7 @@ impl<'a> PodValueParser<*const c_char> for &'a PodStringRef {
 }
 
 impl<'a> PodValueParser<*const u8> for &'a PodStringRef {
-    type To = &'a CStr;
-
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
         Self::parse(size, value as *const c_char)
     }
 }

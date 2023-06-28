@@ -42,11 +42,11 @@ pub enum ChoiceStructType<T>
 where
     T: PodValueParser<*const u8>,
 {
-    NONE(Option<T::To>) = ChoiceType::NONE.raw, // value
-    RANGE(PodRangeValue<T::To>) = ChoiceType::RANGE.raw, // (default, min, max)
-    STEP(PodStepValue<T::To>) = ChoiceType::STEP.raw, // (default, min, max, step)
-    ENUM(PodEnumValue<T::To>) = ChoiceType::ENUM.raw, // (default, alternatives)
-    FLAGS(PodFlagsValue<T::To>) = ChoiceType::FLAGS.raw, // (default, possible flags)
+    NONE(Option<T::Value>) = ChoiceType::NONE.raw, // value
+    RANGE(PodRangeValue<T::Value>) = ChoiceType::RANGE.raw, // (default, min, max)
+    STEP(PodStepValue<T::Value>) = ChoiceType::STEP.raw, // (default, min, max, step)
+    ENUM(PodEnumValue<T::Value>) = ChoiceType::ENUM.raw, // (default, alternatives)
+    FLAGS(PodFlagsValue<T::Value>) = ChoiceType::FLAGS.raw, // (default, possible flags)
 }
 
 #[repr(u32)]
@@ -159,9 +159,7 @@ where
 }
 
 impl<'a> PodValueParser<&'a PodChoiceBodyRef> for &'a PodChoiceRef {
-    type To = ChoiceValueType<'a>;
-
-    fn parse(size: u32, value: &'a PodChoiceBodyRef) -> PodResult<Self::To> {
+    fn parse(size: u32, value: &'a PodChoiceBodyRef) -> PodResult<Self::Value> {
         match value.child().type_() {
             Type::NONE => Ok(ChoiceValueType::NONE()),
             Type::BOOL => Ok(ChoiceValueType::BOOL(parse_choice(size, value)?)),
@@ -179,9 +177,7 @@ impl<'a> PodValueParser<&'a PodChoiceBodyRef> for &'a PodChoiceRef {
 }
 
 impl<'a> PodValueParser<*const u8> for &'a PodChoiceRef {
-    type To = ChoiceValueType<'a>;
-
-    fn parse(size: u32, value: *const u8) -> PodResult<Self::To> {
+    fn parse(size: u32, value: *const u8) -> PodResult<Self::Value> {
         unsafe { Self::parse(size, &*(value as *const PodChoiceBodyRef)) }
     }
 }
