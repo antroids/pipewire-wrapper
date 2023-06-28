@@ -20,6 +20,16 @@ pub struct PodControlRef {
     raw: spa_sys::spa_pod_control,
 }
 
+impl Debug for PodControlRef {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PodControlRef")
+            .field("type", &self.type_())
+            .field("offset", &self.raw.offset)
+            .field("value", &self.value())
+            .finish()
+    }
+}
+
 impl Pod for PodControlRef {
     fn pod_size(&self) -> usize {
         size_of::<PodControlRef>() + self.raw.value.size as usize
@@ -69,16 +79,6 @@ impl<'a> PodValueParser<&'a PodControlRef> for &'a PodControlRef {
 impl<'a> PodValueParser<*const u8> for &'a PodControlRef {
     fn parse(_size: u32, value: *const u8) -> PodResult<<Self as ReadablePod>::Value> {
         unsafe { Self::parse(_size, PodControlRef::from_raw_ptr(value.cast())) }
-    }
-}
-
-impl<'a> Debug for &'a PodControlRef {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PodControlRef")
-            .field("type", &self.type_())
-            .field("offset", &self.raw.offset)
-            .field("value", &self.value())
-            .finish()
     }
 }
 
