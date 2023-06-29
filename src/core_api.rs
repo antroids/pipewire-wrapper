@@ -23,6 +23,7 @@ pub mod data_loop;
 pub mod factory;
 pub mod loop_;
 pub mod main_loop;
+pub mod node;
 pub mod permissions;
 pub mod port;
 pub mod properties;

@@ -121,7 +121,10 @@ where
                 alternatives,
             })
         } else {
-            Err(PodError::WrongPodTypeToCast)
+            Err(PodError::WrongPodTypeToCast(
+                T::static_type(),
+                header_or_value.upcast().type_(),
+            ))
         }
     }
 }

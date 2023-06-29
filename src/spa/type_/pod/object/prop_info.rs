@@ -6,7 +6,7 @@ use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
-use crate::spa::type_::pod::{PodBoolRef, PodError, PodSubtype};
+use crate::spa::type_::pod::{PodBoolRef, PodError, PodRef, PodSubtype};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
@@ -15,7 +15,7 @@ use crate::wrapper::RawWrapper;
 pub enum ObjectPropInfoType<'a> {
     ID(&'a PodIdRef<Prop>) = PropInfo::ID.raw,
     NAME(&'a PodStringRef) = PropInfo::NAME.raw,
-    TYPE(&'a PodChoiceRef) = PropInfo::TYPE.raw,
+    TYPE(&'a PodRef) = PropInfo::TYPE.raw,
     LABELS(&'a PodStructRef) = PropInfo::LABELS.raw,
     CONTAINER(&'a PodIdRef<u32>) = PropInfo::CONTAINER.raw,
     PARAMS(&'a PodBoolRef) = PropInfo::PARAMS.raw,

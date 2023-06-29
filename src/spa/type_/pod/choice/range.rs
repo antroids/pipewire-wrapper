@@ -128,7 +128,10 @@ where
                 Err(PodError::DataIsTooShort(element_size * 3, content_size))
             }
         } else {
-            Err(PodError::WrongPodTypeToCast)
+            Err(PodError::WrongPodTypeToCast(
+                T::static_type(),
+                header_or_value.upcast().type_(),
+            ))
         }
     }
 }

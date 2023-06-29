@@ -72,19 +72,19 @@ pub struct PodChoiceBodyRef {
 }
 
 impl PodChoiceBodyRef {
-    fn type_(&self) -> ChoiceType {
+    pub fn type_(&self) -> ChoiceType {
         ChoiceType::from_raw(self.raw.type_)
     }
 
-    fn flags(&self) -> u32 {
+    pub fn flags(&self) -> u32 {
         self.raw.flags
     }
 
-    fn child(&self) -> &PodRef {
+    pub fn child(&self) -> &PodRef {
         unsafe { PodRef::from_raw_ptr(addr_of!(self.raw.child)) }
     }
 
-    unsafe fn content_ptr(&self) -> *const u8 {
+    pub(crate) unsafe fn content_ptr(&self) -> *const u8 {
         (self.as_raw_ptr() as *const u8).offset(size_of::<PodChoiceBodyRef>() as isize)
     }
 }
@@ -97,8 +97,12 @@ pub struct PodChoiceRef {
 }
 
 impl PodChoiceRef {
-    fn body(&self) -> &PodChoiceBodyRef {
+    pub fn body(&self) -> &PodChoiceBodyRef {
         unsafe { PodChoiceBodyRef::from_raw_ptr(addr_of!(self.raw.body)) }
+    }
+
+    pub fn fixated(&self) -> bool {
+        self.body().type_() == ChoiceType::NONE
     }
 
     fn content_size(&self) -> usize {

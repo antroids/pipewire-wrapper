@@ -19,6 +19,7 @@ use string::PodStringRef;
 use struct_::PodStructRef;
 
 use crate::spa::type_::object::PodObjectRef;
+use crate::spa::type_::pod::choice::ChoiceType;
 use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::pointer::PodPointerRef;
 use crate::spa::type_::pod::restricted::{PodSubtype, PodValueParser};
@@ -114,7 +115,7 @@ macro_rules! primitive_type_pod_impl {
 pub enum PodError {
     DataIsTooShort(usize, usize),
     UnknownPodTypeToDowncast,
-    WrongPodTypeToCast,
+    WrongPodTypeToCast(Type, Type),
     StringIsNotNullTerminated,
     IndexIsOutOfRange,
     ChoiceElementMissing,
@@ -122,6 +123,7 @@ pub enum PodError {
     UnsupportedChoiceElementType,
     UnexpectedControlType(u32),
     UnexpectedObjectType(u32),
+    UnexpectedChoiceType(ChoiceType, ChoiceType),
 }
 
 impl From<PodError> for crate::Error {
@@ -141,7 +143,11 @@ impl Debug for PodError {
             PodError::UnknownPodTypeToDowncast => {
                 write!(f, "Cannot downcast Pod, child type is unknown")
             }
-            PodError::WrongPodTypeToCast => write!(f, "Cannot cast Pod to this type"),
+            PodError::WrongPodTypeToCast(cast_type, actual_type) => write!(
+                f,
+                "Cannot cast Pod with type {:?} to type {:?}",
+                actual_type, cast_type
+            ),
             PodError::StringIsNotNullTerminated => write!(f, "String is not null terminated"),
             PodError::IndexIsOutOfRange => write!(f, "Index is out of range"),
             PodError::ChoiceElementMissing => {
@@ -154,6 +160,13 @@ impl Debug for PodError {
             }
             PodError::UnexpectedObjectType(type_) => {
                 write!(f, "Unexpected object type {}", type_)
+            }
+            PodError::UnexpectedChoiceType(expected, actual) => {
+                write!(
+                    f,
+                    "Unexpected choice type, expected {:?} actual {:?}",
+                    expected, actual
+                )
             }
         }
     }
@@ -172,11 +185,14 @@ pub trait ReadablePod {
 }
 
 pub(crate) mod restricted {
+    use std::any::{Any, TypeId};
     use std::fmt::Debug;
     use std::ptr::addr_of;
 
     use spa_sys::spa_pod;
 
+    use crate::spa::type_::pod::choice::enum_::PodEnumRef;
+    use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceRef};
     use crate::spa::type_::pod::{Pod, PodError, PodRef, PodResult, ReadablePod};
     use crate::spa::type_::Type;
     use crate::wrapper::RawWrapper;
@@ -204,10 +220,16 @@ pub(crate) mod restricted {
         where
             T: PodSubtype,
         {
-            if T::static_type() == self.upcast().type_() {
+            let target_type = T::static_type();
+            let pod_type = self.upcast().type_();
+            if target_type == PodRef::static_type() || target_type == pod_type {
                 unsafe { Ok(self.cast_unchecked()) }
+            } else if pod_type == PodChoiceRef::static_type() {
+                let choice: &PodChoiceRef = self.cast()?;
+                // try to cast fixated or choice subtypes
+                choice.body().child().cast()
             } else {
-                Err(PodError::WrongPodTypeToCast)
+                Err(PodError::WrongPodTypeToCast(target_type, pod_type))
             }
         }
 

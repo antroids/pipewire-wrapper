@@ -113,7 +113,7 @@ where
         f.debug_struct("PodArrayRef")
             .field("pod", &self.upcast())
             .field("body", &self.body())
-            .field("value", &self.value().map(|v| v.collect::<Vec<_>>()))
+            .field("value", &self.value().map(|i| i.collect::<Vec<_>>()))
             .finish()
     }
 }
@@ -138,7 +138,10 @@ where
 
     pub fn element(&self, index: u32) -> PodResult<T::Value> {
         if T::static_type() != self.body().child().type_() {
-            Err(PodError::WrongPodTypeToCast)
+            Err(PodError::WrongPodTypeToCast(
+                T::static_type(),
+                self.body().child().type_(),
+            ))
         } else if self.elements() >= index {
             Err(PodError::IndexIsOutOfRange)
         } else {

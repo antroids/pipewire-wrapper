@@ -1,5 +1,6 @@
 use pipewire_macro_impl::enum_wrapper;
 
+use crate::spa::type_::pod::array::PodArrayRef;
 use crate::spa::type_::pod::choice::enum_::PodEnumRef;
 use crate::spa::type_::pod::choice::PodChoiceRef;
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
@@ -19,11 +20,11 @@ pub enum ObjectFormatType<'a> {
     MEDIA_SUBTYPE(&'a PodEnumRef<PodIdRef<MediaSubType>>) = Format::MEDIA_SUBTYPE.raw,
 
     // Audio
-    AUDIO_FORMAT(&'a PodEnumRef<PodIdRef<AudioFormat>>) = Format::AUDIO_FORMAT.raw,
+    AUDIO_FORMAT(&'a PodEnumRef<PodIdRef<AudioFormat>>) = Format::AUDIO_FORMAT.raw, // Getting choice
     AUDIO_FLAGS(&'a PodIntRef) = Format::AUDIO_FLAGS.raw,
-    AUDIO_RATE(&'a PodIntRef) = Format::AUDIO_RATE.raw,
+    AUDIO_RATE(&'a PodIntRef) = Format::AUDIO_RATE.raw, // Getting choice
     AUDIO_CHANNELS(&'a PodIntRef) = Format::AUDIO_CHANNELS.raw,
-    AUDIO_POSITION(&'a PodEnumRef<PodIdRef<u32>>) = Format::AUDIO_POSITION.raw,
+    AUDIO_POSITION(&'a PodArrayRef<PodIdRef<u32>>) = Format::AUDIO_POSITION.raw, // Enum in comments, but getting array
     AUDIO_IEC958CODEC(&'a PodEnumRef<PodIdRef<AudioIec958Codec>>) = Format::AUDIO_IEC958CODEC.raw,
     AUDIO_BITORDER(&'a PodEnumRef<PodIdRef<ParamBitorder>>) = Format::AUDIO_BITORDER.raw,
     AUDIO_INTERLEAVE(&'a PodIntRef) = Format::AUDIO_INTERLEAVE.raw,
