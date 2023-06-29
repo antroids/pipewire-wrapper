@@ -4,6 +4,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use bitflags::Flags;
+
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
 use pipewire_wrapper::core_api::port::events::PortEvents;

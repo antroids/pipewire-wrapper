@@ -15,13 +15,6 @@ use crate::wrapper::RawWrapper;
 pub mod events;
 pub mod info;
 
-enum_wrapper!(
-    Direction, // todo use from SPA
-    spa_sys::spa_direction,
-    INPUT: spa_sys::SPA_DIRECTION_INPUT,
-    OUTPUT: spa_sys::SPA_DIRECTION_OUTPUT,
-);
-
 #[derive(RawWrapper, Debug)]
 #[proxied(methods=pw_sys::pw_port_methods, interface="Port")]
 #[repr(transparent)]

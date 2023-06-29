@@ -1,12 +1,15 @@
-use crate::core_api::port::Direction;
-use crate::spa::dict::DictRef;
-use crate::spa::param::ParamInfoRef;
-use crate::wrapper::RawWrapper;
-use bitflags::bitflags;
-use pipewire_proc_macro::RawWrapper;
 use std::fmt::Debug;
 use std::ptr::slice_from_raw_parts;
 use std::slice::from_raw_parts;
+
+use bitflags::bitflags;
+
+use pipewire_proc_macro::RawWrapper;
+
+use crate::spa::dict::DictRef;
+use crate::spa::param::ParamInfoRef;
+use crate::spa::type_::pod::object::param_port_config::Direction;
+use crate::wrapper::RawWrapper;
 
 bitflags! {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]

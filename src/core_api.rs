@@ -12,6 +12,7 @@ use crate::spa::dict::DictRef;
 use crate::spa::handle::HandleRef;
 use crate::spa::loop_::AsLoopRef;
 use crate::spa::support::SupportRef;
+use crate::spa::type_::pod::object::param_port_config::Direction;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{error, i32_as_void_result, spa};
 
@@ -98,8 +99,8 @@ impl Pipewire {
         unsafe { pw_sys::pw_check_option(option.as_ptr(), value.as_ptr()) }
     }
 
-    pub fn direction_reverse(direction: &port::Direction) -> port::Direction {
-        port::Direction::from_raw(unsafe { pw_sys::pw_direction_reverse(*direction.as_raw()) })
+    pub fn direction_reverse(direction: &Direction) -> Direction {
+        Direction::from_raw(unsafe { pw_sys::pw_direction_reverse(*direction.as_raw()) })
     }
 
     pub fn set_domain(&self, domain: &CStr) -> crate::Result<()> {
