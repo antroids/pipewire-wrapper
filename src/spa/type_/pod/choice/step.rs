@@ -3,9 +3,11 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
 
-use crate::spa::type_::pod::choice::PodChoiceBodyRef;
+use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::type_::pod::iterator::PodValueIterator;
-use crate::spa::type_::pod::{Pod, PodError, PodResult, PodSubtype, PodValueParser, ReadablePod};
+use crate::spa::type_::pod::{
+    Pod, PodError, PodRef, PodResult, PodSubtype, PodValueParser, ReadablePod,
+};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -34,13 +36,13 @@ impl<T> PodStepValue<T> {
 
 #[repr(transparent)]
 pub struct PodStepRef<T> {
-    raw: spa_sys::spa_pod,
+    raw: spa_sys::spa_pod_choice,
     phantom: PhantomData<T>,
 }
 
 impl<T> PodStepRef<T> {
-    fn content_size(&self) -> usize {
-        self.raw.size as usize
+    pub fn choice(&self) -> &PodChoiceRef {
+        unsafe { PodChoiceRef::from_raw_ptr(addr_of!(self.raw)) }
     }
 }
 
@@ -48,7 +50,7 @@ impl<T> crate::wrapper::RawWrapper for PodStepRef<T>
 where
     T: PodValueParser<*const u8>,
 {
-    type CType = spa_sys::spa_pod;
+    type CType = spa_sys::spa_pod_choice;
 
     fn as_raw_ptr(&self) -> *mut Self::CType {
         &self.raw as *const _ as *mut _
@@ -76,7 +78,7 @@ where
     T: PodSubtype,
 {
     fn static_type() -> Type {
-        T::static_type()
+        PodChoiceRef::static_type()
     }
 }
 
@@ -90,35 +92,23 @@ where
     }
 }
 
-impl<'a, T> PodValueParser<&'a PodChoiceBodyRef> for PodStepRef<T>
+impl<T> ReadablePod for PodStepRef<T>
 where
     T: PodValueParser<*const u8>,
     T: PodSubtype,
 {
-    fn parse(
-        content_size: usize,
-        header_or_value: &'a PodChoiceBodyRef,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        Self::parse(content_size, addr_of!(header_or_value.raw.child).cast())
-    }
-}
+    type Value = PodStepValue<T::Value>;
 
-impl<'a, T> PodValueParser<&'a PodStepRef<T>> for PodStepRef<T>
-where
-    T: PodValueParser<*const u8>,
-    T: PodSubtype,
-{
-    fn parse(
-        content_size: usize,
-        header_or_value: &'a PodStepRef<T>,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        if T::static_type() == header_or_value.upcast().type_() {
-            let element_size = header_or_value.raw.size as usize;
-            if content_size >= element_size * 4 {
+    fn value(&self) -> PodResult<Self::Value> {
+        let body = self.choice().body();
+        if body.type_() == ChoiceType::STEP {
+            if T::static_type() == body.child().type_() {
+                let content_size = self.pod_size() - size_of::<PodStepRef<T>>();
+                let element_size = body.child().size() as usize;
                 let mut iter: PodValueIterator<T> = PodValueIterator::new(
-                    unsafe { header_or_value.content_ptr() },
+                    unsafe { body.content_ptr().cast() },
                     content_size,
-                    size_of::<T::Value>(),
+                    element_size,
                 );
                 let default = iter.next().unwrap();
                 let min = iter.next().unwrap();
@@ -135,44 +125,17 @@ where
                     })
                 }
             } else {
-                Err(PodError::DataIsTooShort(element_size * 4, content_size))
+                Err(PodError::WrongPodTypeToCast(
+                    T::static_type(),
+                    body.child().type_(),
+                ))
             }
         } else {
-            Err(PodError::WrongPodTypeToCast(
-                T::static_type(),
-                header_or_value.upcast().type_(),
+            Err(PodError::UnexpectedChoiceType(
+                ChoiceType::STEP,
+                body.type_(),
             ))
         }
-    }
-}
-
-impl<T> PodValueParser<*const u8> for PodStepRef<T>
-where
-    T: PodValueParser<*const u8>,
-    T: PodSubtype,
-{
-    fn parse(
-        content_size: usize,
-        header_or_value: *const u8,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe {
-            Self::parse(
-                content_size,
-                PodStepRef::from_raw_ptr(header_or_value.cast()),
-            )
-        }
-    }
-}
-
-impl<T> ReadablePod for PodStepRef<T>
-where
-    T: PodValueParser<*const u8>,
-    T: PodSubtype,
-{
-    type Value = PodStepValue<T::Value>;
-
-    fn value(&self) -> PodResult<Self::Value> {
-        Self::parse(self.content_size(), self)
     }
 }
 

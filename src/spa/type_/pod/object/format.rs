@@ -16,11 +16,11 @@ use crate::wrapper::RawWrapper;
 #[repr(u32)]
 pub enum ObjectFormatType<'a> {
     // Media
-    MEDIA_TYPE(&'a PodEnumRef<PodIdRef<MediaType>>) = Format::MEDIA_TYPE.raw,
-    MEDIA_SUBTYPE(&'a PodEnumRef<PodIdRef<MediaSubType>>) = Format::MEDIA_SUBTYPE.raw,
+    MEDIA_TYPE(&'a PodIdRef<MediaType>) = Format::MEDIA_TYPE.raw,
+    MEDIA_SUBTYPE(&'a PodIdRef<MediaSubType>) = Format::MEDIA_SUBTYPE.raw,
 
     // Audio
-    AUDIO_FORMAT(&'a PodEnumRef<PodIdRef<AudioFormat>>) = Format::AUDIO_FORMAT.raw, // Getting choice
+    AUDIO_FORMAT(&'a PodIdRef<AudioFormat>) = Format::AUDIO_FORMAT.raw,
     AUDIO_FLAGS(&'a PodIntRef) = Format::AUDIO_FLAGS.raw,
     AUDIO_RATE(&'a PodIntRef) = Format::AUDIO_RATE.raw, // Getting choice
     AUDIO_CHANNELS(&'a PodIntRef) = Format::AUDIO_CHANNELS.raw,
@@ -31,7 +31,7 @@ pub enum ObjectFormatType<'a> {
     // missing audio params
 
     // Video
-    VIDEO_FORMAT(&'a PodEnumRef<PodIdRef<VideoFormat>>) = Format::VIDEO_FORMAT.raw,
+    VIDEO_FORMAT(&'a PodIdRef<VideoFormat>) = Format::VIDEO_FORMAT.raw,
     VIDEO_MODIFIER(&'a PodLongRef) = Format::VIDEO_MODIFIER.raw,
     VIDEO_SIZE(&'a PodRectangleRef) = Format::VIDEO_SIZE.raw,
     VIDEO_FRAMERATE(&'a PodChoiceRef) = Format::VIDEO_FRAMERATE.raw, // There is a choice for some reason, but should be fraction

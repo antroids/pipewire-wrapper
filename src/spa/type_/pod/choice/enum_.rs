@@ -3,9 +3,11 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
 
-use crate::spa::type_::pod::choice::PodChoiceBodyRef;
+use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::type_::pod::iterator::PodValueIterator;
-use crate::spa::type_::pod::{Pod, PodError, PodResult, PodSubtype, PodValueParser, ReadablePod};
+use crate::spa::type_::pod::{
+    Pod, PodError, PodRef, PodResult, PodSubtype, PodValueParser, ReadablePod,
+};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -26,13 +28,13 @@ impl<T> PodEnumValue<T> {
 
 #[repr(transparent)]
 pub struct PodEnumRef<T> {
-    raw: spa_sys::spa_pod,
+    raw: spa_sys::spa_pod_choice,
     phantom: PhantomData<T>,
 }
 
 impl<T> PodEnumRef<T> {
-    fn content_size(&self) -> usize {
-        self.raw.size as usize
+    pub fn choice(&self) -> &PodChoiceRef {
+        unsafe { PodChoiceRef::from_raw_ptr(addr_of!(self.raw)) }
     }
 }
 
@@ -40,7 +42,7 @@ impl<T> crate::wrapper::RawWrapper for PodEnumRef<T>
 where
     T: PodValueParser<*const u8>,
 {
-    type CType = spa_sys::spa_pod;
+    type CType = spa_sys::spa_pod_choice;
 
     fn as_raw_ptr(&self) -> *mut Self::CType {
         &self.raw as *const _ as *mut _
@@ -68,7 +70,7 @@ where
     T: PodSubtype,
 {
     fn static_type() -> Type {
-        T::static_type()
+        PodChoiceRef::static_type()
     }
 }
 
@@ -82,71 +84,6 @@ where
     }
 }
 
-impl<'a, T> PodValueParser<&'a PodEnumRef<T>> for PodEnumRef<T>
-where
-    T: PodValueParser<*const u8>,
-    T: PodSubtype,
-{
-    fn parse(
-        content_size: usize,
-        header_or_value: &'a PodEnumRef<T>,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        if T::static_type() == header_or_value.upcast().type_() {
-            let element_size = header_or_value.raw.size as usize;
-            let mut iter: PodValueIterator<T> = PodValueIterator::new(
-                unsafe { header_or_value.content_ptr() },
-                content_size,
-                element_size,
-            );
-            let default = iter
-                .next()
-                .ok_or(PodError::DataIsTooShort(element_size, content_size))?;
-            let mut alternatives = Vec::new();
-            iter.for_each(|a| alternatives.push(a));
-            Ok(PodEnumValue {
-                default,
-                alternatives,
-            })
-        } else {
-            Err(PodError::WrongPodTypeToCast(
-                T::static_type(),
-                header_or_value.upcast().type_(),
-            ))
-        }
-    }
-}
-
-impl<'a, T> PodValueParser<&'a PodChoiceBodyRef> for PodEnumRef<T>
-where
-    T: PodValueParser<*const u8>,
-    T: PodSubtype,
-{
-    fn parse(
-        content_size: usize,
-        header_or_value: &'a PodChoiceBodyRef,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        Self::parse(content_size, addr_of!(header_or_value.raw.child).cast())
-    }
-}
-
-impl<T> PodValueParser<*const u8> for PodEnumRef<T>
-where
-    T: PodValueParser<*const u8>,
-    T: PodSubtype,
-{
-    fn parse(
-        content_size: usize,
-        header_or_value: *const u8,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe {
-            Self::parse(
-                content_size,
-                PodEnumRef::from_raw_ptr(header_or_value.cast()),
-            )
-        }
-    }
-}
-
 impl<T> ReadablePod for PodEnumRef<T>
 where
     T: PodValueParser<*const u8>,
@@ -155,7 +92,37 @@ where
     type Value = PodEnumValue<T::Value>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        Self::parse(self.content_size(), self)
+        let body = self.choice().body();
+        if body.type_() == ChoiceType::ENUM {
+            if T::static_type() == body.child().type_() {
+                let content_size = self.pod_size() - size_of::<PodEnumRef<T>>();
+                let element_size = body.child().size() as usize;
+                let mut iter: PodValueIterator<T> = PodValueIterator::new(
+                    unsafe { body.content_ptr().cast() },
+                    content_size,
+                    element_size,
+                );
+                let default = iter
+                    .next()
+                    .ok_or(PodError::DataIsTooShort(element_size, content_size))?;
+                let mut alternatives = Vec::new();
+                iter.for_each(|a| alternatives.push(a));
+                Ok(PodEnumValue {
+                    default,
+                    alternatives,
+                })
+            } else {
+                Err(PodError::WrongPodTypeToCast(
+                    T::static_type(),
+                    body.child().type_(),
+                ))
+            }
+        } else {
+            Err(PodError::UnexpectedChoiceType(
+                ChoiceType::ENUM,
+                body.type_(),
+            ))
+        }
     }
 }
 

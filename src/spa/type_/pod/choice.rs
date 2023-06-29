@@ -1,3 +1,4 @@
+use std::any::TypeId;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::mem::size_of;
@@ -106,7 +107,44 @@ impl PodChoiceRef {
     }
 
     fn content_size(&self) -> usize {
-        self.raw.pod.size as usize
+        self.raw.pod.size as usize - size_of::<PodChoiceRef>()
+    }
+
+    fn parse_choice<T>(&self) -> PodResult<ChoiceStructType<T>>
+    where
+        T: PodValueParser<*const u8>,
+        T: PodSubtype,
+    {
+        let body = self.body();
+        unsafe {
+            match body.type_() {
+                ChoiceType::NONE => {
+                    let mut iter: PodValueIterator<T> = PodValueIterator::new(
+                        unsafe { body.content_ptr().cast() },
+                        self.content_size(),
+                        body.child().size() as usize,
+                    );
+                    Ok(ChoiceStructType::NONE(iter.next()))
+                }
+                ChoiceType::RANGE => <PodRangeRef<T> as ReadablePod>::value(
+                    PodRangeRef::from_raw_ptr(self.as_raw_ptr()),
+                )
+                .map(|r| ChoiceStructType::RANGE(r)),
+                ChoiceType::STEP => <PodStepRef<T> as ReadablePod>::value(
+                    PodStepRef::from_raw_ptr(self.as_raw_ptr()),
+                )
+                .map(|r| ChoiceStructType::STEP(r)),
+                ChoiceType::ENUM => <PodEnumRef<T> as ReadablePod>::value(
+                    PodEnumRef::from_raw_ptr(self.as_raw_ptr()),
+                )
+                .map(|r| ChoiceStructType::ENUM(r)),
+                ChoiceType::FLAGS => <PodFlagsRef<T> as ReadablePod>::value(
+                    PodFlagsRef::from_raw_ptr(self.as_raw_ptr()),
+                )
+                .map(|r| ChoiceStructType::FLAGS(r)),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
+            }
+        }
     }
 }
 
@@ -124,7 +162,19 @@ impl<'a> ReadablePod for &'a PodChoiceRef {
     type Value = ChoiceValueType<'a>;
 
     fn value(&self) -> PodResult<Self::Value> {
-        Self::parse(self.content_size(), self.body())
+        match self.body().child().type_() {
+            Type::NONE => Ok(ChoiceValueType::NONE()),
+            Type::BOOL => Ok(ChoiceValueType::BOOL(self.parse_choice()?)),
+            Type::ID => Ok(ChoiceValueType::ID(self.parse_choice()?)),
+            Type::INT => Ok(ChoiceValueType::INT(self.parse_choice()?)),
+            Type::LONG => Ok(ChoiceValueType::LONG(self.parse_choice()?)),
+            Type::FLOAT => Ok(ChoiceValueType::FLOAT(self.parse_choice()?)),
+            Type::DOUBLE => Ok(ChoiceValueType::DOUBLE(self.parse_choice()?)),
+            //Type::STRING => Ok(ChoiceValueType::STRING(self.parse_choice(size, value)?)),
+            Type::RECTANGLE => Ok(ChoiceValueType::RECTANGLE(self.parse_choice()?)),
+            Type::FRACTION => Ok(ChoiceValueType::FRACTION(self.parse_choice()?)),
+            _ => Err(PodError::UnsupportedChoiceElementType),
+        }
     }
 }
 
@@ -137,55 +187,5 @@ impl Pod for PodChoiceRef {
 impl PodSubtype for PodChoiceRef {
     fn static_type() -> Type {
         Type::CHOICE
-    }
-}
-
-fn parse_choice<T>(s: usize, value: &PodChoiceBodyRef) -> PodResult<ChoiceStructType<T>>
-where
-    T: PodValueParser<*const u8>,
-    T: PodSubtype,
-{
-    let s = s - size_of::<PodChoiceBodyRef>();
-    match value.type_() {
-        ChoiceType::NONE => {
-            let mut iter: PodValueIterator<T> = PodValueIterator::new(
-                unsafe { value.content_ptr().cast() },
-                s,
-                value.child().size() as usize,
-            );
-            Ok(ChoiceStructType::NONE(iter.next()))
-        }
-        ChoiceType::RANGE => PodRangeRef::<T>::parse(s, value).map(|r| ChoiceStructType::RANGE(r)),
-        ChoiceType::STEP => PodStepRef::<T>::parse(s, value).map(|r| ChoiceStructType::STEP(r)),
-        ChoiceType::ENUM => PodEnumRef::<T>::parse(s, value).map(|r| ChoiceStructType::ENUM(r)),
-        ChoiceType::FLAGS => PodFlagsRef::<T>::parse(s, value).map(|r| ChoiceStructType::FLAGS(r)),
-        _ => Err(PodError::UnknownPodTypeToDowncast),
-    }
-}
-
-impl<'a> PodValueParser<&'a PodChoiceBodyRef> for &'a PodChoiceRef {
-    fn parse(s: usize, v: &'a PodChoiceBodyRef) -> PodResult<<Self as ReadablePod>::Value> {
-        match v.child().type_() {
-            Type::NONE => Ok(ChoiceValueType::NONE()),
-            Type::BOOL => Ok(ChoiceValueType::BOOL(parse_choice(s, v)?)),
-            Type::ID => Ok(ChoiceValueType::ID(parse_choice(s, v)?)),
-            Type::INT => Ok(ChoiceValueType::INT(parse_choice(s, v)?)),
-            Type::LONG => Ok(ChoiceValueType::LONG(parse_choice(s, v)?)),
-            Type::FLOAT => Ok(ChoiceValueType::FLOAT(parse_choice(s, v)?)),
-            Type::DOUBLE => Ok(ChoiceValueType::DOUBLE(parse_choice(s, v)?)),
-            //Type::STRING => Ok(ChoiceValueType::STRING(parse_choice(size, value)?)),
-            Type::RECTANGLE => Ok(ChoiceValueType::RECTANGLE(parse_choice(s, v)?)),
-            Type::FRACTION => Ok(ChoiceValueType::FRACTION(parse_choice(s, v)?)),
-            _ => Err(PodError::UnsupportedChoiceElementType),
-        }
-    }
-}
-
-impl<'a> PodValueParser<*const u8> for &'a PodChoiceRef {
-    fn parse(
-        content_size: usize,
-        header_or_value: *const u8,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe { Self::parse(content_size, &*(header_or_value as *const PodChoiceBodyRef)) }
     }
 }

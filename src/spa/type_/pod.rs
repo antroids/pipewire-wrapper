@@ -227,7 +227,9 @@ pub(crate) mod restricted {
                 unsafe { Ok(self.cast_unchecked()) }
             } else if pod_type == PodChoiceRef::static_type() {
                 let choice: &PodChoiceRef = self.cast()?;
-                // try to cast fixated or choice subtypes
+                // Handle fixated choices and wrong values
+                // Due to ugly not restricted format, there can be any kind of data
+                // So, we doing our best to parse it least default value
                 choice.body().child().cast()
             } else {
                 Err(PodError::WrongPodTypeToCast(target_type, pod_type))
