@@ -103,7 +103,8 @@ macro_rules! primitive_type_pod_impl {
             fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
                 unsafe {
                     f.debug_struct(stringify!($pod_ref_type))
-                        .field("pod", &self.upcast())
+                        .field("pod.type", &self.upcast().type_())
+                        .field("pod.size", &self.upcast().size())
                         .field("value", &self.value())
                         .finish()
                 }
@@ -346,6 +347,7 @@ impl Debug for PodRef {
         f.debug_struct("PodRef")
             .field("size", &self.size())
             .field("type", &self.type_())
+            .field("value", &self.downcast())
             .finish()
     }
 }

@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::ptr::slice_from_raw_parts;
 use std::slice::from_raw_parts;
 
@@ -52,5 +52,17 @@ impl PortInfoRef {
                 self.raw.n_params as usize,
             )
         }
+    }
+}
+
+impl Debug for PortInfoRef {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PortInfoRef")
+            .field("id", &self.id())
+            .field("direction", &self.direction())
+            .field("change_mask", &self.change_mask())
+            .field("props", &self.props())
+            .field("params", &self.params())
+            .finish()
     }
 }

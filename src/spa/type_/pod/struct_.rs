@@ -36,7 +36,8 @@ impl<'a> ReadablePod for &'a PodStructRef {
 impl Debug for PodStructRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodStructRef")
-            .field("pod", &self.upcast())
+            .field("pod.type", &self.upcast().type_())
+            .field("pod.size", &self.upcast().size())
             .field(
                 "value",
                 &self

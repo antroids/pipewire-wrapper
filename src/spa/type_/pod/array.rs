@@ -111,7 +111,8 @@ where
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodArrayRef")
-            .field("pod", &self.upcast())
+            .field("pod.type", &self.upcast().type_())
+            .field("pod.size", &self.upcast().size())
             .field("body", &self.body())
             .field("value", &self.value().map(|i| i.collect::<Vec<_>>()))
             .finish()

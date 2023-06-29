@@ -197,7 +197,7 @@ fn test_port_params() {
                         }
                     };
                     let port_info_callback = |port_info: &PortInfoRef| {
-                        println!("Port info {:?}", port_info.props());
+                        println!("Port info {:?}", port_info);
                         for param in port_info.params() {
                             println!("Param info {:?}", param);
                             port.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();
@@ -257,7 +257,7 @@ fn test_node_params() {
                         }
                     };
                     let node_info_callback = |node_info: &NodeInfoRef| {
-                        println!("Node info {:?}", node_info.props());
+                        println!("Node info {:?}", node_info);
                         for param in node_info.params() {
                             println!("Param info {:?}", param);
                             node.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();

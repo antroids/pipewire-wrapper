@@ -113,7 +113,8 @@ impl PodChoiceRef {
 impl Debug for PodChoiceRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodChoiceRef")
-            .field("pod", &self.upcast())
+            .field("pod.type", &self.upcast().type_())
+            .field("pod.size", &self.upcast().size())
             .field("value", &self.value())
             .finish()
     }
