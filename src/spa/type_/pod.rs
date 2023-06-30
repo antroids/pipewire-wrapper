@@ -229,7 +229,7 @@ pub(crate) mod restricted {
                 let choice: &PodChoiceRef = self.cast()?;
                 // Handle fixated choices and wrong values
                 // Due to ugly not restricted format, there can be any kind of data
-                // So, we doing our best to parse it least default value
+                // So, we doing our best to parse at least default value
                 choice.body().child().cast()
             } else {
                 Err(PodError::WrongPodTypeToCast(target_type, pod_type))
