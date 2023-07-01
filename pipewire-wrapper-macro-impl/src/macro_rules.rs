@@ -27,7 +27,7 @@ macro_rules! enum_wrapper {
     (@add_debug_variant $self:ident, $f:ident, $(,)*) => {};
 
     ($name: ident, $repr_type: ty, $($tts:tt)+) => {
-        #[derive(pipewire_proc_macro::RawWrapper, PartialEq, Eq)]
+        #[derive(pipewire_proc_macro::RawWrapper, PartialEq, Eq, Clone, Copy)]
         #[repr(transparent)]
         pub struct $name {
             #[raw]

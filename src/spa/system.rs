@@ -1,4 +1,4 @@
-use pipewire_proc_macro::{RawWrapper, spa_interface};
+use pipewire_proc_macro::{spa_interface, RawWrapper};
 
 use crate::wrapper::*;
 

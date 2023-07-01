@@ -418,12 +418,12 @@ pub enum BasicTypeValue<'a> {
     FRACTION(<PodFractionRef as ReadablePod>::Value) = Type::FRACTION.raw,
     BITMAP(<&'a PodBitmapRef as ReadablePod>::Value) = Type::BITMAP.raw,
     ARRAY(<&'a PodArrayRef as ReadablePod>::Value) = Type::ARRAY.raw,
-    // STRUCT(<&'a PodStructRef as ReadablePod>::Value)=Type::STRUCT.raw,
-    // OBJECT(<&'a PodObjectRef  as ReadablePod>::Value)=Type::OBJECT.raw,
-    // SEQUENCE(<&'a PodSequenceRef as ReadablePod>::Value)=Type::SEQUENCE.raw,
+    STRUCT(<&'a PodStructRef as ReadablePod>::Value) = Type::STRUCT.raw,
+    OBJECT(<&'a PodObjectRef as ReadablePod>::Value) = Type::OBJECT.raw,
+    SEQUENCE(<&'a PodSequenceRef as ReadablePod>::Value) = Type::SEQUENCE.raw,
     POINTER(<&'a PodPointerRef as ReadablePod>::Value) = Type::POINTER.raw,
     FD(<PodFdRef as ReadablePod>::Value) = Type::FD.raw,
-    // CHOICE(<&'a PodChoiceRef as ReadablePod>::Value) = Type::CHOICE.raw,
+    CHOICE(<&'a PodChoiceRef as ReadablePod>::Value) = Type::CHOICE.raw,
     POD(<&'a PodRef as ReadablePod>::Value) = Type::POD.raw,
 }
 
