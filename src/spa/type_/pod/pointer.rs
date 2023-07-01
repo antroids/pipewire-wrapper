@@ -3,8 +3,8 @@ use std::ptr::addr_of;
 
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::restricted::PodSubtype;
-use crate::spa::type_::pod::{Pod, PodRef, PodResult, ReadablePod};
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::{PodRef, PodResult, ReadablePod, SizedPod};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -38,13 +38,13 @@ impl PodPointerRef {
     }
 }
 
-impl Pod for PodPointerRef {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+impl PodHeader for PodPointerRef {
+    fn pod_header(&self) -> &spa_sys::spa_pod {
+        &self.raw.pod
     }
 }
 
-impl PodSubtype for PodPointerRef {
+impl StaticTypePod for PodPointerRef {
     fn static_type() -> Type {
         Type::POINTER
     }

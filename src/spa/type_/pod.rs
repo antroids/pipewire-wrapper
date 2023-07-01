@@ -22,7 +22,7 @@ use crate::spa::type_::object::PodObjectRef;
 use crate::spa::type_::pod::choice::ChoiceType;
 use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::pointer::PodPointerRef;
-use crate::spa::type_::pod::restricted::{PodSubtype, PodValueParser};
+use crate::spa::type_::pod::restricted::{PodHeader, PodValueParser, StaticTypePod};
 use crate::spa::type_::{FractionRef, RectangleRef, Type};
 use crate::wrapper::RawWrapper;
 
@@ -81,13 +81,13 @@ macro_rules! primitive_type_pod_impl {
             }
         }
 
-        impl Pod for $pod_ref_type {
-            fn pod_size(&self) -> usize {
-                self.upcast().pod_size()
+        impl PodHeader for $pod_ref_type {
+            fn pod_header(&self) -> &spa_sys::spa_pod {
+                &self.raw.pod
             }
         }
 
-        impl restricted::PodSubtype for $pod_ref_type {
+        impl StaticTypePod for $pod_ref_type {
             fn static_type() -> Type {
                 $pod_type
             }
@@ -175,8 +175,14 @@ impl Debug for PodError {
 
 type PodResult<T> = Result<T, PodError>;
 
-pub trait Pod {
+pub trait SizedPod {
     fn pod_size(&self) -> usize;
+}
+
+impl<T: PodHeader> SizedPod for T {
+    fn pod_size(&self) -> usize {
+        self.pod_header().size as usize + size_of::<spa_sys::spa_pod>()
+    }
 }
 
 pub trait ReadablePod {
@@ -188,15 +194,28 @@ pub trait ReadablePod {
 pub(crate) mod restricted {
     use std::any::{Any, TypeId};
     use std::fmt::Debug;
+    use std::mem::size_of;
     use std::ptr::addr_of;
 
     use spa_sys::spa_pod;
 
     use crate::spa::type_::pod::choice::enum_::PodEnumRef;
     use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceRef};
-    use crate::spa::type_::pod::{Pod, PodError, PodRef, PodResult, ReadablePod};
+    use crate::spa::type_::pod::{PodError, PodRef, PodResult, ReadablePod, SizedPod};
     use crate::spa::type_::Type;
     use crate::wrapper::RawWrapper;
+
+    pub trait PodHeader {
+        fn pod_header(&self) -> &spa_sys::spa_pod;
+
+        fn pod_type(&self) -> Type {
+            Type::from_raw(self.pod_header().type_)
+        }
+    }
+
+    pub trait StaticTypePod {
+        fn static_type() -> Type;
+    }
 
     pub trait PodValueParser<F: Copy>: ReadablePod {
         /// Parse Pod value from F.
@@ -209,51 +228,53 @@ pub(crate) mod restricted {
             header_or_value: F,
         ) -> PodResult<<Self as ReadablePod>::Value>;
     }
+}
 
-    pub trait PodSubtype: RawWrapper + Pod + Debug {
-        fn static_type() -> Type;
+pub trait BasicTypePod
+where
+    Self: StaticTypePod,
+    Self: PodHeader,
+    Self: RawWrapper,
+    Self: Debug,
+{
+    fn upcast(&self) -> &PodRef {
+        unsafe { PodRef::from_raw_ptr(self.pod_header()) }
+    }
 
-        fn upcast(&self) -> &PodRef {
-            unsafe { PodRef::from_raw_ptr(self as *const _ as *const spa_pod) }
-        }
-
-        fn cast<T>(&self) -> PodResult<&T>
-        where
-            T: PodSubtype,
-        {
-            let target_type = T::static_type();
-            let pod_type = self.upcast().type_();
-            if target_type == PodRef::static_type() || target_type == pod_type {
-                unsafe { Ok(self.cast_unchecked()) }
-            } else if pod_type == PodChoiceRef::static_type() {
-                let choice: &PodChoiceRef = self.cast()?;
-                // Handle fixated choices and wrong values
-                // Due to ugly not restricted format, there can be any kind of data
-                // So, we doing our best to parse at least default value
-                choice.body().child().cast()
-            } else {
-                Err(PodError::WrongPodTypeToCast(target_type, pod_type))
-            }
-        }
-
-        unsafe fn cast_unchecked<T>(&self) -> &T
-        where
-            T: PodSubtype,
-        {
-            T::from_raw_ptr(addr_of!(*self) as *const _)
-        }
-
-        unsafe fn content_slice(&self) -> &[u8] {
-            let content_ptr: *const u8 = self.content_ptr();
-            let content_size = self.upcast().size() as usize;
-            std::slice::from_raw_parts(content_ptr, content_size)
-        }
-
-        unsafe fn content_ptr<T>(&self) -> *const T {
-            let self_ptr = self as *const Self;
-            self_ptr.offset(1).cast()
+    fn cast<T>(&self) -> PodResult<&T>
+    where
+        T: BasicTypePod,
+    {
+        let target_type = T::static_type();
+        let pod_type = self.upcast().type_();
+        if target_type == PodRef::static_type() || target_type == pod_type {
+            unsafe { Ok(self.cast_unchecked()) }
+        } else if pod_type == PodChoiceRef::static_type() {
+            let choice: &PodChoiceRef = self.cast()?;
+            // Handle fixated choices and wrong values
+            // Due to ugly not restricted format, there can be any kind of data
+            // So, we doing our best to parse at least default value
+            choice.body().child().cast()
+        } else {
+            Err(PodError::WrongPodTypeToCast(target_type, pod_type))
         }
     }
+
+    unsafe fn cast_unchecked<T>(&self) -> &T
+    where
+        T: BasicTypePod,
+    {
+        T::from_raw_ptr(addr_of!(*self) as *const _)
+    }
+}
+
+impl<T> BasicTypePod for T
+where
+    T: StaticTypePod,
+    T: PodHeader,
+    T: RawWrapper,
+    T: Debug,
+{
 }
 
 #[derive(RawWrapper)]
@@ -301,9 +322,9 @@ impl PodRef {
     }
 }
 
-impl Pod for PodRef {
-    fn pod_size(&self) -> usize {
-        size_of::<PodRef>() + self.as_raw().size as usize
+impl PodHeader for PodRef {
+    fn pod_header(&self) -> &spa_pod {
+        &self.raw
     }
 }
 
@@ -338,7 +359,7 @@ impl<'a> ReadablePod for &'a PodRef {
     }
 }
 
-impl restricted::PodSubtype for PodRef {
+impl StaticTypePod for PodRef {
     fn static_type() -> Type {
         Type::POD
     }

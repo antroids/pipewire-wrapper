@@ -4,15 +4,16 @@ use std::ptr::NonNull;
 use std::rc::Rc;
 use std::time::Duration;
 
-use pipewire_macro_impl::spa_interface_call;
-use pipewire_proc_macro::{spa_interface, RawWrapper, Wrapper};
 use spa_sys::{spa_interface, spa_source, spa_source_io_func_t};
 
+use pipewire_macro_impl::spa_interface_call;
+use pipewire_proc_macro::{RawWrapper, spa_interface, Wrapper};
+
+use crate::{i32_as_result, i32_as_void_result};
 use crate::core_api::main_loop::MainLoop;
 use crate::error::Error;
 use crate::spa::interface::InterfaceRef;
 use crate::wrapper::{RawWrapper, SpaInterface, Wrapper};
-use crate::{i32_as_result, i32_as_void_result};
 
 pub mod utils;
 

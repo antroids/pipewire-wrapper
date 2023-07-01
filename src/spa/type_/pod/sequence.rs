@@ -2,10 +2,10 @@ use std::ptr::addr_of;
 
 use pipewire_proc_macro::RawWrapper;
 
+use crate::spa::type_::pod::{BasicType, PodResult, ReadablePod, SizedPod};
 use crate::spa::type_::pod::control::PodControlRef;
 use crate::spa::type_::pod::iterator::PodIterator;
-use crate::spa::type_::pod::restricted::{PodSubtype, PodValueParser};
-use crate::spa::type_::pod::{BasicType, Pod, PodResult, ReadablePod};
+use crate::spa::type_::pod::restricted::{PodHeader, PodValueParser, StaticTypePod};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -29,13 +29,13 @@ impl PodSequenceRef {
     }
 }
 
-impl Pod for PodSequenceRef {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+impl PodHeader for PodSequenceRef {
+    fn pod_header(&self) -> &spa_sys::spa_pod {
+        &self.raw.pod
     }
 }
 
-impl PodSubtype for PodSequenceRef {
+impl StaticTypePod for PodSequenceRef {
     fn static_type() -> Type {
         Type::SEQUENCE
     }

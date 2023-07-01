@@ -7,7 +7,7 @@ use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::object::prop::AudioIec958Codec;
 use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::{
-    PodError, PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef, PodSubtype,
+    BasicTypePod, PodError, PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef,
 };
 use crate::wrapper::RawWrapper;
 

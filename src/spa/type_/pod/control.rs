@@ -5,12 +5,12 @@ use std::ptr::addr_of;
 use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::spa::type_::pod::{BasicTypePod, PodError, PodRef, PodResult, ReadablePod, SizedPod};
 use crate::spa::type_::pod::bytes::PodBytesRef;
 use crate::spa::type_::pod::iterator::PodIterator;
-use crate::spa::type_::pod::object::prop::ObjectPropType;
 use crate::spa::type_::pod::object::{ObjectPropsIterator, ObjectType, PodPropRef};
-use crate::spa::type_::pod::restricted::{PodSubtype, PodValueParser};
-use crate::spa::type_::pod::{Pod, PodError, PodRef, PodResult, ReadablePod};
+use crate::spa::type_::pod::object::prop::ObjectPropType;
+use crate::spa::type_::pod::restricted::{PodHeader, PodValueParser};
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper)]
@@ -30,7 +30,7 @@ impl Debug for PodControlRef {
     }
 }
 
-impl Pod for PodControlRef {
+impl SizedPod for PodControlRef {
     fn pod_size(&self) -> usize {
         size_of::<PodControlRef>() + self.raw.value.size as usize
     }

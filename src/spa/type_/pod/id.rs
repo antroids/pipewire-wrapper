@@ -2,8 +2,13 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::mem::size_of;
 
+use spa_sys::spa_pod;
+
 use crate::spa::type_::pod::object::prop::Prop;
-use crate::spa::type_::pod::{Pod, PodError, PodResult, PodSubtype, PodValueParser, ReadablePod};
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::{
+    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod,
+};
 use crate::spa::type_::Type;
 
 #[repr(transparent)]
@@ -73,13 +78,13 @@ impl<T: PodIdType> ReadablePod for PodIdRef<T> {
     }
 }
 
-impl<T: PodIdType> Pod for PodIdRef<T> {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+impl<T: PodIdType> PodHeader for PodIdRef<T> {
+    fn pod_header(&self) -> &spa_pod {
+        &self.raw.pod
     }
 }
 
-impl<T: PodIdType> PodSubtype for PodIdRef<T> {
+impl<T: PodIdType> StaticTypePod for PodIdRef<T> {
     fn static_type() -> Type {
         Type::ID
     }

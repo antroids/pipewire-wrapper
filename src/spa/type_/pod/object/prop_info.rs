@@ -1,12 +1,12 @@
 use pipewire_macro_impl::enum_wrapper;
 
+use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodRef};
 use crate::spa::type_::pod::choice::PodChoiceRef;
 use crate::spa::type_::pod::id::PodIdRef;
-use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
+use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
-use crate::spa::type_::pod::{PodBoolRef, PodError, PodRef, PodSubtype};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]

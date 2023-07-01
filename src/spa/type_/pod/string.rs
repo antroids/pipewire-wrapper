@@ -3,7 +3,10 @@ use std::fmt::{Debug, Formatter};
 
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::{Pod, PodError, PodResult, PodSubtype, PodValueParser, ReadablePod};
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::{
+    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod,
+};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
@@ -13,15 +16,25 @@ pub struct PodStringRef {
     raw: spa_sys::spa_pod_string,
 }
 
-impl Pod for PodStringRef {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+impl PodHeader for PodStringRef {
+    fn pod_header(&self) -> &spa_sys::spa_pod {
+        &self.raw.pod
+    }
+}
+
+impl StaticTypePod for PodStringRef {
+    fn static_type() -> Type {
+        Type::STRING
     }
 }
 
 impl PodStringRef {
     fn content_size(&self) -> usize {
         self.raw.pod.size as usize
+    }
+
+    unsafe fn content_ptr(&self) -> *const c_char {
+        (self as *const Self).offset(1).cast()
     }
 }
 
@@ -53,18 +66,7 @@ impl<'a> ReadablePod for &'a PodStringRef {
     type Value = &'a CStr;
 
     fn value(&self) -> PodResult<Self::Value> {
-        unsafe {
-            Self::parse(
-                self.content_size(),
-                self.upcast().content_ptr() as *const c_char,
-            )
-        }
-    }
-}
-
-impl PodSubtype for PodStringRef {
-    fn static_type() -> Type {
-        Type::STRING
+        unsafe { Self::parse(self.content_size(), self.content_ptr()) }
     }
 }
 

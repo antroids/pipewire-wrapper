@@ -2,8 +2,7 @@ use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
-use crate::spa::type_::pod::restricted::PodSubtype;
-use crate::spa::type_::pod::{PodError, PodIntRef};
+use crate::spa::type_::pod::{BasicTypePod, PodError, PodIntRef};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]

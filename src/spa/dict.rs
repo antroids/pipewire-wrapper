@@ -5,6 +5,7 @@ use std::ptr::{NonNull, slice_from_raw_parts};
 use std::slice::Iter;
 
 use bitflags::bitflags;
+
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::wrapper::{RawWrapper, Wrapper};

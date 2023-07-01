@@ -3,7 +3,10 @@ use std::fmt::{Debug, Formatter};
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::type_::pod::iterator::PodIterator;
-use crate::spa::type_::pod::{Pod, PodRef, PodResult, PodSubtype, PodValueParser, ReadablePod};
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::{
+    BasicTypePod, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod,
+};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
@@ -13,15 +16,15 @@ pub struct PodStructRef {
     raw: spa_sys::spa_pod_struct,
 }
 
-impl PodSubtype for PodStructRef {
+impl StaticTypePod for PodStructRef {
     fn static_type() -> Type {
         Type::STRUCT
     }
 }
 
-impl Pod for PodStructRef {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+impl PodHeader for PodStructRef {
+    fn pod_header(&self) -> &spa_sys::spa_pod {
+        &self.raw.pod
     }
 }
 

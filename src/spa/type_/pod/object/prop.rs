@@ -6,7 +6,7 @@ use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
-    PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef, PodIntRef, PodLongRef, PodSubtype,
+    BasicTypePod, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef, PodIntRef, PodLongRef,
 };
 use crate::wrapper::RawWrapper;
 

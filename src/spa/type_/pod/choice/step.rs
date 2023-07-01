@@ -3,10 +3,13 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
 
+use spa_sys::spa_pod;
+
 use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::type_::pod::iterator::PodValueIterator;
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    Pod, PodError, PodRef, PodResult, PodSubtype, PodValueParser, ReadablePod,
+    BasicTypePod, PodError, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -72,30 +75,30 @@ where
     }
 }
 
-impl<T> PodSubtype for PodStepRef<T>
+impl<T> StaticTypePod for PodStepRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: StaticTypePod,
 {
     fn static_type() -> Type {
         PodChoiceRef::static_type()
     }
 }
 
-impl<T> Pod for PodStepRef<T>
+impl<T> PodHeader for PodStepRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: StaticTypePod,
 {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+    fn pod_header(&self) -> &spa_pod {
+        &self.raw.pod
     }
 }
 
 impl<T> ReadablePod for PodStepRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: StaticTypePod,
 {
     type Value = PodStepValue<T::Value>;
 
@@ -142,7 +145,7 @@ where
 impl<T> Debug for PodStepRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: StaticTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodStepRef")

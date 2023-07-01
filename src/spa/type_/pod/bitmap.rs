@@ -1,9 +1,12 @@
 use std::fmt::{Debug, Formatter};
 use std::slice;
 
+use spa_sys::spa_pod;
+
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::{Pod, PodResult, PodSubtype, PodValueParser, ReadablePod};
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::{BasicTypePod, PodResult, PodValueParser, ReadablePod, SizedPod};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
@@ -17,11 +20,21 @@ impl PodBitmapRef {
     fn content_size(&self) -> usize {
         self.raw.pod.size as usize
     }
+
+    unsafe fn content_ptr(&self) -> *const u8 {
+        (self as *const Self).offset(1).cast()
+    }
 }
 
-impl Pod for PodBitmapRef {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+impl StaticTypePod for PodBitmapRef {
+    fn static_type() -> Type {
+        Type::BITMAP
+    }
+}
+
+impl PodHeader for PodBitmapRef {
+    fn pod_header(&self) -> &spa_pod {
+        &self.raw.pod
     }
 }
 
@@ -38,13 +51,7 @@ impl<'a> ReadablePod for &'a PodBitmapRef {
     type Value = &'a [u8];
 
     fn value(&self) -> PodResult<Self::Value> {
-        unsafe { Self::parse(self.content_size(), self.upcast().content_ptr()) }
-    }
-}
-
-impl PodSubtype for PodBitmapRef {
-    fn static_type() -> Type {
-        Type::BITMAP
+        unsafe { Self::parse(self.content_size(), self.content_ptr()) }
     }
 }
 

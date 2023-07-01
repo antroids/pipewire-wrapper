@@ -25,11 +25,12 @@ use crate::spa::type_::pod::object::param_profile::ParamProfileType;
 use crate::spa::type_::pod::object::param_route::ParamRouteType;
 use crate::spa::type_::pod::object::profiler::ProfilerType;
 use crate::spa::type_::pod::object::prop::Prop;
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
-    BasicType, Pod, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef, PodIntRef,
-    PodLongRef, PodRef, PodResult, PodSubtype, ReadablePod,
+    BasicType, BasicTypePod, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef, PodIntRef,
+    PodLongRef, PodRef, PodResult, ReadablePod, SizedPod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -80,13 +81,13 @@ pub struct PodObjectRef {
     raw: spa_sys::spa_pod_object,
 }
 
-impl Pod for PodObjectRef {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+impl PodHeader for PodObjectRef {
+    fn pod_header(&self) -> &spa_sys::spa_pod {
+        &self.raw.pod
     }
 }
 
-impl PodSubtype for PodObjectRef {
+impl StaticTypePod for PodObjectRef {
     fn static_type() -> Type {
         Type::OBJECT
     }
@@ -235,7 +236,7 @@ impl<'a, T: PodPropKeyType<'a>> RawWrapper for PodPropRef<'a, T> {
     }
 }
 
-impl<'a, T: PodPropKeyType<'a>> Pod for PodPropRef<'a, T> {
+impl<'a, T: PodPropKeyType<'a>> SizedPod for PodPropRef<'a, T> {
     fn pod_size(&self) -> usize {
         size_of::<PodPropRef<T>>() + self.pod().size() as usize
     }

@@ -1,8 +1,9 @@
 use std::marker::PhantomData;
 use std::ptr::{addr_of, null, null_mut};
 
-use pipewire_proc_macro::RawWrapper;
 use spa_sys::spa_list;
+
+use pipewire_proc_macro::RawWrapper;
 
 use crate::wrapper::RawWrapper;
 

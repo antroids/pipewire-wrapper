@@ -1,9 +1,12 @@
 use std::fmt::{Debug, Formatter};
 use std::slice;
 
+use spa_sys::spa_pod;
+
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::{Pod, PodResult, PodSubtype, PodValueParser, ReadablePod};
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::{BasicTypePod, PodResult, PodValueParser, ReadablePod, SizedPod};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
@@ -13,15 +16,25 @@ pub struct PodBytesRef {
     raw: spa_sys::spa_pod_bytes,
 }
 
-impl Pod for PodBytesRef {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
-    }
-}
-
 impl PodBytesRef {
     fn content_size(&self) -> usize {
         self.raw.pod.size as usize
+    }
+
+    unsafe fn content_ptr(&self) -> *const u8 {
+        (self as *const Self).offset(1).cast()
+    }
+}
+
+impl PodHeader for PodBytesRef {
+    fn pod_header(&self) -> &spa_pod {
+        &self.raw.pod
+    }
+}
+
+impl StaticTypePod for PodBytesRef {
+    fn static_type() -> Type {
+        Type::BYTES
     }
 }
 
@@ -38,13 +51,7 @@ impl<'a> ReadablePod for &'a PodBytesRef {
     type Value = &'a [u8];
 
     fn value(&self) -> PodResult<Self::Value> {
-        unsafe { Self::parse(self.content_size(), self.upcast().content_ptr()) }
-    }
-}
-
-impl PodSubtype for PodBytesRef {
-    fn static_type() -> Type {
-        Type::BYTES
+        unsafe { Self::parse(self.content_size(), self.content_ptr()) }
     }
 }
 

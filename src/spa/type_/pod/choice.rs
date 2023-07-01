@@ -4,6 +4,8 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
 
+use spa_sys::spa_pod;
+
 use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
@@ -13,11 +15,12 @@ use crate::spa::type_::pod::choice::range::{PodRangeRef, PodRangeValue};
 use crate::spa::type_::pod::choice::step::{PodStepRef, PodStepValue};
 use crate::spa::type_::pod::id::PodIdRef;
 use crate::spa::type_::pod::iterator::PodValueIterator;
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::{
-    BasicTypeValue, Pod, PodBoolRef, PodDoubleRef, PodError, PodFloatRef, PodFractionRef,
-    PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodSubtype, PodValueParser,
-    ReadablePod,
+    BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFloatRef, PodFractionRef,
+    PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodValueParser, ReadablePod,
+    SizedPod,
 };
 use crate::spa::type_::{PointRef, Type};
 use crate::wrapper::RawWrapper;
@@ -113,7 +116,7 @@ impl PodChoiceRef {
     fn parse_choice<T>(&self) -> PodResult<ChoiceStructType<T>>
     where
         T: PodValueParser<*const u8>,
-        T: PodSubtype,
+        T: BasicTypePod,
     {
         let body = self.body();
         unsafe {
@@ -178,13 +181,13 @@ impl<'a> ReadablePod for &'a PodChoiceRef {
     }
 }
 
-impl Pod for PodChoiceRef {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+impl PodHeader for PodChoiceRef {
+    fn pod_header(&self) -> &spa_pod {
+        &self.raw.pod
     }
 }
 
-impl PodSubtype for PodChoiceRef {
+impl StaticTypePod for PodChoiceRef {
     fn static_type() -> Type {
         Type::CHOICE
     }

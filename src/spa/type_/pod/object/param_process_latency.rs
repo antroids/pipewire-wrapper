@@ -3,10 +3,11 @@ use pipewire_macro_impl::enum_wrapper;
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::object::param_port_config::Direction;
 use crate::spa::type_::pod::object::{PodObjectRef, PodPropKeyType, PodPropRef};
-use crate::spa::type_::pod::restricted::PodSubtype;
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
-use crate::spa::type_::pod::{PodBoolRef, PodError, PodFloatRef, PodIntRef, PodLongRef};
+use crate::spa::type_::pod::{
+    BasicTypePod, PodBoolRef, PodError, PodFloatRef, PodIntRef, PodLongRef,
+};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]

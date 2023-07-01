@@ -3,6 +3,8 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
 
+use spa_sys::spa_pod;
+
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::type_::pod::bitmap::PodBitmapRef;
@@ -11,13 +13,14 @@ use crate::spa::type_::pod::choice::PodChoiceRef;
 use crate::spa::type_::pod::id::PodIdRef;
 use crate::spa::type_::pod::iterator::PodValueIterator;
 use crate::spa::type_::pod::object::PodObjectRef;
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::sequence::PodSequenceRef;
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
-    BasicType, BasicTypeValue, Pod, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef,
-    PodFractionRef, PodIntRef, PodLongRef, PodPointerRef, PodRectangleRef, PodRef, PodResult,
-    PodSubtype, PodValueParser, ReadablePod,
+    BasicType, BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFdRef,
+    PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodPointerRef, PodRectangleRef, PodRef,
+    PodResult, PodValueParser, ReadablePod, SizedPod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -48,7 +51,7 @@ pub struct PodArrayRef<T: PodValueParser<*const u8> = PodIdRef> {
 impl<T> crate::wrapper::RawWrapper for PodArrayRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: BasicTypePod,
 {
     type CType = spa_sys::spa_pod_array;
 
@@ -72,20 +75,20 @@ where
     }
 }
 
-impl<T> Pod for PodArrayRef<T>
+impl<T> PodHeader for PodArrayRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: BasicTypePod,
 {
-    fn pod_size(&self) -> usize {
-        self.upcast().pod_size()
+    fn pod_header(&self) -> &spa_pod {
+        &self.raw.pod
     }
 }
 
-impl<T> PodSubtype for PodArrayRef<T>
+impl<T> StaticTypePod for PodArrayRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: BasicTypePod,
 {
     fn static_type() -> Type {
         Type::ARRAY
@@ -95,7 +98,7 @@ where
 impl<'a, T> ReadablePod for &'a PodArrayRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: BasicTypePod,
 {
     type Value = PodValueIterator<'a, T>;
 
@@ -107,7 +110,7 @@ where
 impl<T> Debug for PodArrayRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: BasicTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodArrayRef")
@@ -122,7 +125,7 @@ where
 impl<T> PodArrayRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: BasicTypePod,
 {
     fn body(&self) -> &PodArrayBodyRef {
         unsafe { PodArrayBodyRef::from_raw_ptr(addr_of!(self.raw.body)) }
@@ -158,7 +161,7 @@ where
 impl<'a, T> PodValueParser<&'a PodArrayBodyRef> for &'a PodArrayRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: BasicTypePod,
 {
     fn parse(
         content_size: usize,
@@ -177,7 +180,7 @@ where
 impl<'a, T> PodValueParser<*const u8> for &'a PodArrayRef<T>
 where
     T: PodValueParser<*const u8>,
-    T: PodSubtype,
+    T: BasicTypePod,
 {
     fn parse(
         content_size: usize,
