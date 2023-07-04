@@ -137,7 +137,7 @@ where
     T: WritablePod,
     <T as ReadablePod>::Value: Clone,
 {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -167,13 +167,13 @@ where
         )? + Self::write_align_padding(buffer)?)
     }
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        let element_size = T::write_raw_value(buffer, value.default)?;
+        let element_size = T::write_raw_value(buffer, &value.default)?;
         for v in &value.alternatives {
-            let size = T::write_raw_value(buffer, v.clone())?;
+            let size = T::write_raw_value(buffer, v)?;
             if element_size != size {
                 return Err(PodError::UnexpectedChoiceElementSize(element_size, size));
             }

@@ -183,14 +183,14 @@ impl<'a> ReadablePod for &'a PodChoiceRef {
 }
 
 impl<'a> WritablePod for &'a PodChoiceRef {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
         todo!()
     }
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {

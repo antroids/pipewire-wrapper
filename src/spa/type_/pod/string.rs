@@ -75,7 +75,7 @@ impl<'a> ReadablePod for &'a PodStringRef {
 }
 
 impl<'a> WritablePod for &'a PodStringRef {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -89,7 +89,7 @@ impl<'a> WritablePod for &'a PodStringRef {
         Ok(header_size + string_bytes.len() + Self::write_align_padding(buffer)?)
     }
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -115,7 +115,7 @@ impl Debug for PodStringRef {
 fn test_from_value() {
     let string = CString::new("Test string").unwrap();
     let string_wrong = CString::new("Test string wrong").unwrap();
-    let allocated_pod = PodBuf::<PodStringRef>::from_value(string.as_ref())
+    let allocated_pod = PodBuf::<PodStringRef>::from_value(&string.as_ref())
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);

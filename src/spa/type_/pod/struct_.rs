@@ -38,7 +38,7 @@ impl<'a> ReadablePod for &'a PodStructRef {
 }
 
 impl<'a> WritablePod for &'a PodStructRef {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -52,7 +52,7 @@ impl<'a> WritablePod for &'a PodStructRef {
         Ok(header_size + iterator_content.len() + Self::write_align_padding(buffer)?)
     }
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {

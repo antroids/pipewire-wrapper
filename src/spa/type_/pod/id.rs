@@ -49,6 +49,7 @@ where
     Self: From<u32>,
     Self: Into<u32>,
     Self: Debug,
+    Self: Clone,
 {
 }
 
@@ -75,7 +76,10 @@ impl<T: PodIdType> PodValueParser<u32> for PodIdRef<T> {
     }
 }
 
-impl<T: PodIdType> ReadablePod for PodIdRef<T> {
+impl<T: PodIdType> ReadablePod for PodIdRef<T>
+where
+    T: PodIdType,
+{
     type Value = T;
 
     fn value(&self) -> PodResult<Self::Value> {
@@ -83,8 +87,11 @@ impl<T: PodIdType> ReadablePod for PodIdRef<T> {
     }
 }
 
-impl<T: PodIdType> WritablePod for PodIdRef<T> {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+impl<T: PodIdType> WritablePod for PodIdRef<T>
+where
+    T: PodIdType,
+{
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -96,11 +103,11 @@ impl<T: PodIdType> WritablePod for PodIdRef<T> {
             + Self::write_align_padding(buffer)?)
     }
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        let raw_value: u32 = value.into();
+        let raw_value: u32 = value.clone().into();
         Ok(Self::write_value(buffer, &raw_value)?)
     }
 }
@@ -131,7 +138,7 @@ impl<T: PodIdType> Debug for PodIdRef<T> {
 
 #[test]
 fn test_from_value() {
-    let allocated_pod = PodBuf::<PodIdRef<Type>>::from_value(Type::POINTER)
+    let allocated_pod = PodBuf::<PodIdRef<Type>>::from_value(&Type::POINTER)
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);

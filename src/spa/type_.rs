@@ -14,7 +14,7 @@ use crate::wrapper::RawWrapper;
 
 pub mod pod;
 
-#[derive(RawWrapper, Debug)]
+#[derive(RawWrapper, Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct TimespecRef {
     #[raw]
@@ -40,7 +40,7 @@ impl TryFrom<Duration> for TimespecRef {
     }
 }
 
-#[derive(RawWrapper, Debug)]
+#[derive(RawWrapper, Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct RectangleRef {
     #[raw]
@@ -66,7 +66,7 @@ impl RectangleRef {
     }
 }
 
-#[derive(RawWrapper, Debug)]
+#[derive(RawWrapper, Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct PointRef {
     #[raw]
@@ -92,7 +92,7 @@ impl PointRef {
     }
 }
 
-#[derive(RawWrapper, Debug)]
+#[derive(RawWrapper, Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct RegionRef {
     #[raw]
@@ -118,7 +118,7 @@ impl RegionRef {
     }
 }
 
-#[derive(RawWrapper, Debug)]
+#[derive(RawWrapper, Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct FractionRef {
     #[raw]

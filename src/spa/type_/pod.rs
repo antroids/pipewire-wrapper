@@ -86,7 +86,10 @@ macro_rules! primitive_type_pod_impl {
         }
 
         impl WritablePod for $pod_ref_type {
-            fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+            fn write_pod<W>(
+                buffer: &mut W,
+                value: &<Self as ReadablePod>::Value,
+            ) -> PodResult<usize>
             where
                 W: Write + Seek,
             {
@@ -100,12 +103,12 @@ macro_rules! primitive_type_pod_impl {
 
             fn write_raw_value<W>(
                 buffer: &mut W,
-                value: <Self as ReadablePod>::Value,
+                value: &<Self as ReadablePod>::Value,
             ) -> PodResult<usize>
             where
                 W: Write + Seek,
             {
-                let value: $value_raw_type = value.into();
+                let value: $value_raw_type = (*value).into();
                 Ok(Self::write_value(buffer, &value)?)
             }
         }
@@ -249,11 +252,11 @@ where
 }
 
 pub trait WritablePod: ReadablePod {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: std::io::Write + std::io::Seek;
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: std::io::Write + std::io::Seek;
 
@@ -339,18 +342,18 @@ where
     T: WritablePod,
     <T as ReadablePod>::Value: Clone,
 {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        T::write_pod(buffer, value.clone())
+        T::write_pod(buffer, value)
     }
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        T::write_raw_value(buffer, value.clone())
+        T::write_raw_value(buffer, value)
     }
 }
 
@@ -642,7 +645,7 @@ pub struct PodDoubleRef {
 
 primitive_type_pod_impl!(PodDoubleRef, Type::DOUBLE, f64);
 
-#[derive(RawWrapper)]
+#[derive(RawWrapper, Copy, Clone)]
 #[repr(transparent)]
 pub struct PodRectangleRef {
     #[raw]
@@ -658,7 +661,7 @@ primitive_type_pod_impl!(
     RectangleRef::from_raw(v)
 );
 
-#[derive(RawWrapper)]
+#[derive(RawWrapper, Copy, Clone)]
 #[repr(transparent)]
 pub struct PodFractionRef {
     #[raw]

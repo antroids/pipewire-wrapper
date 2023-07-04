@@ -29,7 +29,7 @@ impl<'a, T> PodBuf<'a, T>
 where
     &'a T: WritablePod,
 {
-    pub fn from_value(value: <&'a T as ReadablePod>::Value) -> PodResult<Self> {
+    pub fn from_value(value: &<&'a T as ReadablePod>::Value) -> PodResult<Self> {
         let mut buf = Self::new();
         <&'a T>::write_pod(&mut buf, value)?;
         Ok(buf)
@@ -201,7 +201,7 @@ where
 
 #[test]
 fn test_buf_from_value() {
-    let allocated_pod = PodBuf::<PodBoolRef>::from_value(true).unwrap().into_pod();
+    let allocated_pod = PodBuf::<PodBoolRef>::from_value(&true).unwrap().into_pod();
     assert_eq!(allocated_pod.data.as_ptr().align_offset(POD_ALIGN), 0);
     assert_eq!(allocated_pod.as_pod().pod_size(), 12);
     assert_eq!(allocated_pod.as_pod().pod_header().size, 4);
@@ -209,7 +209,7 @@ fn test_buf_from_value() {
     assert_eq!(allocated_pod.as_pod().value().unwrap(), true);
     assert_eq!(allocated_pod.as_pod().raw_value(), 1);
 
-    let allocated_pod = PodBuf::<PodLongRef>::from_value(123456789)
+    let allocated_pod = PodBuf::<PodLongRef>::from_value(&123456789)
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.data.as_ptr().align_offset(POD_ALIGN), 0);

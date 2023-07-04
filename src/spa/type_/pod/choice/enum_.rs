@@ -139,7 +139,7 @@ where
     T: WritablePod,
     <T as ReadablePod>::Value: Clone,
 {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -169,13 +169,13 @@ where
         )? + Self::write_align_padding(buffer)?)
     }
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        let element_size = T::write_raw_value(buffer, value.default)?;
+        let element_size = T::write_raw_value(buffer, &value.default)?;
         for v in &value.alternatives {
-            let size = T::write_raw_value(buffer, v.clone())?;
+            let size = T::write_raw_value(buffer, v)?;
             if element_size != size {
                 return Err(PodError::UnexpectedChoiceElementSize(element_size, size));
             }
@@ -208,7 +208,7 @@ fn test_from_value() {
         default: 123,
         alternatives: vec![],
     };
-    let allocated_pod = PodBuf::<PodEnumRef<PodIntRef>>::from_value(v1.clone())
+    let allocated_pod = PodBuf::<PodEnumRef<PodIntRef>>::from_value(&v1)
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
@@ -228,7 +228,7 @@ fn test_from_value() {
     assert_eq!(allocated_pod.as_pod().value().unwrap(), v1);
     assert_ne!(allocated_pod.as_pod().value().unwrap(), v2);
 
-    let allocated_pod = PodBuf::<PodEnumRef<PodIntRef>>::from_value(v2.clone())
+    let allocated_pod = PodBuf::<PodEnumRef<PodIntRef>>::from_value(&v2)
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);

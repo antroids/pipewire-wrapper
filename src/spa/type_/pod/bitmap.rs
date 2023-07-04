@@ -61,7 +61,7 @@ impl<'a> ReadablePod for &'a PodBitmapRef {
 }
 
 impl<'a> WritablePod for &'a PodBitmapRef {
-    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -72,7 +72,7 @@ impl<'a> WritablePod for &'a PodBitmapRef {
         )
     }
 
-    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -97,7 +97,7 @@ impl Debug for PodBitmapRef {
 fn test_from_value() {
     let bytes = [1u8, 2u8, 3u8];
     let bytes_wrong = [1u8, 1u8, 1u8];
-    let allocated_pod = PodBuf::<PodBitmapRef>::from_value(&bytes)
+    let allocated_pod = PodBuf::<PodBitmapRef>::from_value(&bytes.as_ref())
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
