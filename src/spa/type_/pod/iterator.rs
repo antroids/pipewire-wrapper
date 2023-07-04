@@ -74,13 +74,13 @@ impl<'a, C: SizedPod, E: SizedPod + 'a> Debug for PodIterator<'_, C, E> {
 pub struct PodValueIterator<'a, E: PodValueParser<*const u8>> {
     size: usize,
     element_size: usize,
-    first_element_ptr: *const E,
-    current_element_ptr: *const E,
+    first_element_ptr: *const E::Value,
+    current_element_ptr: *const E::Value,
     phantom: PhantomData<&'a ()>,
 }
 
 impl<'a, E: PodValueParser<*const u8>> PodValueIterator<'a, E> {
-    pub fn new(first_element_ptr: *const E, size: usize, element_size: usize) -> Self {
+    pub fn new(first_element_ptr: *const E::Value, size: usize, element_size: usize) -> Self {
         Self {
             size,
             element_size,
@@ -90,14 +90,14 @@ impl<'a, E: PodValueParser<*const u8>> PodValueIterator<'a, E> {
         }
     }
 
-    unsafe fn inside(&self, ptr: *const E) -> bool {
+    unsafe fn inside(&self, ptr: *const E::Value) -> bool {
         let max_offset_bytes = self.size;
         let offset_bytes =
             (ptr as *const u8).offset_from(self.first_element_ptr as *const u8) as usize;
         offset_bytes < max_offset_bytes && (offset_bytes + self.element_size) <= max_offset_bytes
     }
 
-    unsafe fn next_element_ptr(&self) -> *const E {
+    unsafe fn next_element_ptr(&self) -> *const E::Value {
         let ptr = self.current_element_ptr;
         let size = self.element_size;
         (ptr as *const u8).offset(size as isize).cast()
