@@ -1,6 +1,6 @@
 use std::ffi::{c_char, CStr};
 use std::fmt::{Debug, Formatter};
-use std::io::{Cursor, Seek, Write};
+use std::io::{Cursor, Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use std::mem::{size_of, size_of_val};
 use std::ops::{Deref, Rem};
@@ -86,17 +86,27 @@ macro_rules! primitive_type_pod_impl {
         }
 
         impl WritablePod for $pod_ref_type {
-            fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+            fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
             where
                 W: Write + Seek,
             {
-                let value: $value_raw_type = value.into();
                 Ok(Self::write_header(
                     buffer,
                     size_of::<$value_raw_type>() as u32,
                     <$pod_ref_type>::static_type(),
-                )? + Self::write_value(buffer, &value)?
+                )? + Self::write_raw_value(buffer, value)?
                     + Self::write_align_padding(buffer)?)
+            }
+
+            fn write_raw_value<W>(
+                buffer: &mut W,
+                value: <Self as ReadablePod>::Value,
+            ) -> PodResult<usize>
+            where
+                W: Write + Seek,
+            {
+                let value: $value_raw_type = value.into();
+                Ok(Self::write_value(buffer, &value)?)
             }
         }
 
@@ -140,6 +150,7 @@ pub enum PodError {
     IndexIsOutOfRange,
     ChoiceElementMissing,
     UnexpectedChoiceElement,
+    UnexpectedChoiceElementSize(usize, usize),
     UnsupportedChoiceElementType,
     UnexpectedControlType(u32),
     UnexpectedObjectType(u32),
@@ -182,6 +193,11 @@ impl Debug for PodError {
                 write!(f, "Cannot find required element for choice type")
             }
             PodError::UnexpectedChoiceElement => write!(f, "Unexpected element in the choice type"),
+            PodError::UnexpectedChoiceElementSize(expected, actual) => write!(
+                f,
+                "Unexpected choice element size, expected {} != actual {}",
+                expected, actual
+            ),
             PodError::UnsupportedChoiceElementType => write!(f, "Unsupported choice element type"),
             PodError::UnexpectedControlType(type_) => {
                 write!(f, "Unexpected control type {}", type_)
@@ -233,7 +249,11 @@ where
 }
 
 pub trait WritablePod: ReadablePod {
-    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: std::io::Write + std::io::Seek;
+
+    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: std::io::Write + std::io::Seek;
 
@@ -284,6 +304,34 @@ pub trait WritablePod: ReadablePod {
         buffer.write_all(padding.as_slice())?;
         Ok(padding_len)
     }
+
+    fn write_end_than_start<W, S, E>(
+        buffer: &mut W,
+        start_size: usize,
+        start: S,
+        end: E,
+    ) -> PodResult<usize>
+    where
+        W: std::io::Write + std::io::Seek,
+        S: FnOnce(&mut W, usize) -> PodResult<usize>,
+        E: FnOnce(&mut W) -> PodResult<usize>,
+    {
+        let start_pos = buffer.stream_position()?;
+        buffer.seek(SeekFrom::Current(start_size as i64))?;
+        let end_size = end(buffer)?;
+        let after_end_pos = buffer.stream_position()?;
+        buffer.seek(SeekFrom::Start(start_pos))?;
+        let actual_start_size = start(buffer, end_size)?;
+        buffer.seek(SeekFrom::Start(after_end_pos))?;
+        if start_size != actual_start_size {
+            Err(PodError::UnexpectedChoiceElementSize(
+                start_size,
+                actual_start_size,
+            ))
+        } else {
+            Ok(start_size + end_size)
+        }
+    }
 }
 
 impl<'a, T> WritablePod for &'a T
@@ -291,11 +339,18 @@ where
     T: WritablePod,
     <T as ReadablePod>::Value: Clone,
 {
-    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        T::write(buffer, value.clone())
+        T::write_pod(buffer, value.clone())
+    }
+
+    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        T::write_raw_value(buffer, value.clone())
     }
 }
 
@@ -332,6 +387,7 @@ pub(crate) mod restricted {
     }
 
     pub trait PodValueParser<F: Copy>: ReadablePod {
+        // todo: replace by better trait
         /// Parse Pod value from F.
         /// * `content_size` size in bytes of the provided data with body structure.
         /// Body structure size should be subtracted to get elements size.

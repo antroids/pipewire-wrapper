@@ -84,17 +84,24 @@ impl<T: PodIdType> ReadablePod for PodIdRef<T> {
 }
 
 impl<T: PodIdType> WritablePod for PodIdRef<T> {
-    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        let raw_value: u32 = value.into();
         Ok(Self::write_header(
             buffer,
             size_of::<u32>() as u32,
             <PodIdRef<T>>::static_type(),
-        )? + Self::write_value(buffer, &raw_value)?
+        )? + Self::write_raw_value(buffer, value)?
             + Self::write_align_padding(buffer)?)
+    }
+
+    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let raw_value: u32 = value.into();
+        Ok(Self::write_value(buffer, &raw_value)?)
     }
 }
 

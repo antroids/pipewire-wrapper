@@ -18,7 +18,6 @@ const DATA_ALIGN: u64 = size_of::<AlignedDataType>() as u64;
 pub struct PodBuf<'a, T>
 where
     T: 'a,
-    T: RawWrapper,
     &'a T: WritablePod,
 {
     data: Vec<AlignedDataType>,
@@ -28,12 +27,11 @@ where
 
 impl<'a, T> PodBuf<'a, T>
 where
-    T: RawWrapper,
     &'a T: WritablePod,
 {
     pub fn from_value(value: <&'a T as ReadablePod>::Value) -> PodResult<Self> {
         let mut buf = Self::new();
-        <&'a T>::write(&mut buf, value)?;
+        <&'a T>::write_pod(&mut buf, value)?;
         Ok(buf)
     }
 
@@ -77,7 +75,6 @@ where
 
 impl<'a, T> PodBuf<'a, T>
 where
-    T: RawWrapper,
     &'a T: WritablePod,
     <&'a T as ReadablePod>::Value: Iterator,
     <<&'a T as ReadablePod>::Value as Iterator>::Item: SizedPod,
@@ -87,7 +84,6 @@ where
 
 impl<'a, T> Write for PodBuf<'a, T>
 where
-    T: RawWrapper,
     &'a T: WritablePod,
 {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
@@ -113,7 +109,6 @@ where
 
 impl<'a, T> Seek for PodBuf<'a, T>
 where
-    T: RawWrapper,
     &'a T: WritablePod,
 {
     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
@@ -138,18 +133,18 @@ where
     }
 }
 
-pub struct AllocatedPod<T: RawWrapper> {
+pub struct AllocatedPod<T> {
     data: Vec<AlignedDataType>,
     phantom: PhantomData<T>,
 }
 
-impl<T: RawWrapper> AllocatedPod<T> {
+impl<T> AllocatedPod<T> {
     pub fn as_pod(&self) -> &T {
-        unsafe { T::from_raw_ptr(self.data.as_ptr().cast()) }
+        unsafe { (self.data.as_ptr() as *const T).as_ref().unwrap() }
     }
 
     pub fn as_pod_mut(&mut self) -> &mut T {
-        unsafe { T::mut_from_raw_ptr(self.data.as_mut_ptr().cast()) }
+        unsafe { (self.data.as_mut_ptr() as *mut T).as_mut().unwrap() }
     }
 }
 

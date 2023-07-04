@@ -61,14 +61,23 @@ impl<'a> ReadablePod for &'a PodBitmapRef {
 }
 
 impl<'a> WritablePod for &'a PodBitmapRef {
-    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        let header_size =
-            Self::write_header(buffer, value.len() as u32, PodBitmapRef::static_type())?;
+        Ok(
+            Self::write_header(buffer, value.len() as u32, PodBitmapRef::static_type())?
+                + Self::write_raw_value(buffer, value)?
+                + Self::write_align_padding(buffer)?,
+        )
+    }
+
+    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
         buffer.write_all(value)?;
-        Ok(header_size + value.len() + Self::write_align_padding(buffer)?)
+        Ok(value.len())
     }
 }
 

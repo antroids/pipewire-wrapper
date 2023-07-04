@@ -1,5 +1,6 @@
 use std::any::TypeId;
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -20,7 +21,7 @@ use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::{
     BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFloatRef, PodFractionRef,
     PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodValueParser, ReadablePod,
-    SizedPod,
+    SizedPod, WritablePod,
 };
 use crate::spa::type_::{PointRef, Type};
 use crate::wrapper::RawWrapper;
@@ -178,6 +179,22 @@ impl<'a> ReadablePod for &'a PodChoiceRef {
             Type::FRACTION => Ok(ChoiceValueType::FRACTION(self.parse_choice()?)),
             _ => Err(PodError::UnsupportedChoiceElementType),
         }
+    }
+}
+
+impl<'a> WritablePod for &'a PodChoiceRef {
+    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        todo!()
+    }
+
+    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        todo!()
     }
 }
 

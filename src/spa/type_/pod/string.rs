@@ -75,7 +75,7 @@ impl<'a> ReadablePod for &'a PodStringRef {
 }
 
 impl<'a> WritablePod for &'a PodStringRef {
-    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -87,6 +87,15 @@ impl<'a> WritablePod for &'a PodStringRef {
         )?;
         buffer.write_all(string_bytes)?;
         Ok(header_size + string_bytes.len() + Self::write_align_padding(buffer)?)
+    }
+
+    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let string_bytes = value.to_bytes_with_nul();
+        buffer.write_all(string_bytes)?;
+        Ok(string_bytes.len())
     }
 }
 

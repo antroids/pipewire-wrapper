@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -9,12 +10,12 @@ use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef}
 use crate::spa::type_::pod::iterator::PodValueIterator;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod,
+    BasicTypePod, PodError, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PodStepValue<T> {
     default: T,
     min: T,
@@ -139,6 +140,57 @@ where
                 body.type_(),
             ))
         }
+    }
+}
+
+impl<T> WritablePod for PodStepRef<T>
+where
+    T: PodValueParser<*const u8>,
+    T: StaticTypePod,
+    T: WritablePod,
+    <T as ReadablePod>::Value: Clone,
+{
+    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        Ok(Self::write_end_than_start(
+            buffer,
+            size_of::<spa_sys::spa_pod_choice>(),
+            |buffer, value_size| {
+                let child_size = value_size / 4;
+                Ok(Self::write_header(
+                    buffer,
+                    (value_size + size_of::<spa_sys::spa_pod_choice_body>()) as u32,
+                    Type::CHOICE,
+                )? + Self::write_value(
+                    buffer,
+                    &spa_sys::spa_pod_choice_body {
+                        type_: ChoiceType::FLAGS.raw,
+                        flags: 0,
+                        child: spa_pod {
+                            size: child_size as u32,
+                            type_: T::static_type().raw,
+                        },
+                    },
+                )?)
+            },
+            |buffer| Self::write_raw_value(buffer, value),
+        )? + Self::write_align_padding(buffer)?)
+    }
+
+    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let element_size = T::write_raw_value(buffer, value.default)?;
+        for v in [value.min, value.max, value.step] {
+            let size = T::write_raw_value(buffer, v)?;
+            if element_size != size {
+                return Err(PodError::UnexpectedChoiceElementSize(element_size, size));
+            }
+        }
+        Ok(element_size * 3)
     }
 }
 

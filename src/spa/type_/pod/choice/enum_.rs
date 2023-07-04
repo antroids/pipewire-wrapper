@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use std::io::{Seek, Write};
+use std::io::{Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -8,14 +8,16 @@ use spa_sys::spa_pod;
 
 use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::type_::pod::iterator::PodValueIterator;
+use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
+    BasicTypePod, PodError, PodIntRef, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod,
+    WritablePod, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PodEnumValue<T> {
     default: T,
     alternatives: Vec<T>,
@@ -134,12 +136,51 @@ impl<T> WritablePod for PodEnumRef<T>
 where
     T: PodValueParser<*const u8>,
     T: StaticTypePod,
+    T: WritablePod,
+    <T as ReadablePod>::Value: Clone,
 {
-    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
-        todo!()
+        let elements_count = value.alternatives.len() + 1;
+        Ok(Self::write_end_than_start(
+            buffer,
+            size_of::<spa_sys::spa_pod_choice>(),
+            |buffer, value_size| {
+                let child_size = value_size / elements_count;
+                Ok(Self::write_header(
+                    buffer,
+                    (value_size + size_of::<spa_sys::spa_pod_choice_body>()) as u32,
+                    Type::CHOICE,
+                )? + Self::write_value(
+                    buffer,
+                    &spa_sys::spa_pod_choice_body {
+                        type_: ChoiceType::ENUM.raw,
+                        flags: 0,
+                        child: spa_pod {
+                            size: child_size as u32,
+                            type_: T::static_type().raw,
+                        },
+                    },
+                )?)
+            },
+            |buffer| Self::write_raw_value(buffer, value),
+        )? + Self::write_align_padding(buffer)?)
+    }
+
+    fn write_raw_value<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let element_size = T::write_raw_value(buffer, value.default)?;
+        for v in &value.alternatives {
+            let size = T::write_raw_value(buffer, v.clone())?;
+            if element_size != size {
+                return Err(PodError::UnexpectedChoiceElementSize(element_size, size));
+            }
+        }
+        Ok(element_size + element_size * value.alternatives.len())
     }
 }
 
@@ -155,4 +196,55 @@ where
             .field("value", &self.value())
             .finish()
     }
+}
+
+#[test]
+fn test_from_value() {
+    let v1 = PodEnumValue {
+        default: 123,
+        alternatives: vec![123, 234, 345, 456],
+    };
+    let v2 = PodEnumValue {
+        default: 123,
+        alternatives: vec![],
+    };
+    let allocated_pod = PodBuf::<PodEnumRef<PodIntRef>>::from_value(v1.clone())
+        .unwrap()
+        .into_pod();
+    assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
+    assert_eq!(allocated_pod.as_pod().pod_size(), 44);
+    assert_eq!(allocated_pod.as_pod().pod_header().size, 36);
+    assert_eq!(allocated_pod.as_pod().pod_header().type_, Type::CHOICE.raw);
+    assert_eq!(
+        allocated_pod.as_pod().choice().body().type_(),
+        ChoiceType::ENUM
+    );
+    assert_eq!(allocated_pod.as_pod().choice().body().flags(), 0);
+    assert_eq!(
+        allocated_pod.as_pod().choice().body().child().type_(),
+        Type::INT
+    );
+    assert_eq!(allocated_pod.as_pod().choice().body().child().size(), 4);
+    assert_eq!(allocated_pod.as_pod().value().unwrap(), v1);
+    assert_ne!(allocated_pod.as_pod().value().unwrap(), v2);
+
+    let allocated_pod = PodBuf::<PodEnumRef<PodIntRef>>::from_value(v2.clone())
+        .unwrap()
+        .into_pod();
+    assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
+    assert_eq!(allocated_pod.as_pod().pod_size(), 28);
+    assert_eq!(allocated_pod.as_pod().pod_header().size, 20);
+    assert_eq!(allocated_pod.as_pod().pod_header().type_, Type::CHOICE.raw);
+    assert_eq!(
+        allocated_pod.as_pod().choice().body().type_(),
+        ChoiceType::ENUM
+    );
+    assert_eq!(allocated_pod.as_pod().choice().body().flags(), 0);
+    assert_eq!(
+        allocated_pod.as_pod().choice().body().child().type_(),
+        Type::INT
+    );
+    assert_eq!(allocated_pod.as_pod().choice().body().child().size(), 4);
+    assert_eq!(allocated_pod.as_pod().value().unwrap(), v2);
+    assert_ne!(allocated_pod.as_pod().value().unwrap(), v1);
 }
