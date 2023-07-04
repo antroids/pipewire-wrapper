@@ -10,7 +10,7 @@ use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
     BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
-    POD_ALIGN,
+    WritableValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -102,7 +102,12 @@ where
         )? + Self::write_raw_value(buffer, value)?
             + Self::write_align_padding(buffer)?)
     }
+}
 
+impl<T: PodIdType> WritableValue for PodIdRef<T>
+where
+    T: PodIdType,
+{
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,

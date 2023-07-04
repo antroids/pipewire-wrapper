@@ -9,7 +9,8 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod, POD_ALIGN,
+    BasicTypePod, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod, WritableValue,
+    POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -71,7 +72,9 @@ impl<'a> WritablePod for &'a PodBytesRef {
                 + Self::write_align_padding(buffer)?,
         )
     }
+}
 
+impl<'a> WritableValue for &'a PodBytesRef {
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,

@@ -8,7 +8,7 @@ use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
     BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
-    POD_ALIGN,
+    WritableValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -88,7 +88,9 @@ impl<'a> WritablePod for &'a PodStringRef {
         buffer.write_all(string_bytes)?;
         Ok(header_size + string_bytes.len() + Self::write_align_padding(buffer)?)
     }
+}
 
+impl<'a> WritableValue for &'a PodStringRef {
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,

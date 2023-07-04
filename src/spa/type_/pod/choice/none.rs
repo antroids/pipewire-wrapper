@@ -8,42 +8,28 @@ use spa_sys::spa_pod;
 
 use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::type_::pod::iterator::PodValueIterator;
+use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
-    WritableValue,
+    BasicTypePod, PodError, PodIntRef, PodLongRef, PodRef, PodResult, PodValueParser, ReadablePod,
+    SizedPod, WritablePod, WritableValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct PodFlagsValue<T> {
-    default: T,
-    alternatives: Vec<T>,
-}
-
-impl<T> PodFlagsValue<T> {
-    pub fn default(&self) -> &T {
-        &self.default
-    }
-    pub fn alternatives(&self) -> &Vec<T> {
-        &self.alternatives
-    }
-}
-
 #[repr(transparent)]
-pub struct PodFlagsRef<T> {
+pub struct PodNoneRef<T> {
     raw: spa_sys::spa_pod_choice,
     phantom: PhantomData<T>,
 }
 
-impl<T> PodFlagsRef<T> {
+impl<T> PodNoneRef<T> {
     pub fn choice(&self) -> &PodChoiceRef {
         unsafe { PodChoiceRef::from_raw_ptr(addr_of!(self.raw)) }
     }
 }
 
-impl<T> crate::wrapper::RawWrapper for PodFlagsRef<T>
+impl<T> crate::wrapper::RawWrapper for PodNoneRef<T>
 where
     T: PodValueParser<*const u8>,
 {
@@ -65,11 +51,11 @@ where
     }
 
     unsafe fn mut_from_raw_ptr<'a>(raw: *mut Self::CType) -> &'a mut Self {
-        &mut *(raw as *mut PodFlagsRef<T>)
+        &mut *(raw as *mut PodNoneRef<T>)
     }
 }
 
-impl<T> StaticTypePod for PodFlagsRef<T>
+impl<T> StaticTypePod for PodNoneRef<T>
 where
     T: PodValueParser<*const u8>,
     T: StaticTypePod,
@@ -79,7 +65,7 @@ where
     }
 }
 
-impl<T> PodHeader for PodFlagsRef<T>
+impl<T> PodHeader for PodNoneRef<T>
 where
     T: PodValueParser<*const u8>,
     T: StaticTypePod,
@@ -89,33 +75,25 @@ where
     }
 }
 
-impl<T> ReadablePod for PodFlagsRef<T>
+impl<T> ReadablePod for PodNoneRef<T>
 where
     T: PodValueParser<*const u8>,
     T: StaticTypePod,
 {
-    type Value = PodFlagsValue<T::Value>;
+    type Value = Option<T::Value>;
 
     fn value(&self) -> PodResult<Self::Value> {
         let body = self.choice().body();
-        if body.type_() == ChoiceType::FLAGS {
+        if body.type_() == ChoiceType::NONE {
             if T::static_type() == body.child().type_() {
-                let content_size = self.pod_size() - size_of::<PodFlagsRef<T>>();
+                let content_size = self.pod_size() - size_of::<PodNoneRef<T>>();
                 let element_size = body.child().size() as usize;
                 let mut iter: PodValueIterator<T> = PodValueIterator::new(
                     unsafe { body.content_ptr().cast() },
                     content_size,
                     element_size,
                 );
-                let default = iter
-                    .next()
-                    .ok_or(PodError::DataIsTooShort(element_size, content_size))?;
-                let mut alternatives = Vec::new();
-                iter.for_each(|a| alternatives.push(a));
-                Ok(PodFlagsValue {
-                    default,
-                    alternatives,
-                })
+                Ok(iter.next())
             } else {
                 Err(PodError::WrongPodTypeToCast(
                     T::static_type(),
@@ -124,14 +102,14 @@ where
             }
         } else {
             Err(PodError::UnexpectedChoiceType(
-                ChoiceType::FLAGS,
+                ChoiceType::NONE,
                 body.type_(),
             ))
         }
     }
 }
 
-impl<T> WritablePod for PodFlagsRef<T>
+impl<T> WritablePod for PodNoneRef<T>
 where
     T: PodValueParser<*const u8>,
     T: StaticTypePod,
@@ -141,21 +119,19 @@ where
     where
         W: Write + Seek,
     {
-        let elements_count = value.alternatives.len() + 1;
         Ok(Self::write_end_than_start(
             buffer,
             size_of::<spa_sys::spa_pod_choice>(),
             |buffer, value_size| {
-                let child_size = value_size / elements_count;
                 Ok(Self::write_header(
                     buffer,
                     (value_size + size_of::<spa_sys::spa_pod_choice_body>()) as u32,
                     Type::CHOICE,
                 )? + PodChoiceRef::write_raw_body(
                     buffer,
-                    ChoiceType::FLAGS,
+                    ChoiceType::NONE,
                     0,
-                    child_size as u32,
+                    value_size as u32,
                     T::static_type(),
                 )?)
             },
@@ -164,7 +140,7 @@ where
     }
 }
 
-impl<T> WritableValue for PodFlagsRef<T>
+impl<T> WritableValue for PodNoneRef<T>
 where
     T: PodValueParser<*const u8>,
     T: StaticTypePod,
@@ -174,27 +150,65 @@ where
     where
         W: Write + Seek,
     {
-        let element_size = T::write_raw_value(buffer, &value.default)?;
-        for v in &value.alternatives {
-            let size = T::write_raw_value(buffer, v)?;
-            if element_size != size {
-                return Err(PodError::UnexpectedChoiceElementSize(element_size, size));
-            }
+        if let Some(value) = value.as_ref() {
+            T::write_raw_value(buffer, value)
+        } else {
+            Ok(0)
         }
-        Ok(element_size + element_size * value.alternatives.len())
     }
 }
 
-impl<T> Debug for PodFlagsRef<T>
+impl<T> Debug for PodNoneRef<T>
 where
     T: PodValueParser<*const u8>,
     T: StaticTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PodFlagsRef")
+        f.debug_struct("PodNoneRef")
             .field("pod.type", &self.upcast().type_())
             .field("pod.size", &self.upcast().size())
             .field("value", &self.value())
             .finish()
     }
+}
+
+#[test]
+fn test_from_value() {
+    let allocated_pod = PodBuf::<PodNoneRef<PodLongRef>>::from_value(&Some(1234567i64))
+        .unwrap()
+        .into_pod();
+    assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
+    assert_eq!(allocated_pod.as_pod().pod_size(), 32);
+    assert_eq!(allocated_pod.as_pod().pod_header().size, 24);
+    assert_eq!(allocated_pod.as_pod().pod_header().type_, Type::CHOICE.raw);
+    assert_eq!(
+        allocated_pod.as_pod().choice().body().type_(),
+        ChoiceType::NONE
+    );
+    assert_eq!(allocated_pod.as_pod().choice().body().flags(), 0);
+    assert_eq!(
+        allocated_pod.as_pod().choice().body().child().type_(),
+        Type::LONG
+    );
+    assert_eq!(allocated_pod.as_pod().choice().body().child().size(), 8);
+    assert_eq!(allocated_pod.as_pod().value().unwrap(), Some(1234567i64));
+
+    let allocated_pod = PodBuf::<PodNoneRef<PodIntRef>>::from_value(&None)
+        .unwrap()
+        .into_pod();
+    assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
+    assert_eq!(allocated_pod.as_pod().pod_size(), 24);
+    assert_eq!(allocated_pod.as_pod().pod_header().size, 16);
+    assert_eq!(allocated_pod.as_pod().pod_header().type_, Type::CHOICE.raw);
+    assert_eq!(
+        allocated_pod.as_pod().choice().body().type_(),
+        ChoiceType::NONE
+    );
+    assert_eq!(allocated_pod.as_pod().choice().body().flags(), 0);
+    assert_eq!(
+        allocated_pod.as_pod().choice().body().child().type_(),
+        Type::INT
+    );
+    assert_eq!(allocated_pod.as_pod().choice().body().child().size(), 0);
+    assert_eq!(allocated_pod.as_pod().value().unwrap(), None);
 }

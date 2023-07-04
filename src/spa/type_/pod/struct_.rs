@@ -7,6 +7,7 @@ use crate::spa::type_::pod::iterator::PodIterator;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
     BasicTypePod, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
+    WritableValue,
 };
 use crate::spa::type_::Type;
 
@@ -51,7 +52,9 @@ impl<'a> WritablePod for &'a PodStructRef {
         buffer.write_all(iterator_content)?;
         Ok(header_size + iterator_content.len() + Self::write_align_padding(buffer)?)
     }
+}
 
+impl<'a> WritableValue for &'a PodStructRef {
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,

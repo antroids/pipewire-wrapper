@@ -5,7 +5,9 @@ use std::ptr::addr_of;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
-use crate::spa::type_::pod::{PodRef, PodResult, ReadablePod, SizedPod, WritablePod};
+use crate::spa::type_::pod::{
+    PodRef, PodResult, ReadablePod, SizedPod, WritablePod, WritableValue,
+};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -66,7 +68,9 @@ impl<'a> WritablePod for &'a PodPointerRef {
     {
         todo!()
     }
+}
 
+impl<'a> WritableValue for &'a PodPointerRef {
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,

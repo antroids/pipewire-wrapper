@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -20,7 +21,7 @@ use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
     BasicType, BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFdRef,
     PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodPointerRef, PodRectangleRef, PodRef,
-    PodResult, PodValueParser, ReadablePod, SizedPod,
+    PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod, WritableValue,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -104,6 +105,19 @@ where
 
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse(self.body_size(), self.body())
+    }
+}
+
+impl<'a, T> WritablePod for &'a PodArrayRef<T>
+where
+    T: PodValueParser<*const u8>,
+    T: BasicTypePod,
+{
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        todo!()
     }
 }
 

@@ -12,7 +12,7 @@ use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
     BasicTypePod, PodError, PodIntRef, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod,
-    WritablePod, POD_ALIGN,
+    WritablePod, WritableValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -136,8 +136,7 @@ impl<T> WritablePod for PodEnumRef<T>
 where
     T: PodValueParser<*const u8>,
     T: StaticTypePod,
-    T: WritablePod,
-    <T as ReadablePod>::Value: Clone,
+    T: WritableValue,
 {
     fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
@@ -153,22 +152,25 @@ where
                     buffer,
                     (value_size + size_of::<spa_sys::spa_pod_choice_body>()) as u32,
                     Type::CHOICE,
-                )? + Self::write_value(
+                )? + PodChoiceRef::write_raw_body(
                     buffer,
-                    &spa_sys::spa_pod_choice_body {
-                        type_: ChoiceType::ENUM.raw,
-                        flags: 0,
-                        child: spa_pod {
-                            size: child_size as u32,
-                            type_: T::static_type().raw,
-                        },
-                    },
+                    ChoiceType::ENUM,
+                    0,
+                    child_size as u32,
+                    T::static_type(),
                 )?)
             },
             |buffer| Self::write_raw_value(buffer, value),
         )? + Self::write_align_padding(buffer)?)
     }
+}
 
+impl<T> WritableValue for PodEnumRef<T>
+where
+    T: PodValueParser<*const u8>,
+    T: StaticTypePod,
+    T: WritableValue,
+{
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,

@@ -100,7 +100,9 @@ macro_rules! primitive_type_pod_impl {
                 )? + Self::write_raw_value(buffer, value)?
                     + Self::write_align_padding(buffer)?)
             }
+        }
 
+        impl WritableValue for $pod_ref_type {
             fn write_raw_value<W>(
                 buffer: &mut W,
                 value: &<Self as ReadablePod>::Value,
@@ -256,10 +258,6 @@ pub trait WritablePod: ReadablePod {
     where
         W: std::io::Write + std::io::Seek;
 
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
-    where
-        W: std::io::Write + std::io::Seek;
-
     fn check_align<W>(buffer: &mut W) -> PodResult<()>
     where
         W: std::io::Write + std::io::Seek,
@@ -337,10 +335,15 @@ pub trait WritablePod: ReadablePod {
     }
 }
 
+pub trait WritableValue: ReadablePod {
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: std::io::Write + std::io::Seek;
+}
+
 impl<'a, T> WritablePod for &'a T
 where
     T: WritablePod,
-    <T as ReadablePod>::Value: Clone,
 {
     fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
@@ -348,7 +351,12 @@ where
     {
         T::write_pod(buffer, value)
     }
+}
 
+impl<'a, T> WritableValue for &'a T
+where
+    T: WritableValue,
+{
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
