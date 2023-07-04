@@ -450,6 +450,11 @@ impl From<u32> for VideoMultiviewMode {
         VideoMultiviewMode::from_raw(value as spa_sys::spa_video_multiview_mode)
     }
 }
+impl From<VideoMultiviewMode> for u32 {
+    fn from(value: VideoMultiviewMode) -> Self {
+        value.raw as Self
+    }
+}
 impl PodIdType for VideoMultiviewMode {}
 
 enum_wrapper!(

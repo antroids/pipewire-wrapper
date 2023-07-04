@@ -1,13 +1,17 @@
-use std::ffi::{c_char, CStr};
+use std::ffi::{c_char, CStr, CString};
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 
 use pipewire_proc_macro::RawWrapper;
 
+use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod,
+    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
+    POD_ALIGN,
 };
 use crate::spa::type_::Type;
+use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
@@ -70,6 +74,22 @@ impl<'a> ReadablePod for &'a PodStringRef {
     }
 }
 
+impl<'a> WritablePod for &'a PodStringRef {
+    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let string_bytes = value.to_bytes_with_nul();
+        let header_size = Self::write_header(
+            buffer,
+            string_bytes.len() as u32,
+            PodStringRef::static_type(),
+        )?;
+        buffer.write_all(string_bytes)?;
+        Ok(header_size + string_bytes.len() + Self::write_align_padding(buffer)?)
+    }
+}
+
 impl Debug for PodStringRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         unsafe {
@@ -80,4 +100,22 @@ impl Debug for PodStringRef {
                 .finish()
         }
     }
+}
+
+#[test]
+fn test_from_value() {
+    let string = CString::new("Test string").unwrap();
+    let string_wrong = CString::new("Test string wrong").unwrap();
+    let allocated_pod = PodBuf::<PodStringRef>::from_value(string.as_ref())
+        .unwrap()
+        .into_pod();
+    assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
+    assert_eq!(allocated_pod.as_pod().pod_size(), 20);
+    assert_eq!(allocated_pod.as_pod().pod_header().size, 12);
+    assert_eq!(allocated_pod.as_pod().pod_header().type_, Type::STRING.raw);
+    assert_eq!(allocated_pod.as_pod().value().unwrap(), string.as_ref());
+    assert_ne!(
+        allocated_pod.as_pod().value().unwrap(),
+        string_wrong.as_ref()
+    );
 }

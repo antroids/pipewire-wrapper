@@ -212,6 +212,12 @@ pub fn derive_raw_wrapper(input: TokenStream) -> TokenStream {
                 Self::from_raw(value)
             }
         }
+
+        impl #struct_generics From<#struct_ident #struct_generics> for #raw_field_type {
+            fn from(value: #struct_ident #struct_generics) -> Self {
+                value.#raw_field_ident
+            }
+        }
     )
 }
 

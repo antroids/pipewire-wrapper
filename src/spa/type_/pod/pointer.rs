@@ -1,10 +1,11 @@
 use std::ffi::c_void;
+use std::io::{Seek, Write};
 use std::ptr::addr_of;
 
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
-use crate::spa::type_::pod::{PodRef, PodResult, ReadablePod, SizedPod};
+use crate::spa::type_::pod::{PodRef, PodResult, ReadablePod, SizedPod, WritablePod};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -55,5 +56,14 @@ impl<'a> ReadablePod for &'a PodPointerRef {
 
     fn value(&self) -> PodResult<Self::Value> {
         Ok(self.raw.body.value)
+    }
+}
+
+impl<'a> WritablePod for &'a PodPointerRef {
+    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        todo!()
     }
 }

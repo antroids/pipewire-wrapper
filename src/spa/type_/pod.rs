@@ -1,7 +1,9 @@
 use std::ffi::{c_char, CStr};
 use std::fmt::{Debug, Formatter};
+use std::io::{Cursor, Seek, Write};
 use std::marker::PhantomData;
-use std::mem::size_of;
+use std::mem::{size_of, size_of_val};
+use std::ops::{Deref, Rem};
 use std::os::fd::RawFd;
 use std::ptr::addr_of;
 use std::{mem, slice};
@@ -38,6 +40,8 @@ pub mod pointer;
 pub mod sequence;
 pub mod string;
 pub mod struct_;
+
+pub mod pod_buf;
 
 macro_rules! primitive_type_pod_impl {
     ($pod_ref_type:ty, $pod_type:expr, $value_raw_type:ty) => {
@@ -77,7 +81,22 @@ macro_rules! primitive_type_pod_impl {
             type Value = $value_type;
 
             fn value(&self) -> PodResult<Self::Value> {
-                Self::parse(self.upcast().size() as usize, self.value())
+                Self::parse(self.upcast().size() as usize, self.raw_value())
+            }
+        }
+
+        impl WritablePod for $pod_ref_type {
+            fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+            where
+                W: Write + Seek,
+            {
+                let value: $value_raw_type = value.into();
+                Ok(Self::write_header(
+                    buffer,
+                    size_of::<$value_raw_type>() as u32,
+                    <$pod_ref_type>::static_type(),
+                )? + Self::write_value(buffer, &value)?
+                    + Self::write_align_padding(buffer)?)
             }
         }
 
@@ -94,7 +113,7 @@ macro_rules! primitive_type_pod_impl {
         }
 
         impl $pod_ref_type {
-            pub fn value(&self) -> $value_raw_type {
+            pub fn raw_value(&self) -> $value_raw_type {
                 self.raw.value
             }
         }
@@ -125,11 +144,19 @@ pub enum PodError {
     UnexpectedControlType(u32),
     UnexpectedObjectType(u32),
     UnexpectedChoiceType(ChoiceType, ChoiceType),
+    IOError(std::io::Error),
+    PodIsNotAligned,
 }
 
 impl From<PodError> for crate::Error {
     fn from(value: PodError) -> Self {
         Self::PodParseError(value)
+    }
+}
+
+impl From<std::io::Error> for PodError {
+    fn from(value: std::io::Error) -> Self {
+        Self::IOError(value)
     }
 }
 
@@ -169,26 +196,113 @@ impl Debug for PodError {
                     expected, actual
                 )
             }
+            PodError::IOError(err) => {
+                write!(f, "IOError {:?}", err)
+            }
+            PodError::PodIsNotAligned => {
+                write!(f, "Pod is not aligned!")
+            }
         }
     }
 }
 
 type PodResult<T> = Result<T, PodError>;
 
+const POD_ALIGN: usize = 8;
+const ZEROED_POD: u64 = 0;
+
 pub trait SizedPod {
     fn pod_size(&self) -> usize;
-}
-
-impl<T: PodHeader> SizedPod for T {
-    fn pod_size(&self) -> usize {
-        self.pod_header().size as usize + size_of::<spa_sys::spa_pod>()
-    }
 }
 
 pub trait ReadablePod {
     type Value: Debug;
 
     fn value(&self) -> PodResult<Self::Value>;
+}
+
+impl<'a, T> ReadablePod for &'a T
+where
+    T: ReadablePod,
+{
+    type Value = T::Value;
+
+    fn value(&self) -> PodResult<Self::Value> {
+        (*self).value()
+    }
+}
+
+pub trait WritablePod: ReadablePod {
+    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: std::io::Write + std::io::Seek;
+
+    fn check_align<W>(buffer: &mut W) -> PodResult<()>
+    where
+        W: std::io::Write + std::io::Seek,
+    {
+        if buffer.stream_position()?.rem(POD_ALIGN as u64) == 0 {
+            Ok(())
+        } else {
+            Err(PodError::PodIsNotAligned)
+        }
+    }
+
+    fn write_header<W>(buffer: &mut W, size: u32, type_: Type) -> PodResult<usize>
+    where
+        W: std::io::Write + std::io::Seek,
+    {
+        Self::check_align(buffer)?;
+        Self::write_value(
+            buffer,
+            &spa_sys::spa_pod {
+                size,
+                type_: type_.raw,
+            },
+        )
+    }
+
+    fn write_value<W, V>(buffer: &mut W, value: &V) -> PodResult<usize>
+    where
+        W: std::io::Write + std::io::Seek,
+        V: Sized,
+    {
+        let size = size_of::<V>();
+        let ptr = value as *const V as *const u8;
+        let slice = unsafe { slice::from_raw_parts(ptr, size) };
+        buffer.write_all(slice)?;
+        Ok(size)
+    }
+
+    fn write_align_padding<W>(buffer: &mut W) -> PodResult<usize>
+    where
+        W: std::io::Write + std::io::Seek,
+    {
+        let position = buffer.stream_position()? as usize;
+        let padding_len = position.rem(POD_ALIGN);
+        let padding = vec![0u8; padding_len];
+        buffer.write_all(padding.as_slice())?;
+        Ok(padding_len)
+    }
+}
+
+impl<'a, T> WritablePod for &'a T
+where
+    T: WritablePod,
+    <T as ReadablePod>::Value: Clone,
+{
+    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        T::write(buffer, value.clone())
+    }
+}
+
+impl<T: PodHeader> SizedPod for T {
+    fn pod_size(&self) -> usize {
+        self.pod_header().size as usize + size_of::<spa_sys::spa_pod>()
+    }
 }
 
 pub(crate) mod restricted {

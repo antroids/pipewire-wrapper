@@ -1,15 +1,19 @@
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 
 use spa_sys::spa_pod;
 
 use crate::spa::type_::pod::object::prop::Prop;
+use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod,
+    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
+    POD_ALIGN,
 };
 use crate::spa::type_::Type;
+use crate::wrapper::RawWrapper;
 
 #[repr(transparent)]
 pub struct PodIdRef<T: PodIdType = u32> {
@@ -43,6 +47,7 @@ impl<T: PodIdType> crate::wrapper::RawWrapper for PodIdRef<T> {
 pub trait PodIdType
 where
     Self: From<u32>,
+    Self: Into<u32>,
     Self: Debug,
 {
 }
@@ -78,6 +83,21 @@ impl<T: PodIdType> ReadablePod for PodIdRef<T> {
     }
 }
 
+impl<T: PodIdType> WritablePod for PodIdRef<T> {
+    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let raw_value: u32 = value.into();
+        Ok(Self::write_header(
+            buffer,
+            size_of::<u32>() as u32,
+            <PodIdRef<T>>::static_type(),
+        )? + Self::write_value(buffer, &raw_value)?
+            + Self::write_align_padding(buffer)?)
+    }
+}
+
 impl<T: PodIdType> PodHeader for PodIdRef<T> {
     fn pod_header(&self) -> &spa_pod {
         &self.raw.pod
@@ -100,4 +120,16 @@ impl<T: PodIdType> Debug for PodIdRef<T> {
                 .finish()
         }
     }
+}
+
+#[test]
+fn test_from_value() {
+    let allocated_pod = PodBuf::<PodIdRef<Type>>::from_value(Type::POINTER)
+        .unwrap()
+        .into_pod();
+    assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
+    assert_eq!(allocated_pod.as_pod().pod_size(), 12);
+    assert_eq!(allocated_pod.as_pod().pod_header().size, 4);
+    assert_eq!(allocated_pod.as_pod().pod_header().type_, Type::ID.raw);
+    assert_eq!(allocated_pod.as_pod().value().unwrap(), Type::POINTER);
 }

@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -9,7 +10,7 @@ use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef}
 use crate::spa::type_::pod::iterator::PodValueIterator;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod,
+    BasicTypePod, PodError, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -126,6 +127,19 @@ where
                 body.type_(),
             ))
         }
+    }
+}
+
+impl<T> WritablePod for PodEnumRef<T>
+where
+    T: PodValueParser<*const u8>,
+    T: StaticTypePod,
+{
+    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        todo!()
     }
 }
 

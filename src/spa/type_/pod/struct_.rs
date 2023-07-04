@@ -1,11 +1,12 @@
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::type_::pod::iterator::PodIterator;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod,
+    BasicTypePod, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
 };
 use crate::spa::type_::Type;
 
@@ -33,6 +34,22 @@ impl<'a> ReadablePod for &'a PodStructRef {
 
     fn value(&self) -> PodResult<Self::Value> {
         Ok(PodIterator::new(self))
+    }
+}
+
+impl<'a> WritablePod for &'a PodStructRef {
+    fn write<W>(buffer: &mut W, value: <Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let iterator_content = unsafe { value.as_bytes() };
+        let header_size = Self::write_header(
+            buffer,
+            iterator_content.len() as u32,
+            PodStructRef::static_type(),
+        )?;
+        buffer.write_all(iterator_content)?;
+        Ok(header_size + iterator_content.len() + Self::write_align_padding(buffer)?)
     }
 }
 

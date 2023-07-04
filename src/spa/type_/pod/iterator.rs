@@ -1,8 +1,9 @@
+use core::slice;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::mem::size_of;
 
-use crate::spa::type_::pod::{BasicTypePod, PodValueParser, SizedPod};
+use crate::spa::type_::pod::{BasicTypePod, PodValueParser, SizedPod, POD_ALIGN};
 
 pub struct PodIterator<'a, C: SizedPod, E: SizedPod> {
     container: &'a C,
@@ -11,8 +12,6 @@ pub struct PodIterator<'a, C: SizedPod, E: SizedPod> {
 }
 
 impl<'a, C: SizedPod, E: SizedPod> PodIterator<'a, C, E> {
-    const ALIGN: usize = 8;
-
     pub fn new(container: &'a C) -> Self {
         unsafe {
             let first_element_ptr = (container as *const C).offset(1).cast();
@@ -25,7 +24,7 @@ impl<'a, C: SizedPod, E: SizedPod> PodIterator<'a, C, E> {
     }
 
     unsafe fn inside(&self, ptr: *const E) -> bool {
-        let max_offset_bytes = self.container.pod_size() - size_of::<C>();
+        let max_offset_bytes = self.max_offset_bytes();
         let offset_bytes =
             (ptr as *const u8).offset_from(self.first_element_ptr as *const u8) as usize;
         offset_bytes < max_offset_bytes && (offset_bytes + (*ptr).pod_size()) <= max_offset_bytes
@@ -36,9 +35,17 @@ impl<'a, C: SizedPod, E: SizedPod> PodIterator<'a, C, E> {
         let size = (*ptr).pod_size();
         let next_ptr = (ptr as *const u8).offset(size as isize);
         let aligned = next_ptr
-            .offset(next_ptr.align_offset(Self::ALIGN) as isize)
+            .offset(next_ptr.align_offset(POD_ALIGN) as isize)
             .cast();
         aligned
+    }
+
+    fn max_offset_bytes(&self) -> usize {
+        self.container.pod_size() - size_of::<C>()
+    }
+
+    pub(crate) unsafe fn as_bytes(&self) -> &[u8] {
+        slice::from_raw_parts(self.first_element_ptr as *const u8, self.max_offset_bytes())
     }
 }
 
