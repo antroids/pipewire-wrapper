@@ -1,11 +1,16 @@
 use core::slice;
+use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
 use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 
-use crate::spa::type_::pod::pod_buf::{PodBuf, PodBufFrame};
-use crate::spa::type_::pod::{BasicTypePod, PodResult, PodValue, SizedPod, POD_ALIGN};
+use crate::spa::type_::pod::pod_buf::{AllocatedData, PodBuf};
+use crate::spa::type_::pod::restricted::{CloneTo, PodHeader};
+use crate::spa::type_::pod::string::PodStringRef;
+use crate::spa::type_::pod::{
+    BasicTypePod, PodIntRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
+};
 
 pub struct PodIterator<'a, E: SizedPod> {
     size: usize,
@@ -134,22 +139,78 @@ impl<'a, E: PodValue + 'a> Debug for PodValueIterator<'a, E> {
     }
 }
 
-// pub struct PodIteratorBuilder<'a, C: SizedPod, E: SizedPod> {
-//     buf: PodBuf<'a, PodIterator<'a, C, E>>,
-// }
-//
-// impl<'a, C: SizedPod, E: SizedPod> PodIteratorBuilder<'a, C, E> {
-//     pub fn new() -> Self {
-//         Self { buf: PodBuf::new() }
-//     }
-//
-//     pub fn element<F, W>(&mut self, write_element: F) -> PodResult<usize>
-//     where
-//         W: Write + Seek,
-//         F: FnOnce(&mut W),
-//     {
-//         let frame = PodBufFrame::from_buf(&mut self.buf)?;
-//
-//         todo!()
-//     }
-// }
+#[repr(transparent)]
+pub struct AllocatedPodIterator<E: SizedPod> {
+    data: AllocatedData<E>,
+}
+
+impl<E: SizedPod> AllocatedPodIterator<E> {
+    pub fn iter(&self) -> PodIterator<E> {
+        PodIterator::new(self.data.as_ptr(), self.data.size())
+    }
+}
+
+pub struct PodIteratorBuilder<'a, E: SizedPod> {
+    buf: PodBuf<'a, E>,
+}
+
+impl<'a, E: SizedPod> PodIteratorBuilder<'a, E> {
+    pub fn new() -> Self {
+        Self { buf: PodBuf::new() }
+    }
+
+    pub fn into_pod_iter(self) -> AllocatedPodIterator<E> {
+        AllocatedPodIterator {
+            data: self.buf.into_pod(),
+        }
+    }
+}
+
+impl<'a, E: SizedPod + PodHeader> PodIteratorBuilder<'a, E> {
+    pub fn push_pod(&mut self, pod_value: &E) -> PodResult<usize> {
+        pod_value.clone_to(&mut self.buf)
+    }
+}
+
+impl<'a, E: SizedPod + WritePod> PodIteratorBuilder<'a, E> {
+    pub fn push_value(&mut self, pod_value: &E::Value) -> PodResult<usize> {
+        E::write_pod(&mut self.buf, pod_value)
+    }
+}
+
+#[test]
+fn test_from_values() {
+    let mut builder: PodIteratorBuilder<PodIntRef> = PodIteratorBuilder::new();
+    builder.push_value(&123).unwrap();
+    builder.push_value(&1).unwrap();
+    builder.push_value(&2).unwrap();
+    builder.push_value(&3).unwrap();
+    builder.push_value(&4).unwrap();
+    let allocated_iter = builder.into_pod_iter();
+
+    let v: Vec<i32> = allocated_iter.iter().map(|e| e.value().unwrap()).collect();
+    assert_eq!(v, vec![123, 1, 2, 3, 4])
+}
+
+#[test]
+fn test_from_pods() {
+    let mut builder: PodIteratorBuilder<PodStringRef> = PodIteratorBuilder::new();
+
+    let string = CString::new("asd").unwrap();
+    let allocated_pod = PodBuf::<PodStringRef>::from_value(&string.as_ref())
+        .unwrap()
+        .into_pod();
+    builder.push_pod(allocated_pod.as_pod()).unwrap();
+
+    let string = CString::new("def").unwrap();
+    let allocated_pod = PodBuf::<PodStringRef>::from_value(&string.as_ref())
+        .unwrap()
+        .into_pod();
+    builder.push_pod(allocated_pod.as_pod()).unwrap();
+
+    let allocated_iter = builder.into_pod_iter();
+
+    let v: Vec<&CStr> = allocated_iter.iter().map(|e| e.value().unwrap()).collect();
+    assert_eq!(v.get(0).unwrap(), &CString::new("asd").unwrap().as_ref());
+    assert_eq!(v.get(1).unwrap(), &CString::new("def").unwrap().as_ref());
+}

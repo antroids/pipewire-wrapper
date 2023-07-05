@@ -9,7 +9,7 @@ use spa_sys::spa_pod;
 use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::type_::pod::iterator::PodValueIterator;
 use crate::spa::type_::pod::pod_buf::PodBuf;
-use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::type_::pod::{
     BasicTypePod, PodError, PodIntRef, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue,
     POD_ALIGN,
@@ -194,6 +194,8 @@ where
         Ok(element_size + element_size * value.alternatives.len())
     }
 }
+
+impl<T> PrimitiveValue for PodEnumRef<T> {}
 
 impl<T> Debug for PodEnumRef<T>
 where

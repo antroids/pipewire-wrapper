@@ -8,7 +8,7 @@ use spa_sys::spa_pod;
 
 use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::type_::pod::iterator::PodValueIterator;
-use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::type_::pod::{
     BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue,
 };
@@ -194,6 +194,8 @@ where
         Ok(element_size * 3)
     }
 }
+
+impl<T> PrimitiveValue for PodRangeRef<T> {}
 
 impl<T> Debug for PodRangeRef<T>
 where

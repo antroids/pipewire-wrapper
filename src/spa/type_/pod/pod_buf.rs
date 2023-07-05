@@ -35,9 +35,20 @@ where
     }
 }
 
+impl<'a, T> PodBuf<'a, T>
+where
+    T: WritePod,
+{
+    pub fn from_primitive_value(value: T::Value) -> PodResult<Self> {
+        let mut buf = Self::new();
+        T::write_pod(&mut buf, &value)?;
+        Ok(buf)
+    }
+}
+
 impl<'a, T> PodBuf<'a, T> {
-    pub fn into_pod(self) -> AllocatedPod<T> {
-        AllocatedPod {
+    pub fn into_pod(self) -> AllocatedData<T> {
+        AllocatedData {
             data: self.data,
             phantom: PhantomData::default(),
         }
@@ -119,75 +130,89 @@ impl<'a, T> Seek for PodBuf<'a, T> {
     }
 }
 
-pub struct AllocatedPod<T> {
+pub struct AllocatedData<T> {
     data: Vec<AlignedDataType>,
     phantom: PhantomData<T>,
 }
 
-impl<T> AllocatedPod<T> {
+impl<T> AllocatedData<T> {
     pub fn as_pod(&self) -> &T {
-        unsafe { (self.data.as_ptr() as *const T).as_ref().unwrap() }
+        unsafe { self.as_ptr().as_ref().unwrap() }
     }
 
     pub fn as_pod_mut(&mut self) -> &mut T {
-        unsafe { (self.data.as_mut_ptr() as *mut T).as_mut().unwrap() }
+        unsafe { &mut *(self.as_mut_ptr()) }
+    }
+
+    pub(crate) fn as_ptr(&self) -> *const T {
+        self.data.as_ptr() as *const _ as *const T
+    }
+
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut T {
+        self.data.as_mut_ptr() as *mut _ as *mut T
+    }
+
+    pub fn size(&self) -> usize {
+        self.data.len() * size_of::<AlignedDataType>()
     }
 }
 
-pub struct PodBufFrame<'a, T>
-where
-    T: 'a,
-{
-    buf: &'a mut PodBuf<'a, T>,
-    start_pos: u64,
-}
-
-impl<'a, T> PodBufFrame<'a, T> {
-    pub(crate) fn from_buf(buffer: &'a mut PodBuf<'a, T>) -> PodResult<Self> {
-        let position = buffer.stream_position()?;
-        Ok(Self {
-            buf: buffer,
-            start_pos: position,
-        })
-    }
-}
-
-impl<'a, T> Write for PodBufFrame<'a, T> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.buf.write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
-
-impl<'a, T> Seek for PodBufFrame<'a, T> {
-    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
-        let (from, offset) = match pos {
-            SeekFrom::Start(pos) => return self.buf.seek(SeekFrom::Start(self.start_pos + pos)),
-            SeekFrom::End(pos_from_end) => {
-                (self.buf.data_size() as u64 - self.start_pos, pos_from_end)
-            }
-            SeekFrom::Current(pos_from_current) => {
-                (self.buf.pos - self.start_pos, pos_from_current)
-            }
-        };
-
-        if let Some(pos) = from.checked_add_signed(offset) {
-            self.seek(SeekFrom::Start(pos))
-        } else {
-            Err(std::io::Error::new(
-                ErrorKind::InvalidInput,
-                "invalid seek to a negative or overflowing position",
-            ))
-        }
-    }
-}
+// pub struct PodBufFrame<'a, T>
+// where
+//     T: 'a,
+// {
+//     buf: &'a mut PodBuf<'a, T>,
+//     start_pos: u64,
+// }
+//
+// impl<'a, T> PodBufFrame<'a, T> {
+//     pub(crate) fn from_buf(buffer: &'a mut PodBuf<'a, T>) -> PodResult<Self> {
+//         let position = buffer.stream_position()?;
+//         Ok(Self {
+//             buf: buffer,
+//             start_pos: position,
+//         })
+//     }
+// }
+//
+// impl<'a, T> Write for PodBufFrame<'a, T> {
+//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+//         self.buf.write(buf)
+//     }
+//
+//     fn flush(&mut self) -> io::Result<()> {
+//         Ok(())
+//     }
+// }
+//
+// impl<'a, T> Seek for PodBufFrame<'a, T> {
+//     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
+//         let (from, offset) = match pos {
+//             SeekFrom::Start(pos) => return self.buf.seek(SeekFrom::Start(self.start_pos + pos)),
+//             SeekFrom::End(pos_from_end) => {
+//                 (self.buf.data_size() as u64 - self.start_pos, pos_from_end)
+//             }
+//             SeekFrom::Current(pos_from_current) => {
+//                 (self.buf.pos - self.start_pos, pos_from_current)
+//             }
+//         };
+//
+//         if let Some(pos) = from.checked_add_signed(offset) {
+//             self.seek(SeekFrom::Start(pos))
+//         } else {
+//             Err(std::io::Error::new(
+//                 ErrorKind::InvalidInput,
+//                 "invalid seek to a negative or overflowing position",
+//             ))
+//         }
+//     }
+// }
 
 #[test]
 fn test_buf_from_value() {
-    let allocated_pod = PodBuf::<PodBoolRef>::from_value(&true).unwrap().into_pod();
+    let allocated_pod = PodBuf::<PodBoolRef>::from_primitive_value(true)
+        .unwrap()
+        .into_pod();
     assert_eq!(allocated_pod.data.as_ptr().align_offset(POD_ALIGN), 0);
     assert_eq!(allocated_pod.as_pod().pod_size(), 12);
     assert_eq!(allocated_pod.as_pod().pod_header().size, 4);
@@ -195,7 +220,7 @@ fn test_buf_from_value() {
     assert_eq!(allocated_pod.as_pod().value().unwrap(), true);
     assert_eq!(allocated_pod.as_pod().raw_value(), 1);
 
-    let allocated_pod = PodBuf::<PodLongRef>::from_value(&123456789)
+    let allocated_pod = PodBuf::<PodLongRef>::from_primitive_value(123456789)
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.data.as_ptr().align_offset(POD_ALIGN), 0);

@@ -9,7 +9,7 @@ use spa_sys::spa_pod;
 use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::type_::pod::iterator::PodValueIterator;
 use crate::spa::type_::pod::pod_buf::PodBuf;
-use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::type_::pod::{
     BasicTypePod, PodError, PodIntRef, PodLongRef, PodRef, PodResult, PodValue, SizedPod, WritePod,
     WriteValue, POD_ALIGN,
@@ -167,6 +167,8 @@ where
     }
 }
 
+impl<T> PrimitiveValue for PodNoneRef<T> {}
+
 impl<T> Debug for PodNoneRef<T>
 where
     T: PodValue,
@@ -183,7 +185,7 @@ where
 
 #[test]
 fn test_from_value() {
-    let allocated_pod = PodBuf::<PodNoneRef<PodLongRef>>::from_value(&Some(1234567i64))
+    let allocated_pod = PodBuf::<PodNoneRef<PodLongRef>>::from_primitive_value(Some(1234567i64))
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
@@ -202,7 +204,7 @@ fn test_from_value() {
     assert_eq!(allocated_pod.as_pod().choice().body().child().size(), 8);
     assert_eq!(allocated_pod.as_pod().value().unwrap(), Some(1234567i64));
 
-    let allocated_pod = PodBuf::<PodNoneRef<PodIntRef>>::from_value(&None)
+    let allocated_pod = PodBuf::<PodNoneRef<PodIntRef>>::from_primitive_value(None)
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);

@@ -26,7 +26,7 @@ use crate::spa::type_::pod::object::param_profile::ParamProfileType;
 use crate::spa::type_::pod::object::param_route::ParamRouteType;
 use crate::spa::type_::pod::object::profiler::ProfilerType;
 use crate::spa::type_::pod::object::prop::Prop;
-use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::restricted::{CloneTo, PodHeader, StaticTypePod};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
@@ -235,11 +235,11 @@ where
     where
         W: Write + Seek,
         T: WritePod,
-        T: SizedPod,
+        T: CloneTo,
     {
         buffer.write_all(&key.to_ne_bytes())?;
         buffer.write_all(&flags.to_ne_bytes())?;
-        Ok(size_of::<u32>() * 2 + pod.write_into(buffer)?)
+        Ok(size_of::<u32>() * 2 + pod.clone_to(buffer)?)
     }
 }
 

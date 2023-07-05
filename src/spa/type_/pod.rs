@@ -23,8 +23,11 @@ use struct_::PodStructRef;
 use crate::spa::type_::object::PodObjectRef;
 use crate::spa::type_::pod::choice::ChoiceType;
 use crate::spa::type_::pod::object::prop::Prop;
+use crate::spa::type_::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::type_::pod::pointer::PodPointerRef;
-use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::restricted::{
+    CloneTo, PodHeader, PrimitiveValue, SizedPod, StaticTypePod,
+};
 use crate::spa::type_::{FractionRef, RectangleRef, Type};
 use crate::wrapper::RawWrapper;
 
@@ -60,6 +63,8 @@ macro_rules! primitive_type_pod_impl {
     };
 
     ($pod_ref_type:ty, $pod_type:expr, $value_raw_type:ty, $value_type:ty, $value_ident:ident, $convert_value_expr:expr) => {
+        impl restricted::PrimitiveValue for $pod_ref_type {}
+
         impl PodValue for $pod_ref_type {
             type Value = $value_type;
             type RawValue = $value_raw_type;
@@ -225,17 +230,6 @@ type PodResult<T> = Result<T, PodError>;
 
 const POD_ALIGN: usize = 8;
 
-pub trait SizedPod {
-    fn pod_size(&self) -> usize;
-
-    fn write_into(&self, buffer: &mut impl Write) -> PodResult<usize> {
-        let size = self.pod_size();
-        let slice = unsafe { slice::from_raw_parts(self as *const Self as *const u8, size) };
-        buffer.write_all(slice)?;
-        Ok(size)
-    }
-}
-
 pub trait PodValue {
     type Value: Debug;
     type RawValue;
@@ -250,6 +244,7 @@ pub trait PodValue {
 impl<'a, T> PodValue for &'a T
 where
     T: PodValue,
+    T: PrimitiveValue,
 {
     type Value = T::Value;
     type RawValue = T::RawValue;
@@ -267,7 +262,7 @@ where
     }
 }
 
-pub trait WritePod: PodValue {
+pub trait WritePod: PodValue + Sized {
     fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: std::io::Write + std::io::Seek;
@@ -314,10 +309,15 @@ pub trait WritePod: PodValue {
         W: std::io::Write + std::io::Seek,
     {
         let position = buffer.stream_position()? as usize;
-        let padding_len = position.rem(POD_ALIGN);
-        let padding = vec![0u8; padding_len];
-        buffer.write_all(padding.as_slice())?;
-        Ok(padding_len)
+        let rem = position.rem(POD_ALIGN);
+        if rem > 0 {
+            let padding_len = POD_ALIGN - rem;
+            let padding = vec![0u8; padding_len];
+            buffer.write_all(padding.as_slice())?;
+            Ok(padding_len)
+        } else {
+            Ok(0)
+        }
     }
 
     fn write_end_than_start<W, S, E>(
@@ -332,9 +332,10 @@ pub trait WritePod: PodValue {
         E: FnOnce(&mut W) -> PodResult<usize>,
     {
         let start_pos = buffer.stream_position()?;
-        buffer.seek(SeekFrom::Current(start_size as i64))?;
-        let end_size = end(buffer)?;
+        let end_pos = buffer.seek(SeekFrom::Current(start_size as i64))?;
+        end(buffer)?;
         let after_end_pos = buffer.stream_position()?;
+        let end_size = (after_end_pos - end_pos) as usize;
         buffer.seek(SeekFrom::Start(start_pos))?;
         let actual_start_size = start(buffer, end_size)?;
         buffer.seek(SeekFrom::Start(after_end_pos))?;
@@ -358,6 +359,7 @@ pub trait WriteValue: PodValue {
 impl<'a, T> WritePod for &'a T
 where
     T: WritePod,
+    T: PrimitiveValue,
 {
     fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
@@ -370,6 +372,7 @@ where
 impl<'a, T> WriteValue for &'a T
 where
     T: WriteValue,
+    T: PrimitiveValue,
 {
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
@@ -385,25 +388,48 @@ impl<T: PodHeader> SizedPod for T {
     }
 }
 
-impl<'a, T: PodHeader> PodHeader for &'a T {
-    fn pod_header(&self) -> &spa_pod {
-        (*self).pod_header()
+impl<T: PodHeader> CloneTo for &T {
+    fn clone_to(&self, buffer: &mut impl Write) -> PodResult<usize> {
+        let size = self.pod_size();
+        let slice = unsafe { slice::from_raw_parts(*self as *const T as *const u8, size) };
+        buffer.write_all(slice)?;
+        let rem = size.rem(POD_ALIGN);
+        if rem > 0 {
+            let padding_len = POD_ALIGN - rem;
+            let padding = vec![0u8; padding_len];
+            buffer.write_all(padding.as_slice())?;
+            Ok(padding_len)
+        } else {
+            Ok(0)
+        }
     }
 }
 
 pub(crate) mod restricted {
     use std::any::{Any, TypeId};
     use std::fmt::Debug;
+    use std::io::Write;
     use std::mem::size_of;
     use std::ptr::addr_of;
+    use std::slice;
 
     use spa_sys::spa_pod;
 
     use crate::spa::type_::pod::choice::enum_::PodEnumRef;
     use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceRef};
-    use crate::spa::type_::pod::{PodError, PodRef, PodResult, PodValue, SizedPod};
+    use crate::spa::type_::pod::{PodError, PodRef, PodResult, PodValue};
     use crate::spa::type_::Type;
     use crate::wrapper::RawWrapper;
+
+    pub trait SizedPod {
+        fn pod_size(&self) -> usize;
+    }
+
+    pub trait PrimitiveValue {}
+
+    pub trait CloneTo {
+        fn clone_to(&self, buffer: &mut impl Write) -> PodResult<usize>;
+    }
 
     pub trait PodHeader {
         fn pod_header(&self) -> &spa_sys::spa_pod;

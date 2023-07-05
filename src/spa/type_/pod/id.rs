@@ -7,7 +7,7 @@ use spa_sys::spa_pod;
 
 use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::pod_buf::PodBuf;
-use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::type_::pod::{
     BasicTypePod, PodError, PodResult, PodValue, SizedPod, WritePod, WriteValue, POD_ALIGN,
 };
@@ -75,6 +75,8 @@ where
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
 }
+
+impl<'a, T: PodIdType> PrimitiveValue for PodIdRef<T> {}
 
 impl<T: PodIdType> WritePod for PodIdRef<T>
 where
