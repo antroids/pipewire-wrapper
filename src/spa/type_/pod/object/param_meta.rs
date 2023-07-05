@@ -1,8 +1,10 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
-use crate::spa::type_::pod::{BasicTypePod, PodError, PodIntRef};
+use crate::spa::type_::pod::{BasicTypePod, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
@@ -26,7 +28,17 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamMetaType<'a>>> for ParamMetaType<'a> {
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ParamMetaType<'a> {}
+impl<'a> PodPropKeyType<'a> for ParamMetaType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ParamMetaType::TYPE(pod) => Self::write_pod_prop(buffer, ParamMeta::TYPE.raw, 0, pod),
+            ParamMetaType::SIZE(pod) => Self::write_pod_prop(buffer, ParamMeta::SIZE.raw, 0, pod),
+        }
+    }
+}
 
 enum_wrapper!(
     ParamMeta,

@@ -1,3 +1,5 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::array::PodArrayRef;
@@ -7,6 +9,7 @@ use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
     BasicTypePod, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef, PodIntRef, PodLongRef,
+    PodResult,
 };
 use crate::wrapper::RawWrapper;
 
@@ -60,7 +63,111 @@ pub enum ObjectPropType<'a> {
     PARAMS(&'a PodStructRef) = Prop::PARAMS.raw,
 }
 
-impl<'a> PodPropKeyType<'a> for ObjectPropType<'a> {}
+impl<'a> PodPropKeyType<'a> for ObjectPropType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ObjectPropType::DEVICE(pod) => Self::write_pod_prop(buffer, Prop::DEVICE.raw, 0, pod),
+            ObjectPropType::DEVICE_NAME(pod) => {
+                Self::write_pod_prop(buffer, Prop::DEVICE_NAME.raw, 0, pod)
+            }
+            ObjectPropType::DEVICE_FD(pod) => {
+                Self::write_pod_prop(buffer, Prop::DEVICE_FD.raw, 0, pod)
+            }
+            ObjectPropType::CARD(pod) => Self::write_pod_prop(buffer, Prop::CARD.raw, 0, pod),
+            ObjectPropType::CARD_NAME(pod) => {
+                Self::write_pod_prop(buffer, Prop::CARD_NAME.raw, 0, pod)
+            }
+            ObjectPropType::MIN_LATENCY(pod) => {
+                Self::write_pod_prop(buffer, Prop::MIN_LATENCY.raw, 0, pod)
+            }
+            ObjectPropType::MAX_LATENCY(pod) => {
+                Self::write_pod_prop(buffer, Prop::MAX_LATENCY.raw, 0, pod)
+            }
+            ObjectPropType::PERIODS(pod) => Self::write_pod_prop(buffer, Prop::PERIODS.raw, 0, pod),
+            ObjectPropType::PERIOD_SIZE(pod) => {
+                Self::write_pod_prop(buffer, Prop::PERIOD_SIZE.raw, 0, pod)
+            }
+            ObjectPropType::PERIOD_EVENT(pod) => {
+                Self::write_pod_prop(buffer, Prop::PERIOD_EVENT.raw, 0, pod)
+            }
+            ObjectPropType::LIVE(pod) => Self::write_pod_prop(buffer, Prop::LIVE.raw, 0, pod),
+            ObjectPropType::RATE(pod) => Self::write_pod_prop(buffer, Prop::RATE.raw, 0, pod),
+            ObjectPropType::QUALITY(pod) => Self::write_pod_prop(buffer, Prop::QUALITY.raw, 0, pod),
+            ObjectPropType::BLUETOOTH_AUDIO_CODEC(pod) => {
+                Self::write_pod_prop(buffer, Prop::BLUETOOTH_AUDIO_CODEC.raw, 0, pod)
+            }
+            ObjectPropType::WAVE_TYPE(pod) => {
+                Self::write_pod_prop(buffer, Prop::WAVE_TYPE.raw, 0, pod)
+            }
+            ObjectPropType::FREQUENCY(pod) => {
+                Self::write_pod_prop(buffer, Prop::FREQUENCY.raw, 0, pod)
+            }
+            ObjectPropType::VOLUME(pod) => Self::write_pod_prop(buffer, Prop::VOLUME.raw, 0, pod),
+            ObjectPropType::MUTE(pod) => Self::write_pod_prop(buffer, Prop::MUTE.raw, 0, pod),
+            ObjectPropType::PATTERN_TYPE(pod) => {
+                Self::write_pod_prop(buffer, Prop::PATTERN_TYPE.raw, 0, pod)
+            }
+            ObjectPropType::DITHER_TYPE(pod) => {
+                Self::write_pod_prop(buffer, Prop::DITHER_TYPE.raw, 0, pod)
+            }
+            ObjectPropType::TRUNCATE(pod) => {
+                Self::write_pod_prop(buffer, Prop::TRUNCATE.raw, 0, pod)
+            }
+            ObjectPropType::CHANNEL_VOLUMES(pod) => {
+                Self::write_pod_prop(buffer, Prop::CHANNEL_VOLUMES.raw, 0, pod)
+            }
+            ObjectPropType::VOLUME_BASE(pod) => {
+                Self::write_pod_prop(buffer, Prop::VOLUME_BASE.raw, 0, pod)
+            }
+            ObjectPropType::VOLUME_STEP(pod) => {
+                Self::write_pod_prop(buffer, Prop::VOLUME_STEP.raw, 0, pod)
+            }
+            ObjectPropType::CHANNEL_MAP(pod) => {
+                Self::write_pod_prop(buffer, Prop::CHANNEL_MAP.raw, 0, pod)
+            }
+            ObjectPropType::MONITOR_MUTE(pod) => {
+                Self::write_pod_prop(buffer, Prop::MONITOR_MUTE.raw, 0, pod)
+            }
+            ObjectPropType::MONITOR_VOLUMES(pod) => {
+                Self::write_pod_prop(buffer, Prop::MONITOR_VOLUMES.raw, 0, pod)
+            }
+            ObjectPropType::LATENCY_OFFSET_NSEC(pod) => {
+                Self::write_pod_prop(buffer, Prop::LATENCY_OFFSET_NSEC.raw, 0, pod)
+            }
+            ObjectPropType::SOFT_MUTE(pod) => {
+                Self::write_pod_prop(buffer, Prop::SOFT_MUTE.raw, 0, pod)
+            }
+            ObjectPropType::SOFT_VOLUMES(pod) => {
+                Self::write_pod_prop(buffer, Prop::SOFT_VOLUMES.raw, 0, pod)
+            }
+            ObjectPropType::IEC958_CODECS(pod) => {
+                Self::write_pod_prop(buffer, Prop::IEC958_CODECS.raw, 0, pod)
+            }
+            ObjectPropType::BRIGHTNESS(pod) => {
+                Self::write_pod_prop(buffer, Prop::BRIGHTNESS.raw, 0, pod)
+            }
+            ObjectPropType::CONTRAST(pod) => {
+                Self::write_pod_prop(buffer, Prop::CONTRAST.raw, 0, pod)
+            }
+            ObjectPropType::SATURATION(pod) => {
+                Self::write_pod_prop(buffer, Prop::SATURATION.raw, 0, pod)
+            }
+            ObjectPropType::HUE(pod) => Self::write_pod_prop(buffer, Prop::HUE.raw, 0, pod),
+            ObjectPropType::GAMMA(pod) => Self::write_pod_prop(buffer, Prop::GAMMA.raw, 0, pod),
+            ObjectPropType::EXPOSURE(pod) => {
+                Self::write_pod_prop(buffer, Prop::EXPOSURE.raw, 0, pod)
+            }
+            ObjectPropType::GAIN(pod) => Self::write_pod_prop(buffer, Prop::GAIN.raw, 0, pod),
+            ObjectPropType::SHARPNESS(pod) => {
+                Self::write_pod_prop(buffer, Prop::SHARPNESS.raw, 0, pod)
+            }
+            ObjectPropType::PARAMS(pod) => Self::write_pod_prop(buffer, Prop::PARAMS.raw, 0, pod),
+        }
+    }
+}
 
 impl<'a> TryFrom<&'a PodPropRef<'a, ObjectPropType<'a>>> for ObjectPropType<'a> {
     type Error = PodError;

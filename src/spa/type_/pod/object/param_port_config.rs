@@ -1,10 +1,12 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::object::{PodObjectRef, PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
-use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef};
+use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
@@ -36,7 +38,30 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamPortConfigType<'a>>> for ParamPortConfi
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ParamPortConfigType<'a> {}
+impl<'a> PodPropKeyType<'a> for ParamPortConfigType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ParamPortConfigType::DIRECTION(pod) => {
+                Self::write_pod_prop(buffer, ParamPortConfig::DIRECTION.raw, 0, pod)
+            }
+            ParamPortConfigType::MODE(pod) => {
+                Self::write_pod_prop(buffer, ParamPortConfig::MODE.raw, 0, pod)
+            }
+            ParamPortConfigType::MONITOR(pod) => {
+                Self::write_pod_prop(buffer, ParamPortConfig::MONITOR.raw, 0, pod)
+            }
+            ParamPortConfigType::CONTROL(pod) => {
+                Self::write_pod_prop(buffer, ParamPortConfig::CONTROL.raw, 0, pod)
+            }
+            ParamPortConfigType::FORMAT(pod) => {
+                Self::write_pod_prop(buffer, ParamPortConfig::FORMAT.raw, 0, pod)
+            }
+        }
+    }
+}
 
 enum_wrapper!(
     ParamPortConfig,

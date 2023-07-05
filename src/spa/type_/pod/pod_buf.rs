@@ -18,7 +18,6 @@ const DATA_ALIGN: u64 = size_of::<AlignedDataType>() as u64;
 pub struct PodBuf<'a, T>
 where
     T: 'a,
-    &'a T: WritablePod,
 {
     data: Vec<AlignedDataType>,
     pos: u64,
@@ -34,7 +33,9 @@ where
         <&'a T>::write_pod(&mut buf, value)?;
         Ok(buf)
     }
+}
 
+impl<'a, T> PodBuf<'a, T> {
     pub fn into_pod(self) -> AllocatedPod<T> {
         AllocatedPod {
             data: self.data,
@@ -42,7 +43,7 @@ where
         }
     }
 
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             data: vec![ZEROED_ALIGNED_DATA],
             pos: 0,
@@ -73,19 +74,7 @@ where
     }
 }
 
-impl<'a, T> PodBuf<'a, T>
-where
-    &'a T: WritablePod,
-    <&'a T as ReadablePod>::Value: Iterator,
-    <<&'a T as ReadablePod>::Value as Iterator>::Item: SizedPod,
-{
-    // todo
-}
-
-impl<'a, T> Write for PodBuf<'a, T>
-where
-    &'a T: WritablePod,
-{
+impl<'a, T> Write for PodBuf<'a, T> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let start_pos = self.pos;
         let end_pos = self
@@ -107,10 +96,7 @@ where
     }
 }
 
-impl<'a, T> Seek for PodBuf<'a, T>
-where
-    &'a T: WritablePod,
-{
+impl<'a, T> Seek for PodBuf<'a, T> {
     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
         let (from, offset) = match pos {
             SeekFrom::Start(pos) => {
@@ -151,18 +137,21 @@ impl<T> AllocatedPod<T> {
 pub struct PodBufFrame<'a, T>
 where
     T: 'a,
-    T: RawWrapper,
-    &'a T: WritablePod,
 {
     buf: &'a mut PodBuf<'a, T>,
     start_pos: u64,
 }
 
-impl<'a, T> Write for PodBufFrame<'a, T>
-where
-    T: RawWrapper,
-    &'a T: WritablePod,
-{
+impl<'a, T> PodBufFrame<'a, T> {
+    pub(crate) fn from_buf(buffer: &mut PodBuf<'a, T>) -> PodResult<Self> {
+        Ok(Self {
+            buf: buffer,
+            start_pos: buffer.stream_position()?,
+        })
+    }
+}
+
+impl<'a, T> Write for PodBufFrame<'a, T> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.buf.write(buf)
     }
@@ -172,11 +161,7 @@ where
     }
 }
 
-impl<'a, T> Seek for PodBufFrame<'a, T>
-where
-    T: RawWrapper,
-    &'a T: WritablePod,
-{
+impl<'a, T> Seek for PodBufFrame<'a, T> {
     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
         let (from, offset) = match pos {
             SeekFrom::Start(pos) => return self.buf.seek(SeekFrom::Start(self.start_pos + pos)),

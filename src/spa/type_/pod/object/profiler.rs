@@ -1,3 +1,5 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
@@ -5,7 +7,7 @@ use crate::spa::type_::pod::object::param_port_config::Direction;
 use crate::spa::type_::pod::object::{PodObjectRef, PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
-use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef};
+use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
@@ -34,7 +36,23 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ProfilerType<'a>>> for ProfilerType<'a> {
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ProfilerType<'a> {}
+impl<'a> PodPropKeyType<'a> for ProfilerType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ProfilerType::INFO(pod) => Self::write_pod_prop(buffer, Profiler::INFO.raw, 0, pod),
+            ProfilerType::CLOCK(pod) => Self::write_pod_prop(buffer, Profiler::CLOCK.raw, 0, pod),
+            ProfilerType::DRIVER_BLOCK(pod) => {
+                Self::write_pod_prop(buffer, Profiler::DRIVER_BLOCK.raw, 0, pod)
+            }
+            ProfilerType::FOLLOWER_BLOCK(pod) => {
+                Self::write_pod_prop(buffer, Profiler::FOLLOWER_BLOCK.raw, 0, pod)
+            }
+        }
+    }
+}
 
 enum_wrapper!(
     Profiler,

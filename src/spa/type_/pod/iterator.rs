@@ -1,9 +1,11 @@
 use core::slice;
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 
-use crate::spa::type_::pod::{BasicTypePod, PodValueParser, SizedPod, POD_ALIGN};
+use crate::spa::type_::pod::pod_buf::{PodBuf, PodBufFrame};
+use crate::spa::type_::pod::{BasicTypePod, PodResult, PodValueParser, SizedPod, POD_ALIGN};
 
 pub struct PodIterator<'a, C: SizedPod, E: SizedPod> {
     container: &'a C,
@@ -125,3 +127,23 @@ impl<'a, E: PodValueParser<*const u8> + 'a> Debug for PodValueIterator<'a, E> {
         f.debug_struct("PodValueParser").finish()
     }
 }
+
+// pub struct PodIteratorBuilder<'a, C: SizedPod, E: SizedPod> {
+//     buf: PodBuf<'a, PodIterator<'a, C, E>>,
+// }
+//
+// impl<'a, C: SizedPod, E: SizedPod> PodIteratorBuilder<'a, C, E> {
+//     pub fn new() -> Self {
+//         Self { buf: PodBuf::new() }
+//     }
+//
+//     pub fn element<F, W>(&mut self, write_element: F) -> PodResult<usize>
+//     where
+//         W: Write + Seek,
+//         F: FnOnce(&mut W),
+//     {
+//         let frame = PodBufFrame::from_buf(&mut self.buf)?;
+//
+//         todo!()
+//     }
+// }

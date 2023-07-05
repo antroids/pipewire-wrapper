@@ -1,3 +1,5 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::array::PodArrayRef;
@@ -7,7 +9,8 @@ use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::object::prop::AudioIec958Codec;
 use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef,
+    BasicTypePod, PodError, PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef, PodResult,
+    ReadablePod, WritableValue,
 };
 use crate::wrapper::RawWrapper;
 
@@ -130,7 +133,102 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ObjectFormatType<'a>>> for ObjectFormatType<
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ObjectFormatType<'a> {}
+impl<'a> PodPropKeyType<'a> for ObjectFormatType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ObjectFormatType::MEDIA_TYPE(pod) => {
+                Self::write_pod_prop(buffer, Format::MEDIA_TYPE.raw, 0, pod)
+            }
+            ObjectFormatType::MEDIA_SUBTYPE(pod) => {
+                Self::write_pod_prop(buffer, Format::MEDIA_SUBTYPE.raw, 0, pod)
+            }
+            ObjectFormatType::AUDIO_FORMAT(pod) => {
+                Self::write_pod_prop(buffer, Format::AUDIO_FORMAT.raw, 0, pod)
+            }
+            ObjectFormatType::AUDIO_FLAGS(pod) => {
+                Self::write_pod_prop(buffer, Format::AUDIO_FLAGS.raw, 0, pod)
+            }
+            ObjectFormatType::AUDIO_RATE(pod) => {
+                Self::write_pod_prop(buffer, Format::AUDIO_RATE.raw, 0, pod)
+            }
+            ObjectFormatType::AUDIO_CHANNELS(pod) => {
+                Self::write_pod_prop(buffer, Format::AUDIO_CHANNELS.raw, 0, pod)
+            }
+            ObjectFormatType::AUDIO_POSITION(pod) => {
+                Self::write_pod_prop(buffer, Format::AUDIO_POSITION.raw, 0, pod)
+            }
+            ObjectFormatType::AUDIO_IEC958CODEC(pod) => {
+                Self::write_pod_prop(buffer, Format::AUDIO_IEC958CODEC.raw, 0, pod)
+            }
+            ObjectFormatType::AUDIO_BITORDER(pod) => {
+                Self::write_pod_prop(buffer, Format::AUDIO_BITORDER.raw, 0, pod)
+            }
+            ObjectFormatType::AUDIO_INTERLEAVE(pod) => {
+                Self::write_pod_prop(buffer, Format::AUDIO_INTERLEAVE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_FORMAT(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_FORMAT.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_MODIFIER(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_MODIFIER.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_SIZE(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_SIZE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_FRAMERATE(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_FRAMERATE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_MAX_FRAMERATE(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_MAX_FRAMERATE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_VIEWS(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_VIEWS.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_INTERLACE_MODE(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_INTERLACE_MODE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_PIXEL_ASPECT_RATIO(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_PIXEL_ASPECT_RATIO.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_MULTIVIEW_MODE(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_MULTIVIEW_MODE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_MULTIVIEW_FLAGS(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_MULTIVIEW_FLAGS.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_CHROMA_SITE(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_CHROMA_SITE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_COLOR_RANGE(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_COLOR_RANGE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_COLOR_MATRIX(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_COLOR_MATRIX.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_TRANSFER_FUNCTION(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_TRANSFER_FUNCTION.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_COLOR_PRIMARIES(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_COLOR_PRIMARIES.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_PROFILE(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_PROFILE.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_LEVEL(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_LEVEL.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_H264_STREAM_FORMAT(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_H264_STREAM_FORMAT.raw, 0, pod)
+            }
+            ObjectFormatType::VIDEO_H264_ALIGNMENT(pod) => {
+                Self::write_pod_prop(buffer, Format::VIDEO_H264_ALIGNMENT.raw, 0, pod)
+            }
+        }
+    }
+}
 
 enum_wrapper!(
     Format,

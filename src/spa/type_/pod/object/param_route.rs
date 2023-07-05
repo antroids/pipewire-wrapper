@@ -1,3 +1,5 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
@@ -5,7 +7,7 @@ use crate::spa::type_::pod::object::param_port_config::Direction;
 use crate::spa::type_::pod::object::{PodObjectRef, PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
-use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef};
+use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
@@ -50,7 +52,48 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamRouteType<'a>>> for ParamRouteType<'a> 
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ParamRouteType<'a> {}
+impl<'a> PodPropKeyType<'a> for ParamRouteType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ParamRouteType::INDEX(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::INDEX.raw, 0, pod)
+            }
+            ParamRouteType::DIRECTION(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::DIRECTION.raw, 0, pod)
+            }
+            ParamRouteType::DEVICE(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::DEVICE.raw, 0, pod)
+            }
+            ParamRouteType::NAME(pod) => Self::write_pod_prop(buffer, ParamRoute::NAME.raw, 0, pod),
+            ParamRouteType::DESCRIPTION(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::DESCRIPTION.raw, 0, pod)
+            }
+            ParamRouteType::PRIORITY(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::PRIORITY.raw, 0, pod)
+            }
+            ParamRouteType::AVAILABLE(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::AVAILABLE.raw, 0, pod)
+            }
+            ParamRouteType::INFO(pod) => Self::write_pod_prop(buffer, ParamRoute::INFO.raw, 0, pod),
+            ParamRouteType::PROFILES(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::PROFILES.raw, 0, pod)
+            }
+            ParamRouteType::PROPS(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::PROPS.raw, 0, pod)
+            }
+            ParamRouteType::DEVICES(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::DEVICES.raw, 0, pod)
+            }
+            ParamRouteType::PROFILE(pod) => {
+                Self::write_pod_prop(buffer, ParamRoute::PROFILE.raw, 0, pod)
+            }
+            ParamRouteType::SAVE(pod) => Self::write_pod_prop(buffer, ParamRoute::SAVE.raw, 0, pod),
+        }
+    }
+}
 
 enum_wrapper!(
     ParamRoute,

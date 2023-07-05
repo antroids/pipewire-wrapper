@@ -1,7 +1,9 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
-use crate::spa::type_::pod::{BasicTypePod, PodError, PodIntRef};
+use crate::spa::type_::pod::{BasicTypePod, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
@@ -34,7 +36,33 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamBuffersType<'a>>> for ParamBuffersType<
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ParamBuffersType<'a> {}
+impl<'a> PodPropKeyType<'a> for ParamBuffersType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ParamBuffersType::BUFFERS(pod) => {
+                Self::write_pod_prop(buffer, ParamBuffers::BUFFERS.raw, 0, pod)
+            }
+            ParamBuffersType::BLOCKS(pod) => {
+                Self::write_pod_prop(buffer, ParamBuffers::BLOCKS.raw, 0, pod)
+            }
+            ParamBuffersType::SIZE(pod) => {
+                Self::write_pod_prop(buffer, ParamBuffers::SIZE.raw, 0, pod)
+            }
+            ParamBuffersType::STRIDE(pod) => {
+                Self::write_pod_prop(buffer, ParamBuffers::STRIDE.raw, 0, pod)
+            }
+            ParamBuffersType::ALIGN(pod) => {
+                Self::write_pod_prop(buffer, ParamBuffers::ALIGN.raw, 0, pod)
+            }
+            ParamBuffersType::DATATYPE(pod) => {
+                Self::write_pod_prop(buffer, ParamBuffers::DATATYPE.raw, 0, pod)
+            }
+        }
+    }
+}
 
 enum_wrapper!(
     ParamBuffers,

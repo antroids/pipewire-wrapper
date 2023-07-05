@@ -1,12 +1,14 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
-use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodRef};
 use crate::spa::type_::pod::choice::PodChoiceRef;
 use crate::spa::type_::pod::id::PodIdRef;
-use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::object::prop::Prop;
+use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
+use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
@@ -22,7 +24,34 @@ pub enum ObjectPropInfoType<'a> {
     DESCRIPTION(&'a PodStringRef) = PropInfo::DESCRIPTION.raw,
 }
 
-impl<'a> PodPropKeyType<'a> for ObjectPropInfoType<'a> {}
+impl<'a> PodPropKeyType<'a> for ObjectPropInfoType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ObjectPropInfoType::ID(pod) => Self::write_pod_prop(buffer, PropInfo::ID.raw, 0, pod),
+            ObjectPropInfoType::NAME(pod) => {
+                Self::write_pod_prop(buffer, PropInfo::NAME.raw, 0, pod)
+            }
+            ObjectPropInfoType::TYPE(pod) => {
+                Self::write_pod_prop(buffer, PropInfo::TYPE.raw, 0, pod)
+            }
+            ObjectPropInfoType::LABELS(pod) => {
+                Self::write_pod_prop(buffer, PropInfo::LABELS.raw, 0, pod)
+            }
+            ObjectPropInfoType::CONTAINER(pod) => {
+                Self::write_pod_prop(buffer, PropInfo::CONTAINER.raw, 0, pod)
+            }
+            ObjectPropInfoType::PARAMS(pod) => {
+                Self::write_pod_prop(buffer, PropInfo::PARAMS.raw, 0, pod)
+            }
+            ObjectPropInfoType::DESCRIPTION(pod) => {
+                Self::write_pod_prop(buffer, PropInfo::DESCRIPTION.raw, 0, pod)
+            }
+        }
+    }
+}
 
 impl<'a> TryFrom<&'a PodPropRef<'a, ObjectPropInfoType<'a>>> for ObjectPropInfoType<'a> {
     type Error = PodError;

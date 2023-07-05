@@ -1,3 +1,5 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
@@ -6,7 +8,7 @@ use crate::spa::type_::pod::object::{PodObjectRef, PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
-    BasicTypePod, PodBoolRef, PodError, PodFloatRef, PodIntRef, PodLongRef,
+    BasicTypePod, PodBoolRef, PodError, PodFloatRef, PodIntRef, PodLongRef, PodResult,
 };
 use crate::wrapper::RawWrapper;
 
@@ -38,7 +40,24 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamProcessLatencyType<'a>>> for ParamProce
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ParamProcessLatencyType<'a> {}
+impl<'a> PodPropKeyType<'a> for ParamProcessLatencyType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ParamProcessLatencyType::QUANTUM(pod) => {
+                Self::write_pod_prop(buffer, ParamProcessLatency::QUANTUM.raw, 0, pod)
+            }
+            ParamProcessLatencyType::RATE(pod) => {
+                Self::write_pod_prop(buffer, ParamProcessLatency::RATE.raw, 0, pod)
+            }
+            ParamProcessLatencyType::NS(pod) => {
+                Self::write_pod_prop(buffer, ParamProcessLatency::NS.raw, 0, pod)
+            }
+        }
+    }
+}
 
 enum_wrapper!(
     ParamProcessLatency,

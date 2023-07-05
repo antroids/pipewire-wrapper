@@ -1,3 +1,5 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
@@ -6,7 +8,7 @@ use crate::spa::type_::pod::object::{PodObjectRef, PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
-    BasicTypePod, PodBoolRef, PodError, PodFloatRef, PodIntRef, PodLongRef,
+    BasicTypePod, PodBoolRef, PodError, PodFloatRef, PodIntRef, PodLongRef, PodResult,
 };
 use crate::wrapper::RawWrapper;
 
@@ -42,7 +44,36 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamLatencyType<'a>>> for ParamLatencyType<
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ParamLatencyType<'a> {}
+impl<'a> PodPropKeyType<'a> for ParamLatencyType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ParamLatencyType::DIRECTION(pod) => {
+                Self::write_pod_prop(buffer, ParamLatency::DIRECTION.raw, 0, pod)
+            }
+            ParamLatencyType::MIN_QUANTUM(pod) => {
+                Self::write_pod_prop(buffer, ParamLatency::MIN_QUANTUM.raw, 0, pod)
+            }
+            ParamLatencyType::MAX_QUANTUM(pod) => {
+                Self::write_pod_prop(buffer, ParamLatency::MAX_QUANTUM.raw, 0, pod)
+            }
+            ParamLatencyType::MIN_RATE(pod) => {
+                Self::write_pod_prop(buffer, ParamLatency::MIN_RATE.raw, 0, pod)
+            }
+            ParamLatencyType::MAX_RATE(pod) => {
+                Self::write_pod_prop(buffer, ParamLatency::MAX_RATE.raw, 0, pod)
+            }
+            ParamLatencyType::MIN_NS(pod) => {
+                Self::write_pod_prop(buffer, ParamLatency::MIN_NS.raw, 0, pod)
+            }
+            ParamLatencyType::MAX_NS(pod) => {
+                Self::write_pod_prop(buffer, ParamLatency::MAX_NS.raw, 0, pod)
+            }
+        }
+    }
+}
 
 enum_wrapper!(
     ParamLatency,

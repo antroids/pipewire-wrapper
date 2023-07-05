@@ -230,10 +230,16 @@ impl Debug for PodError {
 type PodResult<T> = Result<T, PodError>;
 
 const POD_ALIGN: usize = 8;
-const ZEROED_POD: u64 = 0;
 
 pub trait SizedPod {
     fn pod_size(&self) -> usize;
+
+    fn write_into(&self, buffer: &mut impl Write) -> PodResult<usize> {
+        let size = self.pod_size();
+        let slice = unsafe { slice::from_raw_parts(self as *const Self as *const u8, size) };
+        buffer.write_all(slice)?;
+        Ok(size)
+    }
 }
 
 pub trait ReadablePod {
@@ -368,6 +374,12 @@ where
 impl<T: PodHeader> SizedPod for T {
     fn pod_size(&self) -> usize {
         self.pod_header().size as usize + size_of::<spa_sys::spa_pod>()
+    }
+}
+
+impl<'a, T: PodHeader> PodHeader for &'a T {
+    fn pod_header(&self) -> &spa_pod {
+        (*self).pod_header()
     }
 }
 

@@ -1,10 +1,12 @@
+use std::io::{Seek, Write};
+
 use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
-use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef};
+use crate::spa::type_::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
@@ -40,7 +42,39 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamProfileType<'a>>> for ParamProfileType<
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ParamProfileType<'a> {}
+impl<'a> PodPropKeyType<'a> for ParamProfileType<'a> {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        match self {
+            ParamProfileType::INDEX(pod) => {
+                Self::write_pod_prop(buffer, ParamProfile::INDEX.raw, 0, pod)
+            }
+            ParamProfileType::NAME(pod) => {
+                Self::write_pod_prop(buffer, ParamProfile::NAME.raw, 0, pod)
+            }
+            ParamProfileType::DESCRIPTION(pod) => {
+                Self::write_pod_prop(buffer, ParamProfile::DESCRIPTION.raw, 0, pod)
+            }
+            ParamProfileType::PRIORITY(pod) => {
+                Self::write_pod_prop(buffer, ParamProfile::PRIORITY.raw, 0, pod)
+            }
+            ParamProfileType::AVAILABLE(pod) => {
+                Self::write_pod_prop(buffer, ParamProfile::AVAILABLE.raw, 0, pod)
+            }
+            ParamProfileType::INFO(pod) => {
+                Self::write_pod_prop(buffer, ParamProfile::INFO.raw, 0, pod)
+            }
+            ParamProfileType::CLASSES(pod) => {
+                Self::write_pod_prop(buffer, ParamProfile::CLASSES.raw, 0, pod)
+            }
+            ParamProfileType::SAVE(pod) => {
+                Self::write_pod_prop(buffer, ParamProfile::SAVE.raw, 0, pod)
+            }
+        }
+    }
+}
 
 enum_wrapper!(
     ParamProfile,

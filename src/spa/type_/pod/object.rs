@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -30,7 +31,7 @@ use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
     BasicType, BasicTypePod, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef, PodIntRef,
-    PodLongRef, PodRef, PodResult, ReadablePod, SizedPod,
+    PodLongRef, PodRef, PodResult, ReadablePod, SizedPod, WritablePod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -193,6 +194,20 @@ where
     Self: TryFrom<&'a PodPropRef<'a, Self>, Error = PodError>,
     Self: Debug,
 {
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    where
+        W: Write + Seek;
+
+    fn write_pod_prop<W, T>(buffer: &mut W, key: u32, flags: u32, pod: &T) -> PodResult<usize>
+    where
+        W: Write + Seek,
+        T: WritablePod,
+        T: SizedPod,
+    {
+        buffer.write_all(&key.to_ne_bytes())?;
+        buffer.write_all(&flags.to_ne_bytes())?;
+        Ok(size_of::<u32>() * 2 + pod.write_into(buffer)?)
+    }
 }
 
 #[repr(transparent)]
@@ -261,6 +276,15 @@ impl<'a, T: PodPropKeyType<'a>> ReadablePod for &'a PodPropRef<'a, T> {
 
     fn value(&self) -> PodResult<Self::Value> {
         (*self).try_into()
+    }
+}
+
+impl<'a, T: PodPropKeyType<'a>> WritablePod for &'a PodPropRef<'a, T> {
+    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        value.write_prop(buffer)
     }
 }
 
