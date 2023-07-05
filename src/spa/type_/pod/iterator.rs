@@ -36,6 +36,10 @@ impl<'a, E: SizedPod> PodIterator<'a, E> {
         }
     }
 
+    pub fn build() -> PodIteratorBuilder<'a, E> {
+        PodIteratorBuilder::new()
+    }
+
     unsafe fn inside(&self, ptr: *const E) -> bool {
         let max_offset_bytes = self.max_offset_bytes();
         let offset_bytes =
@@ -167,25 +171,36 @@ impl<'a, E: SizedPod> PodIteratorBuilder<'a, E> {
 }
 
 impl<'a, E: SizedPod + PodHeader> PodIteratorBuilder<'a, E> {
-    pub fn push_pod(&mut self, pod_value: &E) -> PodResult<usize> {
-        pod_value.clone_to(&mut self.buf)
+    pub fn push_pod(mut self, pod_value: &E) -> PodResult<Self> {
+        pod_value.clone_to(&mut self.buf)?;
+        Ok(self)
     }
 }
 
-impl<'a, E: SizedPod + WritePod> PodIteratorBuilder<'a, E> {
-    pub fn push_value(&mut self, pod_value: &E::Value) -> PodResult<usize> {
-        E::write_pod(&mut self.buf, pod_value)
+impl<'a, E> PodIteratorBuilder<'a, E>
+where
+    &'a E: WritePod,
+    E: SizedPod,
+{
+    pub fn push_value(mut self, pod_value: &<&'a E as PodValue>::Value) -> PodResult<Self> {
+        <&'a E as WritePod>::write_pod(&mut self.buf, pod_value)?;
+        Ok(self)
     }
 }
 
 #[test]
 fn test_from_values() {
-    let mut builder: PodIteratorBuilder<PodIntRef> = PodIteratorBuilder::new();
-    builder.push_value(&123).unwrap();
-    builder.push_value(&1).unwrap();
-    builder.push_value(&2).unwrap();
-    builder.push_value(&3).unwrap();
-    builder.push_value(&4).unwrap();
+    let mut builder: PodIteratorBuilder<PodIntRef> = PodIteratorBuilder::new()
+        .push_value(&123)
+        .unwrap()
+        .push_value(&1)
+        .unwrap()
+        .push_value(&2)
+        .unwrap()
+        .push_value(&3)
+        .unwrap()
+        .push_value(&4)
+        .unwrap();
     let allocated_iter = builder.into_pod_iter();
 
     let v: Vec<i32> = allocated_iter.iter().map(|e| e.value().unwrap()).collect();
@@ -200,13 +215,13 @@ fn test_from_pods() {
     let allocated_pod = PodBuf::<PodStringRef>::from_value(&string.as_ref())
         .unwrap()
         .into_pod();
-    builder.push_pod(allocated_pod.as_pod()).unwrap();
+    builder = builder.push_pod(allocated_pod.as_pod()).unwrap();
 
     let string = CString::new("def").unwrap();
     let allocated_pod = PodBuf::<PodStringRef>::from_value(&string.as_ref())
         .unwrap()
         .into_pod();
-    builder.push_pod(allocated_pod.as_pod()).unwrap();
+    builder = builder.push_pod(allocated_pod.as_pod()).unwrap();
 
     let allocated_iter = builder.into_pod_iter();
 

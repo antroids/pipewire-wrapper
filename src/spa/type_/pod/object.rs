@@ -15,7 +15,7 @@ use crate::spa::type_::pod::array::PodArrayRef;
 use crate::spa::type_::pod::choice::PodChoiceRef;
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::iterator::PodIterator;
-use crate::spa::type_::pod::object::format::ObjectFormatType;
+use crate::spa::type_::pod::object::format::{MediaSubType, MediaType, ObjectFormatType};
 use crate::spa::type_::pod::object::param_buffers::ParamBuffersType;
 use crate::spa::type_::pod::object::param_io::ParamIoType;
 use crate::spa::type_::pod::object::param_latency::{ParamLatency, ParamLatencyType};
@@ -30,8 +30,8 @@ use crate::spa::type_::pod::restricted::{CloneTo, PodHeader, StaticTypePod};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
-    BasicType, BasicTypePod, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef, PodIntRef,
-    PodLongRef, PodRef, PodResult, PodValue, SizedPod, WritePod,
+    BasicType, BasicTypePod, FromValue, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef,
+    PodIntRef, PodLongRef, PodRef, PodResult, PodValue, SizedPod, WritePod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -160,6 +160,10 @@ impl PodObjectRef {
     pub fn body_id(&self) -> u32 {
         self.body().id()
     }
+
+    pub fn set_body_id(&mut self, id: u32) {
+        self.raw.body.id = id;
+    }
 }
 
 impl<'a> PodValue for &'a PodObjectRef {
@@ -218,6 +222,53 @@ impl<'a> PodValue for &'a PodObjectRef {
 
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
+    }
+}
+
+impl<'a> WritePod for &'a PodObjectRef {
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let (type_, content) = unsafe {
+            match value {
+                ObjectType::OBJECT_PROP_INFO(iter) => (Type::OBJECT_PROP_INFO, iter.as_bytes()),
+                ObjectType::OBJECT_PROPS(iter) => (Type::OBJECT_PROPS, iter.as_bytes()),
+                ObjectType::OBJECT_FORMAT(iter) => (Type::OBJECT_FORMAT, iter.as_bytes()),
+                ObjectType::OBJECT_PARAM_BUFFERS(iter) => {
+                    (Type::OBJECT_PARAM_BUFFERS, iter.as_bytes())
+                }
+                ObjectType::OBJECT_PARAM_META(iter) => (Type::OBJECT_PARAM_META, iter.as_bytes()),
+                ObjectType::OBJECT_PARAM_IO(iter) => (Type::OBJECT_PARAM_IO, iter.as_bytes()),
+                ObjectType::OBJECT_PARAM_PROFILE(iter) => {
+                    (Type::OBJECT_PARAM_PROFILE, iter.as_bytes())
+                }
+                ObjectType::OBJECT_PARAM_PORT_CONFIG(iter) => {
+                    (Type::OBJECT_PARAM_PORT_CONFIG, iter.as_bytes())
+                }
+                ObjectType::OBJECT_PARAM_ROUTE(iter) => (Type::OBJECT_PARAM_ROUTE, iter.as_bytes()),
+                ObjectType::OBJECT_PROFILER(iter) => (Type::OBJECT_PROFILER, iter.as_bytes()),
+                ObjectType::OBJECT_PARAM_LATENCY(iter) => {
+                    (Type::OBJECT_PARAM_LATENCY, iter.as_bytes())
+                }
+                ObjectType::OBJECT_PARAM_PROCESS_LATENCY(iter) => {
+                    (Type::OBJECT_PARAM_PROCESS_LATENCY, iter.as_bytes())
+                }
+            }
+        };
+        let size = Self::write_header(
+            buffer,
+            (size_of::<spa_sys::spa_pod_object_body>() + content.len()) as u32,
+            Type::OBJECT,
+        )? + Self::write_value(
+            buffer,
+            &spa_sys::spa_pod_object_body {
+                type_: type_.raw,
+                id: 0,
+            },
+        )?;
+        buffer.write_all(content)?;
+        Ok(size + Self::write_align_padding(buffer)?)
     }
 }
 
@@ -367,4 +418,41 @@ pub enum ObjectType<'a> {
         Type::OBJECT_PARAM_LATENCY.raw,
     OBJECT_PARAM_PROCESS_LATENCY(ObjectPropsIterator<'a, ParamProcessLatencyType<'a>>) =
         Type::OBJECT_PARAM_PROCESS_LATENCY.raw,
+}
+
+#[test]
+fn from_value() {
+    let mut allocated = PodObjectRef::from_value(&ObjectType::OBJECT_FORMAT(
+        ObjectPropsIterator::build()
+            .push_value(&ObjectFormatType::MEDIA_TYPE(
+                PodIdRef::from_value(&MediaType::AUDIO).unwrap().as_pod(),
+            ))
+            .unwrap()
+            .push_value(&ObjectFormatType::MEDIA_SUBTYPE(
+                PodIdRef::from_value(&MediaSubType::DSP).unwrap().as_pod(),
+            ))
+            .unwrap()
+            .into_pod_iter()
+            .iter(),
+    ))
+    .unwrap();
+    allocated.as_pod_mut().set_body_id(123);
+
+    assert_eq!(allocated.as_pod().body_id(), 123);
+
+    if let ObjectType::OBJECT_FORMAT(mut props) = allocated.as_pod().value().unwrap() {
+        if let ObjectFormatType::MEDIA_TYPE(v) = props.next().unwrap().value().unwrap() {
+            assert_eq!(v.value().unwrap(), MediaType::AUDIO);
+        } else {
+            assert!(false)
+        }
+        if let ObjectFormatType::MEDIA_SUBTYPE(v) = props.next().unwrap().value().unwrap() {
+            assert_eq!(v.value().unwrap(), MediaSubType::DSP);
+        } else {
+            assert!(false)
+        }
+        assert!(props.next().is_none())
+    } else {
+        assert!(false)
+    }
 }

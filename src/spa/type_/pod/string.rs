@@ -7,7 +7,8 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodResult, PodValue, SizedPod, WritePod, WriteValue, POD_ALIGN,
+    BasicTypePod, FromValue, PodError, PodResult, PodValue, SizedPod, WritePod, WriteValue,
+    POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -107,9 +108,7 @@ impl Debug for PodStringRef {
 fn test_from_value() {
     let string = CString::new("Test string").unwrap();
     let string_wrong = CString::new("Test string wrong").unwrap();
-    let allocated_pod = PodBuf::<PodStringRef>::from_value(&string.as_ref())
-        .unwrap()
-        .into_pod();
+    let allocated_pod = PodStringRef::from_value(&string.as_ref()).unwrap();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
     assert_eq!(allocated_pod.as_pod().pod_size(), 20);
     assert_eq!(allocated_pod.as_pod().pod_header().size, 12);

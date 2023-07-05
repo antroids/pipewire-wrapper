@@ -35,7 +35,7 @@ impl<'a> PodPropKeyType<'a> for ObjectPropInfoType<'a> {
                 Self::write_pod_prop(buffer, PropInfo::NAME.raw, 0, pod)
             }
             ObjectPropInfoType::TYPE(pod) => {
-                todo!() //Self::write_pod_prop(buffer, PropInfo::TYPE.raw, 0, pod)
+                Self::write_pod_prop(buffer, PropInfo::TYPE.raw, 0, pod)
             }
             ObjectPropInfoType::LABELS(pod) => {
                 Self::write_pod_prop(buffer, PropInfo::LABELS.raw, 0, pod)
