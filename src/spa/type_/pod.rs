@@ -24,7 +24,7 @@ use crate::spa::type_::object::PodObjectRef;
 use crate::spa::type_::pod::choice::ChoiceType;
 use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::pointer::PodPointerRef;
-use crate::spa::type_::pod::restricted::{PodHeader, PodValueParser, StaticTypePod};
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::{FractionRef, RectangleRef, Type};
 use crate::wrapper::RawWrapper;
 
@@ -60,36 +60,30 @@ macro_rules! primitive_type_pod_impl {
     };
 
     ($pod_ref_type:ty, $pod_type:expr, $value_raw_type:ty, $value_type:ty, $value_ident:ident, $convert_value_expr:expr) => {
-        impl restricted::PodValueParser<*const u8> for $pod_ref_type {
-            fn parse(size: usize, value: *const u8) -> PodResult<Self::Value> {
-                unsafe { Self::parse(size, *(value as *const $value_raw_type)) }
-            }
-        }
+        impl PodValue for $pod_ref_type {
+            type Value = $value_type;
+            type RawValue = $value_raw_type;
 
-        impl restricted::PodValueParser<$value_raw_type> for $pod_ref_type {
-            fn parse(size: usize, value: $value_raw_type) -> PodResult<Self::Value> {
+            fn raw_value_ptr(&self) -> *const Self::RawValue {
+                &self.raw.value
+            }
+
+            fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
                 if size < size_of::<$value_raw_type>() {
                     Err(PodError::DataIsTooShort(size_of::<$value_raw_type>(), size))
                 } else {
-                    let $value_ident = value;
+                    let $value_ident = unsafe { *ptr };
                     Ok($convert_value_expr)
                 }
             }
-        }
-
-        impl ReadablePod for $pod_ref_type {
-            type Value = $value_type;
 
             fn value(&self) -> PodResult<Self::Value> {
-                Self::parse(self.upcast().size() as usize, self.raw_value())
+                Self::parse_raw_value(&self.raw_value(), self.raw.pod.size as usize)
             }
         }
 
-        impl WritablePod for $pod_ref_type {
-            fn write_pod<W>(
-                buffer: &mut W,
-                value: &<Self as ReadablePod>::Value,
-            ) -> PodResult<usize>
+        impl WritePod for $pod_ref_type {
+            fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
             where
                 W: Write + Seek,
             {
@@ -102,10 +96,10 @@ macro_rules! primitive_type_pod_impl {
             }
         }
 
-        impl WritableValue for $pod_ref_type {
+        impl WriteValue for $pod_ref_type {
             fn write_raw_value<W>(
                 buffer: &mut W,
-                value: &<Self as ReadablePod>::Value,
+                value: &<Self as PodValue>::Value,
             ) -> PodResult<usize>
             where
                 W: Write + Seek,
@@ -242,25 +236,39 @@ pub trait SizedPod {
     }
 }
 
-pub trait ReadablePod {
+pub trait PodValue {
     type Value: Debug;
+    type RawValue;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue;
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value>;
 
     fn value(&self) -> PodResult<Self::Value>;
 }
 
-impl<'a, T> ReadablePod for &'a T
+impl<'a, T> PodValue for &'a T
 where
-    T: ReadablePod,
+    T: PodValue,
 {
     type Value = T::Value;
+    type RawValue = T::RawValue;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        (*self).raw_value_ptr()
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        T::parse_raw_value(ptr, size)
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
         (*self).value()
     }
 }
 
-pub trait WritablePod: ReadablePod {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+pub trait WritePod: PodValue {
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: std::io::Write + std::io::Seek;
 
@@ -341,17 +349,17 @@ pub trait WritablePod: ReadablePod {
     }
 }
 
-pub trait WritableValue: ReadablePod {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+pub trait WriteValue: PodValue {
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: std::io::Write + std::io::Seek;
 }
 
-impl<'a, T> WritablePod for &'a T
+impl<'a, T> WritePod for &'a T
 where
-    T: WritablePod,
+    T: WritePod,
 {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -359,11 +367,11 @@ where
     }
 }
 
-impl<'a, T> WritableValue for &'a T
+impl<'a, T> WriteValue for &'a T
 where
-    T: WritableValue,
+    T: WriteValue,
 {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -393,7 +401,7 @@ pub(crate) mod restricted {
 
     use crate::spa::type_::pod::choice::enum_::PodEnumRef;
     use crate::spa::type_::pod::choice::{ChoiceType, PodChoiceRef};
-    use crate::spa::type_::pod::{PodError, PodRef, PodResult, ReadablePod, SizedPod};
+    use crate::spa::type_::pod::{PodError, PodRef, PodResult, PodValue, SizedPod};
     use crate::spa::type_::Type;
     use crate::wrapper::RawWrapper;
 
@@ -407,19 +415,6 @@ pub(crate) mod restricted {
 
     pub trait StaticTypePod {
         fn static_type() -> Type;
-    }
-
-    pub trait PodValueParser<F: Copy>: ReadablePod {
-        // todo: replace by better trait
-        /// Parse Pod value from F.
-        /// * `content_size` size in bytes of the provided data with body structure.
-        /// Body structure size should be subtracted to get elements size.
-        /// * `header_or_value` header or value, used to parse value.
-        /// Can be first value, body structure or pointer to the value itself.
-        fn parse(
-            content_size: usize,
-            header_or_value: F,
-        ) -> PodResult<<Self as ReadablePod>::Value>;
     }
 }
 
@@ -521,34 +516,20 @@ impl PodHeader for PodRef {
     }
 }
 
-impl<'a> restricted::PodValueParser<*const u8> for &'a PodRef {
-    fn parse(
-        content_size: usize,
-        header_or_value: *const u8,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe {
-            Self::parse(
-                content_size,
-                PodRef::from_raw_ptr(header_or_value as *const spa_sys::spa_pod),
-            )
-        }
-    }
-}
-
-impl<'a> restricted::PodValueParser<&'a PodRef> for &'a PodRef {
-    fn parse(
-        content_size: usize,
-        header_or_value: &'a PodRef,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        header_or_value.downcast()
-    }
-}
-
-impl<'a> ReadablePod for &'a PodRef {
+impl<'a> PodValue for &'a PodRef {
     type Value = BasicType<'a>;
+    type RawValue = spa_sys::spa_pod;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, _size: usize) -> PodResult<Self::Value> {
+        unsafe { PodRef::from_raw_ptr(ptr).downcast() }
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
-        Self::parse(self.size() as usize, *self)
+        Self::parse_raw_value(self.as_raw_ptr(), self.size() as usize)
     }
 }
 
@@ -598,26 +579,26 @@ pub enum BasicType<'a> {
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
 pub enum BasicTypeValue<'a> {
-    NONE(<&'a PodRef as ReadablePod>::Value) = Type::NONE.raw,
-    BOOL(<PodBoolRef as ReadablePod>::Value) = Type::BOOL.raw,
-    ID(<PodIdRef as ReadablePod>::Value) = Type::ID.raw,
-    INT(<PodIntRef as ReadablePod>::Value) = Type::INT.raw,
-    LONG(<PodLongRef as ReadablePod>::Value) = Type::LONG.raw,
-    FLOAT(<PodFloatRef as ReadablePod>::Value) = Type::FLOAT.raw,
-    DOUBLE(<PodDoubleRef as ReadablePod>::Value) = Type::DOUBLE.raw,
-    STRING(<&'a PodStringRef as ReadablePod>::Value) = Type::STRING.raw,
-    BYTES(<&'a PodBytesRef as ReadablePod>::Value) = Type::BYTES.raw,
-    RECTANGLE(<PodRectangleRef as ReadablePod>::Value) = Type::RECTANGLE.raw,
-    FRACTION(<PodFractionRef as ReadablePod>::Value) = Type::FRACTION.raw,
-    BITMAP(<&'a PodBitmapRef as ReadablePod>::Value) = Type::BITMAP.raw,
-    ARRAY(<&'a PodArrayRef as ReadablePod>::Value) = Type::ARRAY.raw,
-    STRUCT(<&'a PodStructRef as ReadablePod>::Value) = Type::STRUCT.raw,
-    OBJECT(<&'a PodObjectRef as ReadablePod>::Value) = Type::OBJECT.raw,
-    SEQUENCE(<&'a PodSequenceRef as ReadablePod>::Value) = Type::SEQUENCE.raw,
-    POINTER(<&'a PodPointerRef as ReadablePod>::Value) = Type::POINTER.raw,
-    FD(<PodFdRef as ReadablePod>::Value) = Type::FD.raw,
-    CHOICE(<&'a PodChoiceRef as ReadablePod>::Value) = Type::CHOICE.raw,
-    POD(<&'a PodRef as ReadablePod>::Value) = Type::POD.raw,
+    NONE(<&'a PodRef as PodValue>::Value) = Type::NONE.raw,
+    BOOL(<PodBoolRef as PodValue>::Value) = Type::BOOL.raw,
+    ID(<PodIdRef as PodValue>::Value) = Type::ID.raw,
+    INT(<PodIntRef as PodValue>::Value) = Type::INT.raw,
+    LONG(<PodLongRef as PodValue>::Value) = Type::LONG.raw,
+    FLOAT(<PodFloatRef as PodValue>::Value) = Type::FLOAT.raw,
+    DOUBLE(<PodDoubleRef as PodValue>::Value) = Type::DOUBLE.raw,
+    STRING(<&'a PodStringRef as PodValue>::Value) = Type::STRING.raw,
+    BYTES(<&'a PodBytesRef as PodValue>::Value) = Type::BYTES.raw,
+    RECTANGLE(<PodRectangleRef as PodValue>::Value) = Type::RECTANGLE.raw,
+    FRACTION(<PodFractionRef as PodValue>::Value) = Type::FRACTION.raw,
+    BITMAP(<&'a PodBitmapRef as PodValue>::Value) = Type::BITMAP.raw,
+    ARRAY(<&'a PodArrayRef as PodValue>::Value) = Type::ARRAY.raw,
+    STRUCT(<&'a PodStructRef as PodValue>::Value) = Type::STRUCT.raw,
+    OBJECT(<&'a PodObjectRef as PodValue>::Value) = Type::OBJECT.raw,
+    SEQUENCE(<&'a PodSequenceRef as PodValue>::Value) = Type::SEQUENCE.raw,
+    POINTER(<&'a PodPointerRef as PodValue>::Value) = Type::POINTER.raw,
+    FD(<PodFdRef as PodValue>::Value) = Type::FD.raw,
+    CHOICE(<&'a PodChoiceRef as PodValue>::Value) = Type::CHOICE.raw,
+    POD(<&'a PodRef as PodValue>::Value) = Type::POD.raw,
 }
 
 #[derive(RawWrapper)]

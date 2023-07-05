@@ -9,8 +9,7 @@ use crate::spa::type_::pod::object::prop::Prop;
 use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
-    WritableValue, POD_ALIGN,
+    BasicTypePod, PodError, PodResult, PodValue, SizedPod, WritePod, WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -57,41 +56,31 @@ impl PodIdType for u32 {}
 
 impl PodIdType for Type {}
 
-impl<T: PodIdType> PodValueParser<*const u8> for PodIdRef<T> {
-    fn parse(
-        content_size: usize,
-        header_or_value: *const u8,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe { Self::parse(content_size, *(header_or_value as *const u32)) }
-    }
-}
-
-impl<T: PodIdType> PodValueParser<u32> for PodIdRef<T> {
-    fn parse(content_size: usize, header_or_value: u32) -> PodResult<<Self as ReadablePod>::Value> {
-        if content_size < size_of::<u32>() {
-            Err(PodError::DataIsTooShort(size_of::<u32>(), content_size))
-        } else {
-            Ok(header_or_value.into())
-        }
-    }
-}
-
-impl<T: PodIdType> ReadablePod for PodIdRef<T>
+impl<T: PodIdType> PodValue for PodIdRef<T>
 where
     T: PodIdType,
 {
     type Value = T;
+    type RawValue = u32;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw.value
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        unsafe { Ok((*ptr).into()) }
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
-        Ok(self.raw.value.into())
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
 }
 
-impl<T: PodIdType> WritablePod for PodIdRef<T>
+impl<T: PodIdType> WritePod for PodIdRef<T>
 where
     T: PodIdType,
 {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -104,11 +93,11 @@ where
     }
 }
 
-impl<T: PodIdType> WritableValue for PodIdRef<T>
+impl<T: PodIdType> WriteValue for PodIdRef<T>
 where
     T: PodIdType,
 {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {

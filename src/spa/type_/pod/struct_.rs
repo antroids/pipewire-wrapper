@@ -6,8 +6,7 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::type_::pod::iterator::PodIterator;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod,
-    WritableValue,
+    BasicTypePod, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue,
 };
 use crate::spa::type_::Type;
 
@@ -30,16 +29,25 @@ impl PodHeader for PodStructRef {
     }
 }
 
-impl<'a> ReadablePod for &'a PodStructRef {
-    type Value = PodIterator<'a, PodStructRef, PodRef>;
+impl<'a> PodValue for &'a PodStructRef {
+    type Value = PodIterator<'a, PodRef>;
+    type RawValue = spa_sys::spa_pod;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        unsafe { (&self.raw.pod as *const spa_sys::spa_pod).offset(1) }
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        Ok(PodIterator::new(ptr.cast(), size))
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
-        Ok(PodIterator::new(self))
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
 }
 
-impl<'a> WritablePod for &'a PodStructRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+impl<'a> WritePod for &'a PodStructRef {
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -54,8 +62,8 @@ impl<'a> WritablePod for &'a PodStructRef {
     }
 }
 
-impl<'a> WritableValue for &'a PodStructRef {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+impl<'a> WriteValue for &'a PodStructRef {
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {

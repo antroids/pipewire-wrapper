@@ -57,7 +57,7 @@ impl<'a> PodPropKeyType<'a> for ParamPortConfigType<'a> {
                 Self::write_pod_prop(buffer, ParamPortConfig::CONTROL.raw, 0, pod)
             }
             ParamPortConfigType::FORMAT(pod) => {
-                Self::write_pod_prop(buffer, ParamPortConfig::FORMAT.raw, 0, pod)
+                todo!() //Self::write_pod_prop(buffer, ParamPortConfig::FORMAT.raw, 0, pod)
             }
         }
     }

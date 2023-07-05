@@ -11,8 +11,8 @@ use crate::spa::type_::pod::iterator::PodValueIterator;
 use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodError, PodIntRef, PodRef, PodResult, PodValueParser, ReadablePod, SizedPod,
-    WritablePod, WritableValue, POD_ALIGN,
+    BasicTypePod, PodError, PodIntRef, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue,
+    POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -46,7 +46,7 @@ impl<T> PodEnumRef<T> {
 
 impl<T> crate::wrapper::RawWrapper for PodEnumRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
 {
     type CType = spa_sys::spa_pod_choice;
 
@@ -72,7 +72,7 @@ where
 
 impl<T> StaticTypePod for PodEnumRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: StaticTypePod,
 {
     fn static_type() -> Type {
@@ -82,7 +82,7 @@ where
 
 impl<T> PodHeader for PodEnumRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: StaticTypePod,
 {
     fn pod_header(&self) -> &spa_pod {
@@ -90,18 +90,23 @@ where
     }
 }
 
-impl<T> ReadablePod for PodEnumRef<T>
+impl<T> PodValue for PodEnumRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: StaticTypePod,
 {
     type Value = PodEnumValue<T::Value>;
+    type RawValue = spa_sys::spa_pod_choice_body;
 
-    fn value(&self) -> PodResult<Self::Value> {
-        let body = self.choice().body();
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw.body
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        let body = unsafe { PodChoiceBodyRef::from_raw_ptr(ptr) };
         if body.type_() == ChoiceType::ENUM {
             if T::static_type() == body.child().type_() {
-                let content_size = self.pod_size() - size_of::<PodEnumRef<T>>();
+                let content_size = size - size_of::<Self::RawValue>();
                 let element_size = body.child().size() as usize;
                 let mut iter: PodValueIterator<T> = PodValueIterator::new(
                     unsafe { body.content_ptr().cast() },
@@ -130,15 +135,19 @@ where
             ))
         }
     }
+
+    fn value(&self) -> PodResult<Self::Value> {
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
+    }
 }
 
-impl<T> WritablePod for PodEnumRef<T>
+impl<T> WritePod for PodEnumRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: StaticTypePod,
-    T: WritableValue,
+    T: WriteValue,
 {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -165,13 +174,13 @@ where
     }
 }
 
-impl<T> WritableValue for PodEnumRef<T>
+impl<T> WriteValue for PodEnumRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: StaticTypePod,
-    T: WritableValue,
+    T: WriteValue,
 {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -188,7 +197,7 @@ where
 
 impl<T> Debug for PodEnumRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: StaticTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

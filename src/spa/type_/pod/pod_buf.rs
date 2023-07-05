@@ -6,7 +6,7 @@ use std::{io, slice};
 
 use crate::spa::type_::pod::restricted::PodHeader;
 use crate::spa::type_::pod::{
-    PodBoolRef, PodError, PodLongRef, PodResult, ReadablePod, SizedPod, WritablePod, POD_ALIGN,
+    PodBoolRef, PodError, PodLongRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -26,9 +26,9 @@ where
 
 impl<'a, T> PodBuf<'a, T>
 where
-    &'a T: WritablePod,
+    &'a T: WritePod,
 {
-    pub fn from_value(value: &<&'a T as ReadablePod>::Value) -> PodResult<Self> {
+    pub fn from_value(value: &<&'a T as PodValue>::Value) -> PodResult<Self> {
         let mut buf = Self::new();
         <&'a T>::write_pod(&mut buf, value)?;
         Ok(buf)
@@ -143,10 +143,11 @@ where
 }
 
 impl<'a, T> PodBufFrame<'a, T> {
-    pub(crate) fn from_buf(buffer: &mut PodBuf<'a, T>) -> PodResult<Self> {
+    pub(crate) fn from_buf(buffer: &'a mut PodBuf<'a, T>) -> PodResult<Self> {
+        let position = buffer.stream_position()?;
         Ok(Self {
             buf: buffer,
-            start_pos: buffer.stream_position()?,
+            start_pos: position,
         })
     }
 }

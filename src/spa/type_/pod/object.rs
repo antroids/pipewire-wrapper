@@ -31,7 +31,7 @@ use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
     BasicType, BasicTypePod, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef, PodIntRef,
-    PodLongRef, PodRef, PodResult, ReadablePod, SizedPod, WritablePod,
+    PodLongRef, PodRef, PodResult, PodValue, SizedPod, WritePod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -162,29 +162,62 @@ impl PodObjectRef {
     }
 }
 
-impl<'a> ReadablePod for &'a PodObjectRef {
+impl<'a> PodValue for &'a PodObjectRef {
     type Value = ObjectType<'a>;
+    type RawValue = spa_sys::spa_pod_object_body;
 
-    fn value(&self) -> PodResult<Self::Value> {
-        Ok(match self.body_type() {
-            Type::OBJECT_PROP_INFO => ObjectType::OBJECT_PROP_INFO(PodIterator::new(self)),
-            Type::OBJECT_PROPS => ObjectType::OBJECT_PROPS(PodIterator::new(self)),
-            Type::OBJECT_FORMAT => ObjectType::OBJECT_FORMAT(PodIterator::new(self)),
-            Type::OBJECT_PARAM_BUFFERS => ObjectType::OBJECT_PARAM_BUFFERS(PodIterator::new(self)),
-            Type::OBJECT_PARAM_META => ObjectType::OBJECT_PARAM_META(PodIterator::new(self)),
-            Type::OBJECT_PARAM_IO => ObjectType::OBJECT_PARAM_IO(PodIterator::new(self)),
-            Type::OBJECT_PARAM_PROFILE => ObjectType::OBJECT_PARAM_PROFILE(PodIterator::new(self)),
-            Type::OBJECT_PARAM_PORT_CONFIG => {
-                ObjectType::OBJECT_PARAM_PORT_CONFIG(PodIterator::new(self))
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw.body
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        let body = unsafe { PodObjectBodyRef::from_raw_ptr(ptr) };
+        let first_element_ptr = unsafe { ptr.offset(1) };
+        let size = size - size_of::<spa_sys::spa_pod_object_body>();
+
+        Ok(match body.type_() {
+            Type::OBJECT_PROP_INFO => {
+                ObjectType::OBJECT_PROP_INFO(PodIterator::new(first_element_ptr.cast(), size))
             }
-            Type::OBJECT_PARAM_ROUTE => ObjectType::OBJECT_PARAM_ROUTE(PodIterator::new(self)),
-            Type::OBJECT_PROFILER => ObjectType::OBJECT_PROFILER(PodIterator::new(self)),
-            Type::OBJECT_PARAM_LATENCY => ObjectType::OBJECT_PARAM_LATENCY(PodIterator::new(self)),
-            Type::OBJECT_PARAM_PROCESS_LATENCY => {
-                ObjectType::OBJECT_PARAM_PROCESS_LATENCY(PodIterator::new(self))
+            Type::OBJECT_PROPS => {
+                ObjectType::OBJECT_PROPS(PodIterator::new(first_element_ptr.cast(), size))
             }
+            Type::OBJECT_FORMAT => {
+                ObjectType::OBJECT_FORMAT(PodIterator::new(first_element_ptr.cast(), size))
+            }
+            Type::OBJECT_PARAM_BUFFERS => {
+                ObjectType::OBJECT_PARAM_BUFFERS(PodIterator::new(first_element_ptr.cast(), size))
+            }
+            Type::OBJECT_PARAM_META => {
+                ObjectType::OBJECT_PARAM_META(PodIterator::new(first_element_ptr.cast(), size))
+            }
+            Type::OBJECT_PARAM_IO => {
+                ObjectType::OBJECT_PARAM_IO(PodIterator::new(first_element_ptr.cast(), size))
+            }
+            Type::OBJECT_PARAM_PROFILE => {
+                ObjectType::OBJECT_PARAM_PROFILE(PodIterator::new(first_element_ptr.cast(), size))
+            }
+            Type::OBJECT_PARAM_PORT_CONFIG => ObjectType::OBJECT_PARAM_PORT_CONFIG(
+                PodIterator::new(first_element_ptr.cast(), size),
+            ),
+            Type::OBJECT_PARAM_ROUTE => {
+                ObjectType::OBJECT_PARAM_ROUTE(PodIterator::new(first_element_ptr.cast(), size))
+            }
+            Type::OBJECT_PROFILER => {
+                ObjectType::OBJECT_PROFILER(PodIterator::new(first_element_ptr.cast(), size))
+            }
+            Type::OBJECT_PARAM_LATENCY => {
+                ObjectType::OBJECT_PARAM_LATENCY(PodIterator::new(first_element_ptr.cast(), size))
+            }
+            Type::OBJECT_PARAM_PROCESS_LATENCY => ObjectType::OBJECT_PARAM_PROCESS_LATENCY(
+                PodIterator::new(first_element_ptr.cast(), size),
+            ),
             type_ => return Err(PodError::UnexpectedObjectType(type_.raw)),
         })
+    }
+
+    fn value(&self) -> PodResult<Self::Value> {
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
 }
 
@@ -201,7 +234,7 @@ where
     fn write_pod_prop<W, T>(buffer: &mut W, key: u32, flags: u32, pod: &T) -> PodResult<usize>
     where
         W: Write + Seek,
-        T: WritablePod,
+        T: WritePod,
         T: SizedPod,
     {
         buffer.write_all(&key.to_ne_bytes())?;
@@ -271,16 +304,26 @@ impl<'a, T: PodPropKeyType<'a>> PodPropRef<'a, T> {
     }
 }
 
-impl<'a, T: PodPropKeyType<'a>> ReadablePod for &'a PodPropRef<'a, T> {
+impl<'a, T: PodPropKeyType<'a>> PodValue for &'a PodPropRef<'a, T> {
     type Value = T;
+    type RawValue = spa_sys::spa_pod_prop;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        unsafe { PodPropRef::from_raw_ptr(ptr).try_into() }
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
-        (*self).try_into()
+        let size = size_of::<Self::RawValue>() + self.raw.value.size as usize;
+        Self::parse_raw_value(self.raw_value_ptr(), size)
     }
 }
 
-impl<'a, T: PodPropKeyType<'a>> WritablePod for &'a PodPropRef<'a, T> {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+impl<'a, T: PodPropKeyType<'a>> WritePod for &'a PodPropRef<'a, T> {
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -301,7 +344,7 @@ impl<'a, T: PodPropKeyType<'a>> Debug for &'a PodPropRef<'a, T> {
     }
 }
 
-pub type ObjectPropsIterator<'a, T> = PodIterator<'a, PodObjectRef, PodPropRef<'a, T>>;
+pub type ObjectPropsIterator<'a, T> = PodIterator<'a, PodPropRef<'a, T>>;
 
 #[repr(u32)]
 #[derive(Debug)]

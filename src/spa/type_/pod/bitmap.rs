@@ -9,8 +9,7 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::type_::pod::pod_buf::PodBuf;
 use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::{
-    BasicTypePod, PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod, WritableValue,
-    POD_ALIGN,
+    BasicTypePod, PodResult, PodValue, SizedPod, WritePod, WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -44,25 +43,25 @@ impl PodHeader for PodBitmapRef {
     }
 }
 
-impl<'a> PodValueParser<*const u8> for &'a PodBitmapRef {
-    fn parse(
-        content_size: usize,
-        header_or_value: *const u8,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe { Ok(slice::from_raw_parts(header_or_value, content_size)) }
-    }
-}
-
-impl<'a> ReadablePod for &'a PodBitmapRef {
+impl<'a> PodValue for &'a PodBitmapRef {
     type Value = &'a [u8];
+    type RawValue = u8;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        unsafe { (&self.raw.pod as *const spa_sys::spa_pod).offset(1).cast() }
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        unsafe { Ok(slice::from_raw_parts(ptr, size)) }
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
-        unsafe { Self::parse(self.content_size(), self.content_ptr()) }
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
 }
 
-impl<'a> WritablePod for &'a PodBitmapRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+impl<'a> WritePod for &'a PodBitmapRef {
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -74,8 +73,8 @@ impl<'a> WritablePod for &'a PodBitmapRef {
     }
 }
 
-impl<'a> WritableValue for &'a PodBitmapRef {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+impl<'a> WriteValue for &'a PodBitmapRef {
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {

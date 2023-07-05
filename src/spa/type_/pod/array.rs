@@ -21,7 +21,7 @@ use crate::spa::type_::pod::struct_::PodStructRef;
 use crate::spa::type_::pod::{
     BasicType, BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFdRef,
     PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodPointerRef, PodRectangleRef, PodRef,
-    PodResult, PodValueParser, ReadablePod, SizedPod, WritablePod, WritableValue,
+    PodResult, PodValue, SizedPod, WritePod, WriteValue,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -44,14 +44,14 @@ impl PodArrayBodyRef {
 }
 
 #[repr(transparent)]
-pub struct PodArrayRef<T: PodValueParser<*const u8> = PodIdRef> {
+pub struct PodArrayRef<T: PodValue = PodIdRef> {
     raw: spa_sys::spa_pod_array,
     phantom: PhantomData<T>,
 }
 
 impl<T> crate::wrapper::RawWrapper for PodArrayRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: BasicTypePod,
 {
     type CType = spa_sys::spa_pod_array;
@@ -78,7 +78,7 @@ where
 
 impl<T> PodHeader for PodArrayRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: BasicTypePod,
 {
     fn pod_header(&self) -> &spa_pod {
@@ -88,7 +88,7 @@ where
 
 impl<T> StaticTypePod for PodArrayRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: BasicTypePod,
 {
     fn static_type() -> Type {
@@ -96,24 +96,40 @@ where
     }
 }
 
-impl<'a, T> ReadablePod for &'a PodArrayRef<T>
+impl<'a, T> PodValue for &'a PodArrayRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: BasicTypePod,
 {
     type Value = PodValueIterator<'a, T>;
+    type RawValue = spa_sys::spa_pod_array_body;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw.body
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        let body = unsafe { PodArrayBodyRef::from_raw_ptr(ptr) };
+        let size = size - size_of::<Self::RawValue>();
+        let first_element_ptr = unsafe { body.content_ptr() };
+        Ok(PodValueIterator::new(
+            first_element_ptr.cast(),
+            size,
+            body.child().size() as usize,
+        ))
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
-        Self::parse(self.body_size(), self.body())
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
 }
 
-impl<'a, T> WritablePod for &'a PodArrayRef<T>
+impl<'a, T> WritePod for &'a PodArrayRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: BasicTypePod,
 {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
@@ -123,7 +139,7 @@ where
 
 impl<T> Debug for PodArrayRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: BasicTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -138,7 +154,7 @@ where
 
 impl<T> PodArrayRef<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
     T: BasicTypePod,
 {
     fn body(&self) -> &PodArrayBodyRef {
@@ -152,54 +168,5 @@ where
     fn elements(&self) -> u32 {
         ((self.body_size() - size_of::<PodArrayBodyRef>()) / self.raw.body.child.size as usize)
             as u32
-    }
-
-    pub fn element(&self, index: u32) -> PodResult<T::Value> {
-        if T::static_type() != self.body().child().type_() {
-            Err(PodError::WrongPodTypeToCast(
-                T::static_type(),
-                self.body().child().type_(),
-            ))
-        } else if self.elements() >= index {
-            Err(PodError::IndexIsOutOfRange)
-        } else {
-            let first_element_ptr: *const u8 = unsafe { self.body().content_ptr() };
-            let ptr = unsafe {
-                first_element_ptr.offset(index as isize * self.body().child().pod_size() as isize)
-            };
-            T::parse(self.body_size(), ptr)
-        }
-    }
-}
-
-impl<'a, T> PodValueParser<&'a PodArrayBodyRef> for &'a PodArrayRef<T>
-where
-    T: PodValueParser<*const u8>,
-    T: BasicTypePod,
-{
-    fn parse(
-        content_size: usize,
-        header_or_value: &'a PodArrayBodyRef,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe {
-            Ok(PodValueIterator::new(
-                header_or_value.content_ptr().cast(),
-                content_size - size_of::<PodArrayBodyRef>(),
-                header_or_value.child().size() as usize,
-            ))
-        }
-    }
-}
-
-impl<'a, T> PodValueParser<*const u8> for &'a PodArrayRef<T>
-where
-    T: PodValueParser<*const u8>,
-    T: BasicTypePod,
-{
-    fn parse(
-        content_size: usize,
-        header_or_value: *const u8,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe { Self::parse(content_size, &*(header_or_value as *const PodArrayBodyRef)) }
     }
 }

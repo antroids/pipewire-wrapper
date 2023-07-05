@@ -5,12 +5,12 @@ use std::ptr::addr_of;
 use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::{BasicTypePod, PodError, PodRef, PodResult, ReadablePod, SizedPod};
 use crate::spa::type_::pod::bytes::PodBytesRef;
 use crate::spa::type_::pod::iterator::PodIterator;
-use crate::spa::type_::pod::object::{ObjectPropsIterator, ObjectType, PodPropRef};
 use crate::spa::type_::pod::object::prop::ObjectPropType;
-use crate::spa::type_::pod::restricted::{PodHeader, PodValueParser};
+use crate::spa::type_::pod::object::{ObjectPropsIterator, ObjectType, PodPropRef};
+use crate::spa::type_::pod::restricted::PodHeader;
+use crate::spa::type_::pod::{BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod};
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper)]
@@ -54,52 +54,37 @@ impl PodControlRef {
 #[derive(Debug)]
 pub enum ControlType<'a> {
     INVALID = Type::INVALID.raw,
-    PROPERTIES(PodIterator<'a, PodControlRef, PodPropRef<'a, ObjectPropType<'a>>>) =
-        Type::PROPERTIES.raw,
+    PROPERTIES(PodIterator<'a, PodPropRef<'a, ObjectPropType<'a>>>) = Type::PROPERTIES.raw,
     MIDI(&'a PodBytesRef) = Type::MIDI.raw,
     OSC(&'a PodBytesRef) = Type::OSC.raw,
 }
 
-impl<'a> ReadablePod for &'a PodControlRef {
+impl<'a> PodValue for &'a PodControlRef {
     type Value = ControlType<'a>;
+    type RawValue = spa_sys::spa_pod_control;
 
-    fn value(&self) -> PodResult<Self::Value> {
-        Self::parse(self.content_size(), *self)
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw
     }
-}
 
-impl<'a> PodValueParser<&'a PodControlRef> for &'a PodControlRef {
-    fn parse(
-        _content_size: usize,
-        header_or_value: &'a PodControlRef,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        match header_or_value.type_() {
+    fn parse_raw_value(ptr: *const Self::RawValue, _size: usize) -> PodResult<Self::Value> {
+        let control = unsafe { PodControlRef::from_raw_ptr(ptr) };
+        match control.type_() {
             Type::INVALID => Ok(ControlType::INVALID),
-            Type::PROPERTIES => Ok(ControlType::PROPERTIES(PodIterator::new(header_or_value))),
-            Type::MIDI => header_or_value
-                .value_pod()
-                .cast()
-                .map(|r| ControlType::MIDI(r)),
-            Type::OSC => header_or_value
-                .value_pod()
-                .cast()
-                .map(|r| ControlType::OSC(r)),
+            Type::PROPERTIES => Ok(ControlType::PROPERTIES(PodIterator::from_container(
+                control,
+            ))),
+            Type::MIDI => control.value_pod().cast().map(|r| ControlType::MIDI(r)),
+            Type::OSC => control.value_pod().cast().map(|r| ControlType::OSC(r)),
             type_ => Err(PodError::UnexpectedControlType(type_.raw)),
         }
     }
-}
 
-impl<'a> PodValueParser<*const u8> for &'a PodControlRef {
-    fn parse(
-        content_size: usize,
-        header_or_value: *const u8,
-    ) -> PodResult<<Self as ReadablePod>::Value> {
-        unsafe {
-            Self::parse(
-                content_size,
-                PodControlRef::from_raw_ptr(header_or_value.cast()),
-            )
-        }
+    fn value(&self) -> PodResult<Self::Value> {
+        Self::parse_raw_value(
+            &self.raw,
+            size_of::<Self::RawValue>() + self.raw.value.size as usize,
+        )
     }
 }
 

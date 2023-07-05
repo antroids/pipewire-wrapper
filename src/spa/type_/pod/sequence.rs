@@ -2,10 +2,10 @@ use std::ptr::addr_of;
 
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::{BasicType, PodResult, ReadablePod, SizedPod};
 use crate::spa::type_::pod::control::PodControlRef;
 use crate::spa::type_::pod::iterator::PodIterator;
-use crate::spa::type_::pod::restricted::{PodHeader, PodValueParser, StaticTypePod};
+use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::type_::pod::{BasicType, PodResult, PodValue, SizedPod};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -41,10 +41,20 @@ impl StaticTypePod for PodSequenceRef {
     }
 }
 
-impl<'a> ReadablePod for &'a PodSequenceRef {
-    type Value = PodIterator<'a, PodSequenceRef, PodControlRef>;
+impl<'a> PodValue for &'a PodSequenceRef {
+    type Value = PodIterator<'a, PodControlRef>;
+    type RawValue = spa_sys::spa_pod_sequence_body;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw.body
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        let first_element_ptr = unsafe { ptr.offset(1) as *const PodControlRef };
+        Ok(PodIterator::new(first_element_ptr, size))
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
-        Ok(PodIterator::new(self))
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
 }

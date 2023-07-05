@@ -18,7 +18,7 @@ use pipewire_wrapper::core_api::proxy::Proxied;
 use pipewire_wrapper::core_api::Pipewire;
 use pipewire_wrapper::spa::param::ParamType;
 use pipewire_wrapper::spa::type_::pod::object::ObjectType;
-use pipewire_wrapper::spa::type_::pod::{BasicType, PodRef, ReadablePod};
+use pipewire_wrapper::spa::type_::pod::{BasicType, PodRef, PodValue};
 use pipewire_wrapper::spa::type_::Type;
 use pipewire_wrapper::wrapper::RawWrapper;
 

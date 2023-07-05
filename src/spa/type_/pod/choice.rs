@@ -21,8 +21,8 @@ use crate::spa::type_::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::type_::pod::string::PodStringRef;
 use crate::spa::type_::pod::{
     BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFloatRef, PodFractionRef,
-    PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodValueParser, ReadablePod,
-    SizedPod, WritablePod, WritableValue,
+    PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodValue, SizedPod, WritePod,
+    WriteValue,
 };
 use crate::spa::type_::{PointRef, Type};
 use crate::wrapper::RawWrapper;
@@ -47,7 +47,7 @@ enum_wrapper!(
 #[derive(Debug)]
 pub enum ChoiceStructType<T>
 where
-    T: PodValueParser<*const u8>,
+    T: PodValue,
 {
     NONE(Option<T::Value>) = ChoiceType::NONE.raw,
     RANGE(PodRangeValue<T::Value>) = ChoiceType::RANGE.raw,
@@ -115,36 +115,26 @@ impl PodChoiceRef {
         self.raw.pod.size as usize - size_of::<PodChoiceRef>()
     }
 
-    fn parse_choice<T>(&self) -> PodResult<ChoiceStructType<T>>
+    fn parse_choice<T>(
+        ptr: *const spa_sys::spa_pod_choice_body,
+        size: usize,
+    ) -> PodResult<ChoiceStructType<T>>
     where
-        T: PodValueParser<*const u8>,
-        T: BasicTypePod,
+        T: PodValue,
+        T: StaticTypePod,
     {
-        let body = self.body();
-        unsafe {
-            match body.type_() {
-                ChoiceType::NONE => <PodNoneRef<T> as ReadablePod>::value(
-                    PodNoneRef::from_raw_ptr(self.as_raw_ptr()),
-                )
+        match unsafe { PodChoiceBodyRef::from_raw_ptr(ptr).type_() } {
+            ChoiceType::NONE => <PodNoneRef<T> as PodValue>::parse_raw_value(ptr, size)
                 .map(|r| ChoiceStructType::NONE(r)),
-                ChoiceType::RANGE => <PodRangeRef<T> as ReadablePod>::value(
-                    PodRangeRef::from_raw_ptr(self.as_raw_ptr()),
-                )
+            ChoiceType::RANGE => <PodRangeRef<T> as PodValue>::parse_raw_value(ptr, size)
                 .map(|r| ChoiceStructType::RANGE(r)),
-                ChoiceType::STEP => <PodStepRef<T> as ReadablePod>::value(
-                    PodStepRef::from_raw_ptr(self.as_raw_ptr()),
-                )
+            ChoiceType::STEP => <PodStepRef<T> as PodValue>::parse_raw_value(ptr, size)
                 .map(|r| ChoiceStructType::STEP(r)),
-                ChoiceType::ENUM => <PodEnumRef<T> as ReadablePod>::value(
-                    PodEnumRef::from_raw_ptr(self.as_raw_ptr()),
-                )
+            ChoiceType::ENUM => <PodEnumRef<T> as PodValue>::parse_raw_value(ptr, size)
                 .map(|r| ChoiceStructType::ENUM(r)),
-                ChoiceType::FLAGS => <PodFlagsRef<T> as ReadablePod>::value(
-                    PodFlagsRef::from_raw_ptr(self.as_raw_ptr()),
-                )
+            ChoiceType::FLAGS => <PodFlagsRef<T> as PodValue>::parse_raw_value(ptr, size)
                 .map(|r| ChoiceStructType::FLAGS(r)),
-                _ => Err(PodError::UnknownPodTypeToDowncast),
-            }
+            _ => Err(PodError::UnknownPodTypeToDowncast),
         }
     }
 
@@ -174,8 +164,8 @@ impl PodChoiceRef {
     fn write_pod<W, T>(buffer: &mut W, value: &ChoiceStructType<T>) -> PodResult<usize>
     where
         W: Write + Seek,
-        T: WritableValue,
-        T: PodValueParser<*const u8>,
+        T: WriteValue,
+        T: PodValue,
         T: StaticTypePod,
     {
         match value {
@@ -198,27 +188,48 @@ impl Debug for PodChoiceRef {
     }
 }
 
-impl<'a> ReadablePod for &'a PodChoiceRef {
+impl<'a> PodValue for &'a PodChoiceRef {
     type Value = ChoiceValueType;
+    type RawValue = spa_sys::spa_pod_choice_body;
 
-    fn value(&self) -> PodResult<Self::Value> {
-        match self.body().child().type_() {
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw.body
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        match unsafe { PodChoiceBodyRef::from_raw_ptr(ptr).child().type_() } {
             Type::NONE => Ok(ChoiceValueType::NONE()),
-            Type::BOOL => Ok(ChoiceValueType::BOOL(self.parse_choice()?)),
-            Type::ID => Ok(ChoiceValueType::ID(self.parse_choice()?)),
-            Type::INT => Ok(ChoiceValueType::INT(self.parse_choice()?)),
-            Type::LONG => Ok(ChoiceValueType::LONG(self.parse_choice()?)),
-            Type::FLOAT => Ok(ChoiceValueType::FLOAT(self.parse_choice()?)),
-            Type::DOUBLE => Ok(ChoiceValueType::DOUBLE(self.parse_choice()?)),
-            Type::RECTANGLE => Ok(ChoiceValueType::RECTANGLE(self.parse_choice()?)),
-            Type::FRACTION => Ok(ChoiceValueType::FRACTION(self.parse_choice()?)),
+            Type::BOOL => Ok(ChoiceValueType::BOOL(PodChoiceRef::parse_choice(
+                ptr, size,
+            )?)),
+            Type::ID => Ok(ChoiceValueType::ID(PodChoiceRef::parse_choice(ptr, size)?)),
+            Type::INT => Ok(ChoiceValueType::INT(PodChoiceRef::parse_choice(ptr, size)?)),
+            Type::LONG => Ok(ChoiceValueType::LONG(PodChoiceRef::parse_choice(
+                ptr, size,
+            )?)),
+            Type::FLOAT => Ok(ChoiceValueType::FLOAT(PodChoiceRef::parse_choice(
+                ptr, size,
+            )?)),
+            Type::DOUBLE => Ok(ChoiceValueType::DOUBLE(PodChoiceRef::parse_choice(
+                ptr, size,
+            )?)),
+            Type::RECTANGLE => Ok(ChoiceValueType::RECTANGLE(PodChoiceRef::parse_choice(
+                ptr, size,
+            )?)),
+            Type::FRACTION => Ok(ChoiceValueType::FRACTION(PodChoiceRef::parse_choice(
+                ptr, size,
+            )?)),
             _ => Err(PodError::UnsupportedChoiceElementType),
         }
     }
+
+    fn value(&self) -> PodResult<Self::Value> {
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
+    }
 }
 
-impl<'a> WritablePod for &'a PodChoiceRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as ReadablePod>::Value) -> PodResult<usize>
+impl<'a> WritePod for &'a PodChoiceRef {
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: Write + Seek,
     {
