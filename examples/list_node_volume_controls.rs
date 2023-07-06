@@ -56,8 +56,8 @@ fn add_node_added_event_listener<'a>(
 ) -> EventSource<'a> {
     let node_id_queue = node_id_queue.clone();
     main_loop
-        .add_event(&move |count| {
-            println!("Node added, count {:?}", node_id_queue);
-        })
+        .add_event(Box::new(|count| {
+            println!("Node added, count {:?}", count);
+        }))
         .unwrap()
 }

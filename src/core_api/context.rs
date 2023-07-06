@@ -5,9 +5,10 @@ use std::rc::Rc;
 use std::slice;
 use std::time::Duration;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
 use pw_sys::pw_global;
 use spa_sys::spa_support;
+
+use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::context::events::ContextEvents;
 use crate::core_api::core::Core;
@@ -192,7 +193,10 @@ fn test_context_init() {
     let timer_callback = |_| {
         context.main_loop.quit();
     };
-    let timer = context.main_loop().add_timer(&timer_callback).unwrap();
+    let timer = context
+        .main_loop()
+        .add_timer(Box::new(timer_callback))
+        .unwrap();
     context
         .main_loop
         .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false);
@@ -216,7 +220,10 @@ fn test_context_events() {
     let timer_callback = |_| {
         context.main_loop.quit();
     };
-    let timer = context.main_loop().add_timer(&timer_callback).unwrap();
+    let timer = context
+        .main_loop()
+        .add_timer(Box::new(timer_callback))
+        .unwrap();
     context
         .main_loop
         .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false);

@@ -28,10 +28,11 @@ impl LoopUtilsRef {
         loop_: &'l dyn AsLoopRef,
         fd: RawFd,
         mask: u32,
-        callback: &'l F,
+        callback: Box<F>,
     ) -> crate::Result<IOSource<'l>>
     where
         F: FnMut(RawFd, u32),
+        F: 'l,
     {
         unsafe extern "C" fn callback_call<F>(
             data: *mut ::std::os::raw::c_void,
@@ -44,7 +45,7 @@ impl LoopUtilsRef {
                 callback(fd, mask);
             }
         }
-        let data = callback as *const F as *mut _;
+        let data = &*callback as *const F as *mut _;
         let func = callback_call::<F>;
         let source = spa_interface_call!(self, add_io, fd, mask, false, Some(func), data)?;
 
@@ -64,10 +65,11 @@ impl LoopUtilsRef {
         &self,
         loop_: &'l dyn AsLoopRef,
         enabled: bool,
-        callback: &'l F,
+        callback: Box<F>,
     ) -> crate::Result<IdleSource<'l>>
     where
         F: FnMut(),
+        F: 'l,
     {
         unsafe extern "C" fn callback_call<F>(data: *mut ::std::os::raw::c_void)
         where
@@ -77,7 +79,7 @@ impl LoopUtilsRef {
                 callback();
             }
         }
-        let data = callback as *const F as *mut _;
+        let data = &*callback as *const F as *mut _;
         let source = spa_interface_call!(self, add_idle, enabled, Some(callback_call::<F>), data)?;
 
         Ok(IdleSource {
@@ -95,10 +97,11 @@ impl LoopUtilsRef {
     pub fn add_event<'l, F>(
         &self,
         loop_: &'l dyn AsLoopRef,
-        callback: &'l F,
+        callback: Box<F>,
     ) -> crate::Result<EventSource<'l>>
     where
         F: FnMut(u64),
+        F: 'l,
     {
         unsafe extern "C" fn callback_call<F>(data: *mut ::std::os::raw::c_void, count: u64)
         where
@@ -108,7 +111,7 @@ impl LoopUtilsRef {
                 callback(count);
             }
         }
-        let data = callback as *const F as *mut _;
+        let data = &*callback as *const F as *mut _;
         let source = spa_interface_call!(self, add_event, Some(callback_call::<F>), data)?;
 
         Ok(EventSource {
@@ -126,10 +129,11 @@ impl LoopUtilsRef {
     pub fn add_timer<'l, F>(
         &self,
         loop_: &'l dyn AsLoopRef,
-        callback: &'l F,
+        callback: Box<F>,
     ) -> crate::Result<TimerSource<'l>>
     where
         F: FnMut(u64),
+        F: 'l,
     {
         unsafe extern "C" fn callback_call<F>(data: *mut ::std::os::raw::c_void, count: u64)
         where
@@ -139,7 +143,7 @@ impl LoopUtilsRef {
                 callback(count);
             }
         }
-        let data = callback as *const F as *mut _;
+        let data = &*callback as *const F as *mut _;
         let source = spa_interface_call!(self, add_timer, Some(callback_call::<F>), data)?;
 
         Ok(TimerSource {
@@ -173,10 +177,11 @@ impl LoopUtilsRef {
         &self,
         loop_: &'l dyn AsLoopRef,
         signal_number: i32,
-        callback: &'l F,
+        callback: Box<F>,
     ) -> crate::Result<SignalSource<'l>>
     where
         F: FnMut(i32),
+        F: 'l,
     {
         unsafe extern "C" fn callback_call<F>(
             data: *mut ::std::os::raw::c_void,
@@ -188,7 +193,7 @@ impl LoopUtilsRef {
                 callback(signal_number);
             }
         }
-        let data = callback as *const F as *mut _;
+        let data = &*callback as *const F as *mut _;
         let source = spa_interface_call!(
             self,
             add_signal,

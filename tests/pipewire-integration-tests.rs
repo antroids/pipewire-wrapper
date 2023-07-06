@@ -53,7 +53,7 @@ fn test_init_main_loop() {
     let callback = |_expirations| {
         main_loop.quit().unwrap();
     };
-    let timer = main_loop.add_timer(&callback).unwrap();
+    let timer = main_loop.add_timer(Box::new(callback)).unwrap();
     main_loop
         .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
@@ -68,25 +68,25 @@ fn test_sources() {
     let callback = || {
         println!("Idle");
     };
-    let idle = main_loop.add_idle(false, &callback).unwrap();
+    let idle = main_loop.add_idle(false, Box::new(callback)).unwrap();
     main_loop.enable_idle(&idle, false).unwrap();
 
     let callback = |signal_number| {
         println!("Signal: {:?}", signal_number);
     };
-    let _signal = main_loop.add_signal(123, &callback).unwrap();
+    let _signal = main_loop.add_signal(123, Box::new(callback)).unwrap();
 
     let event_signal = AtomicBool::new(false);
     let callback = |count| {
         println!("Event: count {:?}", count);
         event_signal.store(true, Ordering::Relaxed);
     };
-    let event = main_loop.add_event(&callback).unwrap();
+    let event = main_loop.add_event(Box::new(callback)).unwrap();
 
     let callback = |_expirations| {
         main_loop.signal_event(&event).unwrap();
     };
-    let timer = main_loop.add_timer(&callback).unwrap();
+    let timer = main_loop.add_timer(Box::new(callback)).unwrap();
     main_loop
         .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
@@ -94,7 +94,7 @@ fn test_sources() {
     let callback = |_expirations| {
         main_loop.quit().unwrap();
     };
-    let timer = main_loop.add_timer(&callback).unwrap();
+    let timer = main_loop.add_timer(Box::new(callback)).unwrap();
     main_loop
         .update_timer(&timer, Duration::from_secs(3), Duration::ZERO, false)
         .unwrap();
@@ -122,7 +122,7 @@ fn test_iterate_main_loop() {
 
         assert_eq!(*loop_iterations.lock().unwrap(), 10)
     };
-    let timer = main_loop.add_timer(&callback).unwrap();
+    let timer = main_loop.add_timer(Box::new(callback)).unwrap();
     main_loop
         .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
@@ -144,7 +144,7 @@ fn test_iterate_main_loop() {
 //             dbg!("Main loop quit");
 //             main_loop.quit().unwrap();
 //         };
-//         let timer = main_loop.add_timer(&callback).unwrap();
+//         let timer = main_loop.add_timer(Box::new(callback)).unwrap();
 //         main_loop
 //             .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
 //             .unwrap();
@@ -177,7 +177,9 @@ fn test_port_params() {
         let main_loop_close_callback = |_expirations| {
             main_loop.quit().unwrap();
         };
-        let timer = main_loop.add_timer(&main_loop_close_callback).unwrap();
+        let timer = main_loop
+            .add_timer(Box::new(main_loop_close_callback))
+            .unwrap();
         main_loop
             .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
             .unwrap();
@@ -210,7 +212,7 @@ fn test_port_params() {
                 }
             }
         };
-        let _idle = main_loop.add_idle(true, &main_loop_idle_callback);
+        let _idle = main_loop.add_idle(true, Box::new(main_loop_idle_callback));
 
         main_loop.run().unwrap();
     }
@@ -237,7 +239,9 @@ fn test_node_params() {
         let main_loop_close_callback = |_expirations| {
             main_loop.quit().unwrap();
         };
-        let timer = main_loop.add_timer(&main_loop_close_callback).unwrap();
+        let timer = main_loop
+            .add_timer(Box::new(main_loop_close_callback))
+            .unwrap();
         main_loop
             .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
             .unwrap();
@@ -270,7 +274,7 @@ fn test_node_params() {
                 }
             }
         };
-        let _idle = main_loop.add_idle(true, &main_loop_idle_callback);
+        let _idle = main_loop.add_idle(true, Box::new(main_loop_idle_callback));
 
         main_loop.run().unwrap();
     }

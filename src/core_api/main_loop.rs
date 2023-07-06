@@ -9,8 +9,9 @@ use std::ptr::{addr_of, addr_of_mut, NonNull};
 use std::rc::Rc;
 use std::time::Duration;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
 use pw_sys::pw_main_loop_events;
+
+use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_::{LoopRef, LoopRefIterator};
 use crate::core_api::Pipewire;
@@ -59,10 +60,11 @@ impl MainLoopRef {
         &'l self,
         fd: RawFd,
         mask: u32,
-        callback: &'l F,
+        callback: Box<F>,
     ) -> crate::Result<IOSource<'l>>
     where
         F: FnMut(RawFd, u32),
+        F: 'l,
     {
         self.get_loop().utils().add_io(self, fd, mask, callback)
     }
@@ -74,10 +76,11 @@ impl MainLoopRef {
     pub fn add_idle<'l, F>(
         &'l self,
         enabled: bool,
-        callback: &'l F,
+        callback: Box<F>,
     ) -> crate::Result<IdleSource<'l>>
     where
         F: FnMut(),
+        F: 'l,
     {
         self.get_loop().utils().add_idle(self, enabled, callback)
     }
@@ -86,9 +89,10 @@ impl MainLoopRef {
         self.get_loop().utils().enable_idle(source, enabled)
     }
 
-    pub fn add_event<'l, F>(&'l self, callback: &'l F) -> crate::Result<EventSource<'l>>
+    pub fn add_event<'l, F>(&'l self, callback: Box<F>) -> crate::Result<EventSource<'l>>
     where
         F: FnMut(u64),
+        F: 'l,
     {
         self.get_loop().utils().add_event(self, callback)
     }
@@ -97,9 +101,10 @@ impl MainLoopRef {
         self.get_loop().utils().signal_event(source)
     }
 
-    pub fn add_timer<'l, F>(&'l self, callback: &'l F) -> crate::Result<TimerSource<'l>>
+    pub fn add_timer<'l, F>(&'l self, callback: Box<F>) -> crate::Result<TimerSource<'l>>
     where
         F: FnMut(u64),
+        F: 'l,
     {
         self.get_loop().utils().add_timer(self, callback)
     }
@@ -119,10 +124,11 @@ impl MainLoopRef {
     pub fn add_signal<'l, F>(
         &'l self,
         signal_number: i32,
-        callback: &'l F,
+        callback: Box<F>,
     ) -> crate::Result<SignalSource<'l>>
     where
         F: FnMut(i32),
+        F: 'l,
     {
         self.get_loop()
             .utils()

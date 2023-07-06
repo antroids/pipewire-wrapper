@@ -7,13 +7,13 @@ use std::time::Duration;
 use spa_sys::{spa_interface, spa_source, spa_source_io_func_t};
 
 use pipewire_macro_impl::spa_interface_call;
-use pipewire_proc_macro::{RawWrapper, spa_interface, Wrapper};
+use pipewire_proc_macro::{spa_interface, RawWrapper, Wrapper};
 
-use crate::{i32_as_result, i32_as_void_result};
 use crate::core_api::main_loop::MainLoop;
 use crate::error::Error;
 use crate::spa::interface::InterfaceRef;
 use crate::wrapper::{RawWrapper, SpaInterface, Wrapper};
+use crate::{i32_as_result, i32_as_void_result};
 
 pub mod utils;
 
@@ -45,7 +45,7 @@ pub struct IOSource<'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
     loop_: &'l dyn AsLoopRef,
-    callback: &'l dyn FnMut(RawFd, u32),
+    callback: Box<dyn FnMut(RawFd, u32) + 'l>,
 }
 
 #[derive(Wrapper)]
@@ -53,7 +53,7 @@ pub struct IdleSource<'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
     loop_: &'l dyn AsLoopRef,
-    callback: &'l dyn FnMut(),
+    callback: Box<dyn FnMut() + 'l>,
 }
 
 #[derive(Wrapper)]
@@ -61,7 +61,7 @@ pub struct EventSource<'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
     loop_: &'l dyn AsLoopRef,
-    callback: &'l dyn FnMut(u64),
+    callback: Box<dyn FnMut(u64) + 'l>,
 }
 
 #[derive(Wrapper)]
@@ -69,7 +69,7 @@ pub struct TimerSource<'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
     loop_: &'l dyn AsLoopRef,
-    callback: &'l dyn FnMut(u64),
+    callback: Box<dyn FnMut(u64) + 'l>,
 }
 
 #[derive(Wrapper)]
@@ -77,7 +77,7 @@ pub struct SignalSource<'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
     loop_: &'l dyn AsLoopRef,
-    callback: &'l dyn FnMut(i32),
+    callback: Box<dyn FnMut(i32) + 'l>,
 }
 
 pub trait AsLoopRef: Debug {
