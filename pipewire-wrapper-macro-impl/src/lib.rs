@@ -328,7 +328,7 @@ pub fn proxied(attr: TokenStream, input: TokenStream) -> TokenStream {
         pub const #interface_name_ident: crate::core_api::type_info::TypeInfo = crate::interface_type!(#interface_name);
 
         impl crate::core_api::proxy::Proxied for #struct_ident {
-            fn get_type_info() -> crate::core_api::type_info::TypeInfo<'static> {
+            fn type_info() -> crate::core_api::type_info::TypeInfo<'static> {
                 #interface_name_ident
             }
         }

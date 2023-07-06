@@ -1,3 +1,15 @@
+use std::ffi::CStr;
+use std::ops::{Deref, DerefMut};
+use std::pin::Pin;
+use std::ptr::NonNull;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+
+use spa_sys::SPA_TYPE_INFO_Data;
+
+use pipewire_macro_impl::spa_interface_call;
+use pipewire_proc_macro::RawWrapper;
+
 use crate::core_api::proxy::events::ProxyEvents;
 use crate::core_api::type_info::TypeInfo;
 use crate::error::Error;
@@ -5,15 +17,6 @@ use crate::i32_as_void_result;
 use crate::impl_api::protocol::ProtocolRef;
 use crate::spa::SPA_ID_INVALID;
 use crate::wrapper::{RawWrapper, Wrapper};
-use pipewire_macro_impl::spa_interface_call;
-use pipewire_proc_macro::RawWrapper;
-use spa_sys::SPA_TYPE_INFO_Data;
-use std::ffi::CStr;
-use std::ops::{Deref, DerefMut};
-use std::pin::Pin;
-use std::ptr::NonNull;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 
 pub mod events;
 
@@ -33,7 +36,7 @@ struct InnerProxy {
 }
 
 pub trait Proxied: RawWrapper {
-    fn get_type_info() -> TypeInfo<'static>;
+    fn type_info() -> TypeInfo<'static>;
 
     fn as_proxy(&self) -> &ProxyRef {
         unsafe { ProxyRef::from_raw_ptr(self.as_raw_ptr() as *mut _) }
@@ -161,7 +164,7 @@ impl ProxyRef {
         T: Proxied,
     {
         let proxy_type = self.get_type();
-        let target_type = T::get_type_info();
+        let target_type = T::type_info();
         if proxy_type == target_type {
             unsafe { Ok(T::from_raw_ptr(self.as_raw_ptr() as *mut _)) }
         } else {

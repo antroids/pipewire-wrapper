@@ -167,7 +167,7 @@ fn test_port_params() {
         let mut registry_listener = core.get_registry(0, 0).unwrap().add_listener();
         let global_callback = {
             |id, _permissions, type_info, _version, _props| {
-                if type_info == PortRef::get_type_info() {
+                if type_info == PortRef::type_info() {
                     port_ids_queue.lock().unwrap().push(id);
                 }
             }
@@ -186,7 +186,7 @@ fn test_port_params() {
             if let Some(port_id) = port_ids_queue.lock().unwrap().pop() {
                 println!("Port {}", port_id);
                 let registry = core.get_registry(0, 0).unwrap();
-                if let Ok(port_proxy) = registry.bind(port_id, PortRef::get_type_info(), 0, 0) {
+                if let Ok(port_proxy) = registry.bind(port_id, PortRef::type_info(), 0, 0) {
                     let port: &PortRef = port_proxy.as_object().unwrap();
                     let port_param_callback = |seq, id, index, next, param: &PodRef| {
                         if let Ok(basic_pod) = param.downcast() {
@@ -227,7 +227,7 @@ fn test_node_params() {
         let mut registry_listener = core.get_registry(0, 0).unwrap().add_listener();
         let global_callback = {
             |id, _permissions, type_info, _version, _props| {
-                if type_info == NodeRef::get_type_info() {
+                if type_info == NodeRef::type_info() {
                     node_ids_queue.lock().unwrap().push(id);
                 }
             }
@@ -246,7 +246,7 @@ fn test_node_params() {
             if let Some(node_id) = node_ids_queue.lock().unwrap().pop() {
                 println!("Node {}", node_id);
                 let registry = core.get_registry(0, 0).unwrap();
-                if let Ok(node_proxy) = registry.bind(node_id, NodeRef::get_type_info(), 0, 0) {
+                if let Ok(node_proxy) = registry.bind(node_id, NodeRef::type_info(), 0, 0) {
                     let node: &NodeRef = node_proxy.as_object().unwrap();
                     let node_param_callback = |seq, id, index, next, param: &PodRef| {
                         if let Ok(basic_pod) = param.downcast() {
