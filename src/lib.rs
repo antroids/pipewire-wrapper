@@ -19,7 +19,7 @@ pub mod impl_api;
 pub mod spa;
 pub mod wrapper;
 
-type Result<T> = std::result::Result<T, error::Error>;
+pub type Result<T> = std::result::Result<T, error::Error>;
 
 fn i32_as_void_result(result: i32) -> crate::Result<()> {
     i32_as_result(result, ())
