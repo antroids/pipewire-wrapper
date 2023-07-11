@@ -1,10 +1,12 @@
-use pipewire_proc_macro::{RawWrapper, spa_interface};
+use pipewire_proc_macro::{spa_interface, RawWrapper};
 
 use crate::spa;
-use crate::spa::loop_::LoopControlRef;
 use crate::spa::loop_::utils::LoopUtilsRef;
+use crate::spa::loop_::{AsLoopRef, LoopControlRef};
 use crate::spa::system::SystemRef;
 use crate::wrapper::*;
+
+pub mod channel;
 
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
@@ -76,5 +78,11 @@ impl Drop for LoopRefIterator<'_> {
         unsafe {
             self.loop_ref.control().leave();
         }
+    }
+}
+
+impl AsLoopRef for LoopRef {
+    fn loop_(&self) -> &spa::loop_::LoopRef {
+        self.loop_()
     }
 }

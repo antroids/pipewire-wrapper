@@ -105,7 +105,8 @@ fn node_param_callback(_seq: i32, _type_: ParamType, _index: u32, _next: u32, pa
         channel_volumes: vec![],
     };
     if let BasicType::OBJECT(obj) = param.downcast().unwrap() {
-        if let ObjectType::OBJECT_PROPS(props) = obj.value().unwrap() {
+        let object_value = obj.value().unwrap();
+        if let ObjectType::OBJECT_PROPS(props) = object_value {
             for prop in props {
                 if let Ok(prop_val) = prop.value() {
                     match prop_val {
@@ -125,6 +126,8 @@ fn node_param_callback(_seq: i32, _type_: ParamType, _index: u32, _next: u32, pa
                     };
                 }
             }
+        } else if let ObjectType::OBJECT_PARAM_ROUTE(route) = object_value {
+            println!("Route: {:?}", route)
         }
     }
     if !info.channel_volumes.is_empty() {

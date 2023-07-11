@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Display, Formatter, Pointer};
 
+use crate::core_api::loop_::channel::ChannelError;
 use crate::spa::type_::pod::PodError;
 
 pub enum Error {
@@ -13,6 +14,7 @@ pub enum Error {
     CannotCreateInstance,
     NullPointer,
     PodParseError(PodError),
+    ChannelError(ChannelError),
 }
 
 impl Debug for Error {
@@ -40,6 +42,7 @@ impl Display for Error {
             Error::CannotCreateInstance => write!(f, "CannotCreateInstance"),
             Error::NullPointer => write!(f, "NullPointer"),
             Error::PodParseError(pod_error) => write!(f, "PodParseError({:?})", pod_error),
+            Error::ChannelError(channel_error) => write!(f, "Channel error({:?})", channel_error),
         }
     }
 }

@@ -139,15 +139,16 @@ fn test_create_core() {
     let main_loop = context.main_loop();
     let registry = core.get_registry(0, 0).unwrap();
 
-    let global_callback = Box::new(|id, permissions, type_info, version, properties| {
-        println!(
-            "Global {:?} {:?} {:?} {:?}",
-            permissions, type_info, version, properties
-        );
-    });
     let registry_events = registry.add_listener(
         RegistryEventsBuilder::default()
-            .global(global_callback)
+            .global(Box::new(
+                |id, permissions, type_info, version, properties| {
+                    println!(
+                        "Global {:?} {:?} {:?} {:?}",
+                        permissions, type_info, version, properties
+                    );
+                },
+            ))
             .build(),
     );
 
