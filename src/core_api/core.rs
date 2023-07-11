@@ -5,12 +5,13 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use pipewire_macro_impl::spa_interface_call;
-use pipewire_proc_macro::{proxied, spa_interface, RawWrapper, Wrapper};
+use pipewire_proc_macro::{interface, spa_interface, RawWrapper, Wrapper};
 
 use crate::core_api::context::Context;
 use crate::core_api::core::events::CoreEvents;
 use crate::core_api::properties::Properties;
-use crate::core_api::registry::RegistryRef;
+use crate::core_api::registry::events::RegistryEventsBuilder;
+use crate::core_api::registry::{Registry, RegistryRef};
 use crate::core_api::type_info::TypeInfo;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
@@ -19,7 +20,7 @@ pub mod events;
 pub mod info;
 
 #[derive(RawWrapper, Debug)]
-#[proxied(methods=pw_sys::pw_core_methods, interface="Core")]
+#[interface(methods=pw_sys::pw_core_methods, interface="Core")]
 #[repr(transparent)]
 pub struct CoreRef {
     #[raw]
@@ -52,6 +53,13 @@ impl Core {
     pub fn context(&self) -> &std::sync::Arc<Context> {
         &self.context
     }
+
+    pub fn get_registry(&self, version: u32, user_data_size: usize) -> crate::Result<Registry> {
+        use crate::core_api::proxy::Proxied;
+        use crate::core_api::registry::restricted::RegistryBind;
+        let ref_: &RegistryRef = self.as_ref().get_registry(version, user_data_size)?;
+        Ok(Registry::from_ref(self, ref_.as_proxy()))
+    }
 }
 
 impl Default for Core {
@@ -74,9 +82,8 @@ impl Drop for Core {
 }
 
 impl CoreRef {
-    pub fn add_listener(&self) -> Pin<Box<CoreEvents>> {
-        let mut events = CoreEvents::new(self);
-
+    #[must_use]
+    pub fn add_listener<'a>(&'a self, events: Pin<Box<CoreEvents<'a>>>) -> Pin<Box<CoreEvents>> {
         unsafe {
             spa_interface_call!(
                 self,
@@ -116,7 +123,7 @@ impl CoreRef {
         i32_as_void_result(result)
     }
 
-    pub fn get_registry(&self, version: u32, user_data_size: usize) -> crate::Result<&RegistryRef> {
+    fn get_registry(&self, version: u32, user_data_size: usize) -> crate::Result<&RegistryRef> {
         let ptr = spa_interface_call!(self, get_registry, version, user_data_size)?;
         raw_wrapper(ptr)
     }
@@ -131,7 +138,6 @@ fn test_create_core() {
     let context = core.context();
     let main_loop = context.main_loop();
     let registry = core.get_registry(0, 0).unwrap();
-    let mut registry_events = registry.add_listener();
 
     let global_callback = Box::new(|id, permissions, type_info, version, properties| {
         println!(
@@ -139,7 +145,11 @@ fn test_create_core() {
             permissions, type_info, version, properties
         );
     });
-    registry_events.set_global(Some(global_callback));
+    let registry_events = registry.add_listener(
+        RegistryEventsBuilder::default()
+            .global(global_callback)
+            .build(),
+    );
 
     let timer_callback = |_| {
         core.context().main_loop().quit();

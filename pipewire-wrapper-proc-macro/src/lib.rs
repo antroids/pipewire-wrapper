@@ -16,6 +16,11 @@ pub fn spa_interface(attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn proxied(attr: TokenStream, input: TokenStream) -> TokenStream {
-    pipewire_macro_impl::proxied(attr.into(), input.into()).into()
+pub fn interface(attr: TokenStream, input: TokenStream) -> TokenStream {
+    pipewire_macro_impl::interface(attr.into(), input.into()).into()
+}
+
+#[proc_macro_attribute]
+pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
+    pipewire_macro_impl::proxy_wrapper(attr.into(), input.into()).into()
 }

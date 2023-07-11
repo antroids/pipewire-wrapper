@@ -8,13 +8,14 @@ use bitflags::Flags;
 
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
-use pipewire_wrapper::core_api::node::events::NodeEvents;
+use pipewire_wrapper::core_api::node::events::{NodeEvents, NodeEventsBuilder};
 use pipewire_wrapper::core_api::node::info::NodeInfoRef;
-use pipewire_wrapper::core_api::node::NodeRef;
-use pipewire_wrapper::core_api::port::events::PortEvents;
+use pipewire_wrapper::core_api::node::{Node, NodeRef};
+use pipewire_wrapper::core_api::port::events::{PortEvents, PortEventsBuilder};
 use pipewire_wrapper::core_api::port::info::PortInfoRef;
-use pipewire_wrapper::core_api::port::PortRef;
-use pipewire_wrapper::core_api::proxy::Proxied;
+use pipewire_wrapper::core_api::port::{Port, PortRef};
+use pipewire_wrapper::core_api::proxy::{Proxied, Proxy};
+use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
 use pipewire_wrapper::core_api::Pipewire;
 use pipewire_wrapper::spa::param::ParamType;
 use pipewire_wrapper::spa::type_::pod::object::ObjectType;
@@ -130,32 +131,6 @@ fn test_iterate_main_loop() {
     main_loop.run().unwrap();
 }
 
-// #[test]
-// fn test_init_main_loop_listener() {
-//     let destroy_listener = Box::new(|| println!("Main loop destroyed!"));
-//     let _main_loop_listener = {
-//         let main_loop = MainLoop::default();
-//
-//         let mut listener = main_loop.add_listener();
-//
-//         listener.set_destroy_cb(Some(destroy_listener));
-//
-//         let callback = |_expirations| {
-//             dbg!("Main loop quit");
-//             main_loop.quit().unwrap();
-//         };
-//         let timer = main_loop.add_timer(Box::new(callback)).unwrap();
-//         main_loop
-//             .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
-//             .unwrap();
-//
-//         dbg!("Main loop run");
-//         main_loop.run().unwrap();
-//
-//         listener
-//     };
-// }
-
 #[test]
 fn test_port_params() {
     let core = Arc::new(Core::default());
@@ -163,16 +138,19 @@ fn test_port_params() {
     let port_ids_queue: Mutex<Vec<u32>> = Mutex::new(Vec::new());
 
     {
-        let mut port_listeners: Vec<Pin<Box<PortEvents>>> = Vec::new();
-        let mut registry_listener = core.get_registry(0, 0).unwrap().add_listener();
-        let global_callback = {
-            |id, _permissions, type_info, _version, _props| {
-                if type_info == PortRef::type_info() {
-                    port_ids_queue.lock().unwrap().push(id);
-                }
-            }
-        };
-        registry_listener.set_global(Some(Box::new(global_callback)));
+        let ports: Mutex<Vec<Port>> = Mutex::default();
+        let registry = core.get_registry(0, 0).unwrap();
+        let _registry_listener = registry.add_listener(
+            RegistryEventsBuilder::default()
+                .global(Box::new({
+                    |id, _permissions, type_info, _version, _props| {
+                        if type_info == PortRef::type_info() {
+                            port_ids_queue.lock().unwrap().push(id);
+                        }
+                    }
+                }))
+                .build(),
+        );
 
         let main_loop_close_callback = |_expirations| {
             main_loop.quit().unwrap();
@@ -187,9 +165,7 @@ fn test_port_params() {
         let main_loop_idle_callback = || {
             if let Some(port_id) = port_ids_queue.lock().unwrap().pop() {
                 println!("Port {}", port_id);
-                let registry = core.get_registry(0, 0).unwrap();
-                if let Ok(port_proxy) = registry.bind(port_id, PortRef::type_info(), 0, 0) {
-                    let port: &PortRef = port_proxy.as_object().unwrap();
+                if let Ok(port) = registry.bind_proxy::<Port>(port_id, 0, 0) {
                     let port_param_callback = |seq, id, index, next, param: &PodRef| {
                         if let Ok(basic_pod) = param.downcast() {
                             println!(
@@ -198,17 +174,22 @@ fn test_port_params() {
                             )
                         }
                     };
-                    let port_info_callback = |port_info: &PortInfoRef| {
-                        println!("Port info {:?}", port_info);
-                        for param in port_info.params() {
-                            println!("Param info {:?}", param);
-                            port.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();
+                    let port_info_callback = {
+                        let port = port.clone();
+                        move |port_info: &PortInfoRef| {
+                            println!("Port info {:?}", port_info);
+                            for param in port_info.params() {
+                                println!("Param info {:?}", param);
+                                port.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();
+                            }
                         }
                     };
-                    let mut port_listener = port.add_listener();
-                    port_listener.set_param(Some(Box::new(port_param_callback)));
-                    port_listener.set_info(Some(Box::new(port_info_callback)));
-                    port_listeners.push(port_listener);
+                    let port_listener = PortEventsBuilder::default()
+                        .param(Box::new(port_param_callback))
+                        .info(Box::new(port_info_callback))
+                        .build();
+                    port.add_listener(port_listener);
+                    ports.lock().unwrap().push(port);
                 }
             }
         };
@@ -225,16 +206,19 @@ fn test_node_params() {
     let node_ids_queue: Mutex<Vec<u32>> = Mutex::new(Vec::new());
 
     {
-        let mut node_listeners: Vec<Pin<Box<NodeEvents>>> = Vec::new();
-        let mut registry_listener = core.get_registry(0, 0).unwrap().add_listener();
-        let global_callback = {
-            |id, _permissions, type_info, _version, _props| {
-                if type_info == NodeRef::type_info() {
-                    node_ids_queue.lock().unwrap().push(id);
-                }
-            }
-        };
-        registry_listener.set_global(Some(Box::new(global_callback)));
+        let nodes: Mutex<Vec<Node>> = Mutex::default();
+        let registry = core.get_registry(0, 0).unwrap();
+        let _registry_listener = registry.add_listener(
+            RegistryEventsBuilder::default()
+                .global(Box::new({
+                    |id, _permissions, type_info, _version, _props| {
+                        if type_info == NodeRef::type_info() {
+                            node_ids_queue.lock().unwrap().push(id);
+                        }
+                    }
+                }))
+                .build(),
+        );
 
         let main_loop_close_callback = |_expirations| {
             main_loop.quit().unwrap();
@@ -249,9 +233,7 @@ fn test_node_params() {
         let main_loop_idle_callback = || {
             if let Some(node_id) = node_ids_queue.lock().unwrap().pop() {
                 println!("Node {}", node_id);
-                let registry = core.get_registry(0, 0).unwrap();
-                if let Ok(node_proxy) = registry.bind(node_id, NodeRef::type_info(), 0, 0) {
-                    let node: &NodeRef = node_proxy.as_object().unwrap();
+                if let Ok(node) = registry.bind_proxy::<Node>(node_id, 0, 0) {
                     let node_param_callback = |seq, id, index, next, param: &PodRef| {
                         if let Ok(basic_pod) = param.downcast() {
                             println!(
@@ -260,17 +242,22 @@ fn test_node_params() {
                             )
                         }
                     };
-                    let node_info_callback = |node_info: &NodeInfoRef| {
-                        println!("Node info {:?}", node_info);
-                        for param in node_info.params() {
-                            println!("Param info {:?}", param);
-                            node.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();
+                    let node_info_callback = {
+                        let node = node.clone();
+                        move |node_info: &NodeInfoRef| {
+                            println!("Node info {:?}", node_info);
+                            for param in node_info.params() {
+                                println!("Param info {:?}", param);
+                                node.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();
+                            }
                         }
                     };
-                    let mut node_listener = node.add_listener();
-                    node_listener.set_param(Some(Box::new(node_param_callback)));
-                    node_listener.set_info(Some(Box::new(node_info_callback)));
-                    node_listeners.push(node_listener);
+                    let node_listener = NodeEventsBuilder::default()
+                        .param(Box::new(node_param_callback))
+                        .info(Box::new(node_info_callback))
+                        .build();
+                    node.add_listener(node_listener);
+                    nodes.lock().unwrap().push(node);
                 }
             }
         };

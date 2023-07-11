@@ -1,6 +1,7 @@
 use std::ffi::CStr;
+use std::marker::PhantomPinned;
 use std::pin::Pin;
-use std::ptr::{addr_of, addr_of_mut, NonNull, null_mut};
+use std::ptr::{addr_of, addr_of_mut, null_mut, NonNull};
 
 use spa_sys::{spa_callbacks, spa_hook, spa_list};
 
@@ -22,6 +23,7 @@ pub struct Hook {
     ref_: NonNull<HookRef>,
 
     hook: spa_hook,
+    pinned: PhantomPinned,
 }
 
 #[derive(RawWrapper, Debug)]
@@ -147,6 +149,7 @@ impl Hook {
         let mut hook = Box::new(Self {
             ref_: NonNull::dangling(),
             hook: spa_hook,
+            pinned: PhantomPinned::default(),
         });
         unsafe {
             hook.ref_ = NonNull::new(addr_of_mut!(hook.hook) as *mut HookRef).unwrap();

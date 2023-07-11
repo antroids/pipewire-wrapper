@@ -10,6 +10,7 @@ use spa_sys::SPA_TYPE_INFO_Data;
 use pipewire_macro_impl::spa_interface_call;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::core_api::core::Core;
 use crate::core_api::proxy::events::ProxyEvents;
 use crate::core_api::type_info::TypeInfo;
 use crate::error::Error;
@@ -27,8 +28,10 @@ pub struct ProxyRef {
     raw: pw_sys::pw_proxy,
 }
 
-pub struct Proxy {
+pub struct Proxy<'c> {
     inner: Arc<InnerProxy>,
+
+    core: &'c Core,
 }
 
 struct InnerProxy {
@@ -43,33 +46,48 @@ pub trait Proxied: RawWrapper {
     }
 }
 
-impl Wrapper for Proxy {
+impl<'c> Proxy<'c> {
+    pub(crate) fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
+        Self {
+            inner: Arc::new(InnerProxy {
+                ref_: NonNull::new(ref_.as_ptr()).unwrap(),
+            }),
+            core,
+        }
+    }
+
+    pub fn core(&self) -> &'c Core {
+        self.core
+    }
+}
+
+impl<'c> Wrapper for Proxy<'c> {
     type RawWrapperType = ProxyRef;
 }
 
-impl AsMut<ProxyRef> for Proxy {
-    fn as_mut(&mut self) -> &mut ProxyRef {
+impl<'c> AsMut<ProxyRef> for Proxy<'c> {
+    fn as_mut(&mut self) -> &'c mut ProxyRef {
         unsafe { &mut *self.inner.ref_.as_ptr() }
     }
 }
 
-impl AsRef<ProxyRef> for Proxy {
-    fn as_ref(&self) -> &ProxyRef {
+impl<'c> AsRef<ProxyRef> for Proxy<'c> {
+    fn as_ref(&self) -> &'c ProxyRef {
         unsafe { self.inner.ref_.as_ref() }
     }
 }
 
-impl Deref for Proxy {
+impl<'c> Deref for Proxy<'c> {
     type Target = <Self as crate::wrapper::Wrapper>::RawWrapperType;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &'c Self::Target {
         unsafe { self.inner.ref_.as_ref() }
     }
 }
 
-impl DerefMut for Proxy {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.as_mut()
+impl<'c> DerefMut for Proxy<'c> {
+    fn deref_mut(&mut self) -> &'c mut Self::Target {
+        unsafe { &mut *self.inner.ref_.as_ptr() }
     }
 }
 
@@ -79,17 +97,18 @@ impl Drop for InnerProxy {
     }
 }
 
-impl Clone for Proxy {
+impl<'c> Clone for Proxy<'c> {
     fn clone(&self) -> Self {
         let cloned = Self {
             inner: self.inner.clone(),
+            core: self.core.clone(),
         };
         unsafe { pw_sys::pw_proxy_ref(self.as_raw_ptr()) };
         cloned
     }
 }
 
-impl Drop for Proxy {
+impl<'c> Drop for Proxy<'c> {
     fn drop(&mut self) {
         if Arc::strong_count(&self.inner) > 1 {
             // can cause assert errors when used in concurrent env, probably additional sync required
@@ -99,9 +118,7 @@ impl Drop for Proxy {
 }
 
 impl ProxyRef {
-    pub fn add_listener(&self) -> Pin<Box<ProxyEvents>> {
-        let mut events = ProxyEvents::new(self);
-
+    pub fn add_listener<'a>(&'a self, events: Pin<Box<ProxyEvents<'a>>>) -> Pin<Box<ProxyEvents>> {
         unsafe {
             pw_sys::pw_proxy_add_listener(
                 self.as_raw_ptr(),
@@ -119,6 +136,10 @@ impl ProxyRef {
 
     pub fn get_id(&self) -> u32 {
         unsafe { pw_sys::pw_proxy_get_id(self.as_raw_ptr()) }
+    }
+
+    pub fn is_bound(&self) -> bool {
+        self.get_id() != SPA_ID_INVALID
     }
 
     pub fn get_type_and_version(&self) -> (TypeInfo, u32) {
@@ -166,9 +187,16 @@ impl ProxyRef {
         let proxy_type = self.get_type();
         let target_type = T::type_info();
         if proxy_type == target_type {
-            unsafe { Ok(T::from_raw_ptr(self.as_raw_ptr() as *mut _)) }
+            unsafe { Ok(self.as_object_unchecked_mut()) }
         } else {
             Err(Error::TypeMismatch)
         }
+    }
+
+    pub(crate) unsafe fn as_object_unchecked_mut<T>(&self) -> &'_ mut T
+    where
+        T: Proxied,
+    {
+        T::mut_from_raw_ptr(self.as_raw_ptr() as *mut _)
     }
 }

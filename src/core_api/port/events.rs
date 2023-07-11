@@ -1,15 +1,20 @@
+use std::ffi::CStr;
+use std::pin::Pin;
+use std::ptr::NonNull;
+
+use derive_builder::Builder;
+use pw_sys::{pw_port_events, pw_port_info};
+use spa_sys::spa_pod;
+
+use pipewire_macro_impl::events_builder_build;
+use pipewire_proc_macro::{RawWrapper, Wrapper};
+
 use crate::core_api::port::info::PortInfoRef;
 use crate::core_api::port::PortRef;
 use crate::spa::interface::Hook;
 use crate::spa::param::{ParamInfoRef, ParamType};
 use crate::spa::type_::pod::PodRef;
 use crate::wrapper::RawWrapper;
-use pipewire_proc_macro::{RawWrapper, Wrapper};
-use pw_sys::pw_port_info;
-use spa_sys::spa_pod;
-use std::ffi::CStr;
-use std::pin::Pin;
-use std::ptr::NonNull;
 
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
@@ -18,18 +23,19 @@ pub struct PortEventsRef {
     raw: pw_sys::pw_port_events,
 }
 
-#[derive(Wrapper)]
+#[derive(Wrapper, Builder)]
+#[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct PortEvents<'p> {
     #[raw_wrapper]
     ref_: NonNull<PortEventsRef>,
 
-    port: &'p PortRef,
-
     raw: Pin<Box<PortEventsRef>>,
     hook: Pin<Box<Hook>>,
 
-    info: Option<Box<dyn FnMut(&'p PortInfoRef) + 'p>>,
-    param: Option<Box<dyn FnMut(i32, ParamType, u32, u32, &'p PodRef) + 'p>>,
+    #[builder(setter)]
+    info: Option<Box<dyn for<'a> FnMut(&'a PortInfoRef) + 'p>>,
+    #[builder(setter)]
+    param: Option<Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>>,
 }
 
 impl Drop for PortEvents<'_> {
@@ -39,38 +45,15 @@ impl Drop for PortEvents<'_> {
 }
 
 impl<'p> PortEvents<'p> {
-    pub(crate) fn new(port: &'p PortRef) -> Pin<Box<Self>> {
-        let hook = Hook::new();
-        let raw = PortEventsRef::from_raw(pw_sys::pw_port_events {
-            version: 0,
-            info: None,
-            param: None,
-        });
-        let mut pinned_raw = Box::into_pin(Box::new(raw));
-
-        Box::into_pin(Box::new(Self {
-            ref_: NonNull::new(pinned_raw.as_ptr()).unwrap(),
-            port,
-            raw: pinned_raw,
-            hook,
-            info: None,
-            param: None,
-        }))
-    }
-
-    fn info_call(
-    ) -> unsafe extern "C" fn(data: *mut ::std::os::raw::c_void, info: *const pw_port_info) {
-        unsafe extern "C" fn call(data: *mut ::std::os::raw::c_void, info: *const pw_port_info) {
-            if let Some(events) = (data as *mut PortEvents).as_mut() {
-                if let Some(callback) = &mut events.info {
-                    callback(PortInfoRef::from_raw_ptr(info));
-                }
+    unsafe extern "C" fn info_call(data: *mut ::std::os::raw::c_void, info: *const pw_port_info) {
+        if let Some(events) = (data as *mut PortEvents).as_mut() {
+            if let Some(callback) = &mut events.info {
+                callback(PortInfoRef::from_raw_ptr(info));
             }
         }
-        call
     }
 
-    fn param_call() -> unsafe extern "C" fn(
+    unsafe extern "C" fn param_call(
         data: *mut ::std::os::raw::c_void,
         seq: ::std::os::raw::c_int,
         id: u32,
@@ -78,46 +61,33 @@ impl<'p> PortEvents<'p> {
         next: u32,
         param: *const spa_pod,
     ) {
-        unsafe extern "C" fn call(
-            data: *mut ::std::os::raw::c_void,
-            seq: ::std::os::raw::c_int,
-            id: u32,
-            index: u32,
-            next: u32,
-            param: *const spa_pod,
-        ) {
-            if let Some(events) = (data as *mut PortEvents).as_mut() {
-                if let Some(callback) = &mut events.param {
-                    callback(
-                        seq,
-                        ParamType::from_raw(id),
-                        index,
-                        next,
-                        PodRef::from_raw_ptr(param),
-                    );
-                }
+        if let Some(events) = (data as *mut PortEvents).as_mut() {
+            if let Some(callback) = &mut events.param {
+                callback(
+                    seq,
+                    ParamType::from_raw(id),
+                    index,
+                    next,
+                    PodRef::from_raw_ptr(param),
+                );
             }
         }
-        call
     }
 
-    pub fn set_info(&mut self, info: Option<Box<dyn FnMut(&'p PortInfoRef) + 'p>>) {
-        self.info = info;
-        self.raw.raw.info = self.info.as_ref().map(|_| Self::info_call());
-    }
-
-    pub fn set_param(
-        &mut self,
-        param: Option<Box<dyn FnMut(i32, ParamType, u32, u32, &'p PodRef) + 'p>>,
-    ) {
-        self.param = param;
-        self.raw.raw.param = self.param.as_ref().map(|_| Self::param_call());
-    }
-
-    pub fn port(&self) -> &'p PortRef {
-        self.port
-    }
     pub fn hook(&self) -> &Pin<Box<Hook>> {
         &self.hook
+    }
+
+    pub fn version(&self) -> u32 {
+        self.raw.raw.version
+    }
+}
+
+impl<'p> PortEventsBuilder<'p> {
+    events_builder_build! {
+        PortEvents<'p>,
+        pw_port_events,
+        info => info_call,
+        param => param_call,
     }
 }

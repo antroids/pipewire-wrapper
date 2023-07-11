@@ -1,11 +1,16 @@
+use std::pin::Pin;
+use std::ptr::NonNull;
+
+use derive_builder::Builder;
+use pw_sys::{pw_factory_events, pw_factory_info};
+
+use pipewire_macro_impl::events_builder_build;
+use pipewire_proc_macro::{RawWrapper, Wrapper};
+
 use crate::core_api::factory::info::FactoryInfoRef;
 use crate::core_api::factory::FactoryRef;
 use crate::spa::interface::Hook;
 use crate::wrapper::RawWrapper;
-use pipewire_proc_macro::{RawWrapper, Wrapper};
-use pw_sys::pw_factory_info;
-use std::pin::Pin;
-use std::ptr::NonNull;
 
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
@@ -14,17 +19,17 @@ pub struct FactoryEventsRef {
     raw: pw_sys::pw_factory_events,
 }
 
-#[derive(Wrapper)]
+#[derive(Wrapper, Builder)]
+#[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct FactoryEvents<'f> {
     #[raw_wrapper]
     ref_: NonNull<FactoryEventsRef>,
 
-    factory: &'f FactoryRef,
-
     raw: Pin<Box<FactoryEventsRef>>,
     hook: Pin<Box<Hook>>,
 
-    info: Option<Box<dyn FnMut(&'f FactoryInfoRef) + 'f>>,
+    #[builder(setter)]
+    info: Option<Box<dyn for<'a> FnMut(&'a FactoryInfoRef) + 'f>>,
 }
 
 impl Drop for FactoryEvents<'_> {
@@ -34,44 +39,30 @@ impl Drop for FactoryEvents<'_> {
 }
 
 impl<'f> FactoryEvents<'f> {
-    pub(crate) fn new(factory: &'f FactoryRef) -> Pin<Box<Self>> {
-        let hook = Hook::new();
-        let raw = FactoryEventsRef::from_raw(pw_sys::pw_factory_events {
-            version: 0,
-            info: None,
-        });
-        let mut pinned_raw = Box::into_pin(Box::new(raw));
-
-        Box::into_pin(Box::new(Self {
-            ref_: NonNull::new(pinned_raw.as_ptr()).unwrap(),
-            factory,
-            raw: pinned_raw,
-            hook,
-            info: None,
-        }))
-    }
-
-    fn info_call(
-    ) -> unsafe extern "C" fn(data: *mut ::std::os::raw::c_void, info: *const pw_factory_info) {
-        unsafe extern "C" fn call(data: *mut ::std::os::raw::c_void, info: *const pw_factory_info) {
-            if let Some(factory_events) = (data as *mut FactoryEvents).as_mut() {
-                if let Some(callback) = &mut factory_events.info {
-                    callback(FactoryInfoRef::from_raw_ptr(info));
-                }
+    unsafe extern "C" fn info_call(
+        data: *mut ::std::os::raw::c_void,
+        info: *const pw_factory_info,
+    ) {
+        if let Some(factory_events) = (data as *mut FactoryEvents).as_mut() {
+            if let Some(callback) = &mut factory_events.info {
+                callback(FactoryInfoRef::from_raw_ptr(info));
             }
         }
-        call
     }
 
-    pub fn set_info(&mut self, info: Option<Box<dyn FnMut(&'f FactoryInfoRef) + 'f>>) {
-        self.info = info;
-        self.raw.raw.info = self.info.as_ref().map(|_| Self::info_call());
-    }
-
-    pub fn factory(&self) -> &'f FactoryRef {
-        self.factory
-    }
     pub fn hook(&self) -> &Pin<Box<Hook>> {
         &self.hook
+    }
+
+    pub fn version(&self) -> u32 {
+        self.raw.raw.version
+    }
+}
+
+impl<'f> FactoryEventsBuilder<'f> {
+    events_builder_build! {
+        FactoryEvents<'f>,
+        pw_factory_events,
+        info => info_call,
     }
 }

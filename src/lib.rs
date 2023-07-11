@@ -16,8 +16,11 @@ use crate::wrapper::RawWrapper;
 pub mod core_api;
 pub mod error;
 pub mod impl_api;
+pub mod listeners;
 pub mod spa;
 pub mod wrapper;
+
+pub const SPA_ID_INVALID: u32 = 0xffffffff;
 
 pub type Result<T> = std::result::Result<T, error::Error>;
 

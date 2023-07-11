@@ -10,7 +10,7 @@ use spa_sys::spa_support;
 
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
-use crate::core_api::context::events::ContextEvents;
+use crate::core_api::context::events::{ContextEvents, ContextEventsBuilder};
 use crate::core_api::core::Core;
 use crate::core_api::data_loop::DataLoopRef;
 use crate::core_api::factory::FactoryRef;
@@ -83,9 +83,11 @@ impl Default for Context {
 }
 
 impl ContextRef {
-    pub fn add_listener(&self) -> Pin<Box<ContextEvents>> {
-        let mut events = ContextEvents::new(self);
-
+    #[must_use]
+    pub fn add_listener<'a>(
+        &self,
+        events: Pin<Box<ContextEvents<'a>>>,
+    ) -> Pin<Box<ContextEvents<'a>>> {
         unsafe {
             pw_sys::pw_context_add_listener(
                 self.as_raw_ptr(),
@@ -94,7 +96,6 @@ impl ContextRef {
                 &*events as *const _ as *mut _,
             );
         }
-
         events
     }
 
@@ -207,12 +208,13 @@ fn test_context_init() {
 #[test]
 fn test_context_events() {
     let context = std::sync::Arc::new(Context::default());
-    let mut events = context.add_listener();
 
-    let callback = |global| {
-        println!("Global added {:?}", global);
-    };
-    events.set_global_added(Some(Box::new(callback)));
+    let events = ContextEventsBuilder::default()
+        .global_added(Box::new(|global| {
+            println!("Global added {:?}", global);
+        }))
+        .build();
+    let events = context.add_listener(events);
 
     let core = Core::connect(&context, Properties::default(), 0).unwrap();
     let registry = core.get_registry(0, 0);

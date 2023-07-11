@@ -127,12 +127,12 @@ impl Parse for SpaInterfaceAttr {
     }
 }
 
-struct ProxiedAttr {
+struct InterfaceAttr {
     methods: Type,
     interface: LitStr,
 }
 
-impl Parse for ProxiedAttr {
+impl Parse for InterfaceAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut methods_arg_value: Option<Type> = None;
         let mut interface_arg_value: Option<LitStr> = None;
@@ -303,20 +303,20 @@ pub fn spa_interface(attr: TokenStream, input: TokenStream) -> TokenStream {
     )
 }
 
-pub fn proxied(attr: TokenStream, input: TokenStream) -> TokenStream {
+pub fn interface(attr: TokenStream, input: TokenStream) -> TokenStream {
     let struct_info = match parse2::<WrappedRawStructInfo>(input.clone()) {
         Ok(parsed) => parsed,
         Err(error) => return error.to_compile_error(),
     };
-    let proxied_attr = match parse2::<ProxiedAttr>(attr) {
+    let interface_attr = match parse2::<InterfaceAttr>(attr) {
         Ok(parsed) => parsed,
         Err(error) => return error.to_compile_error(),
     };
 
     let struct_ident = &struct_info.struct_ident;
     let raw_field_ident = &struct_info.raw_field.ident;
-    let methods_type = proxied_attr.methods;
-    let interface_name = proxied_attr.interface;
+    let methods_type = interface_attr.methods;
+    let interface_name = interface_attr.interface;
     let interface_name_ident = Ident::new(
         format!("{}_TYPE_INFO", interface_name.value().to_uppercase()).as_str(),
         Span::call_site(),
@@ -345,6 +345,72 @@ pub fn proxied(attr: TokenStream, input: TokenStream) -> TokenStream {
                     crate::spa::interface::InterfaceRef::from_raw_ptr(
                         &self.#raw_field_ident as *const _ as *const spa_sys::spa_interface)
                 }
+            }
+        }
+    )
+}
+
+pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
+    let struct_info: ItemStruct = parse2(input.clone()).unwrap();
+    let interface_attr: TypePath = parse2(attr).unwrap();
+
+    let struct_ident = &struct_info.ident;
+    let ref_type_ident = interface_attr.path.get_ident().unwrap();
+
+    quote!(
+        #input
+
+        impl<'c> #struct_ident<'c> {
+            pub fn proxy(&self) -> &crate::core_api::proxy::Proxy {
+                &self.ref_
+            }
+
+            pub fn is_bound(&self) -> bool {
+                self.ref_.is_bound()
+            }
+        }
+
+        // impl<'c> crate::core_api::registry::restricted::RegistryBind<'c> for #struct_ident <'c> {
+        //     fn from_ref(core: &'c crate::core_api::core::Core, ref_: &crate::core_api::proxy::ProxyRef) -> Self {
+        //         Self {
+        //             ref_: crate::core_api::proxy::Proxy::from_ref(core, ref_),
+        //         }
+        //     }
+        // }
+
+        impl<'c> crate::wrapper::Wrapper for #struct_ident <'c> {
+            type RawWrapperType = #ref_type_ident;
+        }
+
+        impl<'c> Drop for #struct_ident <'c> {
+            fn drop(&mut self) {
+                // handled by proxy
+            }
+        }
+
+        impl <'c> std::ops::Deref for #struct_ident <'c> {
+            type Target = #ref_type_ident;
+
+            fn deref(&self) -> &'c Self::Target {
+                unsafe { #ref_type_ident::mut_from_raw_ptr(self.ref_.as_raw_ptr().cast()) }
+            }
+        }
+
+        impl<'c> std::ops::DerefMut for #struct_ident <'c> {
+            fn deref_mut(&mut self) -> &'c mut Self::Target {
+                unsafe { #ref_type_ident::mut_from_raw_ptr(self.ref_.as_raw_ptr().cast()) }
+            }
+        }
+
+        impl<'c> AsRef<#ref_type_ident> for #struct_ident <'c> {
+            fn as_ref(&self) -> &'c #ref_type_ident {
+                unsafe { #ref_type_ident::mut_from_raw_ptr(self.ref_.as_raw_ptr().cast()) }
+            }
+        }
+
+        impl<'c> AsMut<#ref_type_ident> for #struct_ident <'c> {
+            fn as_mut(&mut self) -> &'c mut #ref_type_ident {
+                unsafe { #ref_type_ident::mut_from_raw_ptr(self.ref_.as_raw_ptr().cast()) }
             }
         }
     )
