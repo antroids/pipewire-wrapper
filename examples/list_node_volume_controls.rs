@@ -2,17 +2,15 @@ extern crate pipewire_wrapper;
 
 use std::collections::HashMap;
 use std::ffi::CString;
-use std::pin::Pin;
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex};
 
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
-use pipewire_wrapper::core_api::node::events::{NodeEvents, NodeEventsBuilder};
+use pipewire_wrapper::core_api::node::events::NodeEventsBuilder;
 use pipewire_wrapper::core_api::node::{Node, NodeRef};
 use pipewire_wrapper::core_api::proxy::Proxied;
-use pipewire_wrapper::core_api::registry::events::{RegistryEvents, RegistryEventsBuilder};
-use pipewire_wrapper::core_api::registry::{Registry, RegistryRef};
+use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
+use pipewire_wrapper::core_api::registry::Registry;
 use pipewire_wrapper::listeners::ListenerId;
 use pipewire_wrapper::spa::loop_::EventSource;
 use pipewire_wrapper::spa::param::ParamType;
