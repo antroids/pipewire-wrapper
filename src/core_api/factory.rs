@@ -7,8 +7,8 @@ use crate::core_api::core::Core;
 use crate::core_api::factory::events::FactoryEvents;
 use crate::core_api::proxy::{Proxy, ProxyRef};
 use crate::core_api::registry::restricted::RegistryBind;
-use crate::listeners::{ListenerId, Listeners};
-use crate::wrapper::RawWrapper;
+use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
+use crate::wrapper::{RawWrapper, Wrapper};
 
 pub mod events;
 pub mod info;
@@ -21,12 +21,10 @@ pub struct FactoryRef {
     raw: pw_sys::pw_factory,
 }
 
-impl FactoryRef {
-    #[must_use]
-    pub fn add_listener<'a>(
-        &'a self,
-        events: Pin<Box<FactoryEvents<'a>>>,
-    ) -> Pin<Box<FactoryEvents>> {
+impl<'a> AddListener<'a> for FactoryRef {
+    type Events = FactoryEvents<'a>;
+
+    fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
             spa_interface_call!(
                 self,
@@ -58,14 +56,10 @@ impl<'c> RegistryBind<'c> for Factory<'c> {
     }
 }
 
-impl<'c> Factory<'c> {
-    pub fn add_listener(&self, events: Pin<Box<FactoryEvents<'c>>>) -> ListenerId {
-        let raw_wrapper = unsafe { FactoryRef::from_raw_ptr(self.ref_.as_raw_ptr().cast()) };
-        let mut listener = raw_wrapper.add_listener(events);
-        self.listeners.add(listener)
-    }
-
-    pub fn remove_listener(&'c mut self, id: ListenerId) -> Option<Pin<Box<FactoryEvents<'c>>>> {
-        self.listeners.remove(id)
+impl<'a> OwnListeners<'a> for Factory<'a> {
+    fn listeners(
+        &self,
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+        &self.listeners
     }
 }

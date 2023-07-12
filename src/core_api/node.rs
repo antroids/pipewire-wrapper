@@ -14,7 +14,7 @@ use crate::core_api::registry::Registry;
 use crate::core_api::type_info::TypeInfo;
 use crate::core_api::Pipewire;
 use crate::i32_as_void_result;
-use crate::listeners::{ListenerId, Listeners};
+use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
 use crate::spa::param::ParamType;
 use crate::spa::type_::pod::PodRef;
 use crate::wrapper::{RawWrapper, Wrapper};
@@ -31,20 +31,6 @@ pub struct NodeRef {
 }
 
 impl NodeRef {
-    pub fn add_listener<'a>(&'a self, events: Pin<Box<NodeEvents<'a>>>) -> Pin<Box<NodeEvents>> {
-        unsafe {
-            spa_interface_call!(
-                self,
-                add_listener,
-                events.hook().as_raw_ptr(),
-                events.as_raw_ptr(),
-                &*events as *const _ as *mut _
-            )
-        };
-
-        events
-    }
-
     pub fn subscribe_params(&self, param_types: &[ParamType]) -> crate::Result<()> {
         let result = unsafe {
             spa_interface_call!(
@@ -80,6 +66,24 @@ impl NodeRef {
     }
 }
 
+impl<'a> AddListener<'a> for NodeRef {
+    type Events = NodeEvents<'a>;
+
+    fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
+        unsafe {
+            spa_interface_call!(
+                self,
+                add_listener,
+                events.hook().as_raw_ptr(),
+                events.as_raw_ptr(),
+                &*events as *const _ as *mut _
+            )
+        };
+
+        events
+    }
+}
+
 #[derive(Clone)]
 #[proxy_wrapper(NodeRef)]
 pub struct Node<'c> {
@@ -97,14 +101,10 @@ impl<'c> RegistryBind<'c> for Node<'c> {
     }
 }
 
-impl<'c> Node<'c> {
-    pub fn add_listener(&self, events: Pin<Box<NodeEvents<'c>>>) -> ListenerId {
-        let raw_wrapper = unsafe { NodeRef::from_raw_ptr(self.ref_.as_raw_ptr().cast()) };
-        let mut listener = raw_wrapper.add_listener(events);
-        self.listeners.add(listener)
-    }
-
-    pub fn remove_listener(&'c mut self, id: ListenerId) -> Option<Pin<Box<NodeEvents<'c>>>> {
-        self.listeners.remove(id)
+impl<'a> OwnListeners<'a> for Node<'a> {
+    fn listeners(
+        &self,
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+        &self.listeners
     }
 }

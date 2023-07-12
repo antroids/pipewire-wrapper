@@ -2,6 +2,8 @@ use std::mem;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 
+use crate::wrapper::{RawWrapper, Wrapper};
+
 pub type ListenerId = usize;
 
 #[derive(Debug)]
@@ -41,5 +43,38 @@ impl<T> Default for Listeners<T> {
         Self {
             inner: Arc::new(Mutex::default()),
         }
+    }
+}
+
+pub trait AddListener<'a>: RawWrapper {
+    type Events: 'a;
+
+    #[must_use]
+    fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>>;
+}
+
+pub trait OwnListeners<'a>
+where
+    Self: Wrapper,
+    <Self as Wrapper>::RawWrapperType: AddListener<'a>,
+{
+    fn listeners(
+        &self,
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>>;
+
+    fn add_listener(
+        &self,
+        events: Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>,
+    ) -> ListenerId {
+        let raw_wrapper = unsafe { Self::RawWrapperType::from_raw_ptr(self.as_raw_ptr().cast()) };
+        let mut listener = raw_wrapper.add_listener(events);
+        self.listeners().add(listener)
+    }
+
+    fn remove_listener(
+        &'a mut self,
+        id: ListenerId,
+    ) -> Option<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+        self.listeners().remove(id)
     }
 }

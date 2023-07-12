@@ -16,6 +16,7 @@ use crate::core_api::type_info::TypeInfo;
 use crate::error::Error;
 use crate::i32_as_void_result;
 use crate::impl_api::protocol::ProtocolRef;
+use crate::listeners::AddListener;
 use crate::spa::SPA_ID_INVALID;
 use crate::wrapper::{RawWrapper, Wrapper};
 
@@ -118,19 +119,6 @@ impl<'c> Drop for Proxy<'c> {
 }
 
 impl ProxyRef {
-    pub fn add_listener<'a>(&'a self, events: Pin<Box<ProxyEvents<'a>>>) -> Pin<Box<ProxyEvents>> {
-        unsafe {
-            pw_sys::pw_proxy_add_listener(
-                self.as_raw_ptr(),
-                events.hook().as_raw_ptr(),
-                events.as_raw_ptr(),
-                &*events as *const _ as *mut _,
-            )
-        }
-
-        events
-    }
-
     //todo add_object_listener
     //todo get_user_data
 
@@ -198,5 +186,22 @@ impl ProxyRef {
         T: Proxied,
     {
         T::mut_from_raw_ptr(self.as_raw_ptr() as *mut _)
+    }
+}
+
+impl<'a> AddListener<'a> for ProxyRef {
+    type Events = ProxyEvents<'a>;
+
+    fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
+        unsafe {
+            pw_sys::pw_proxy_add_listener(
+                self.as_raw_ptr(),
+                events.hook().as_raw_ptr(),
+                events.as_raw_ptr(),
+                &*events as *const _ as *mut _,
+            )
+        }
+
+        events
     }
 }

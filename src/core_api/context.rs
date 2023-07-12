@@ -19,6 +19,7 @@ use crate::core_api::main_loop::{MainLoop, MainLoopRef};
 use crate::core_api::properties::{Properties, PropertiesRef};
 use crate::impl_api::global::GlobalRef;
 use crate::impl_api::work_queue::WorkQueueRef;
+use crate::listeners::AddListener;
 use crate::spa::dict::DictRef;
 use crate::spa::support::SupportRef;
 use crate::wrapper::{RawWrapper, Wrapper};
@@ -83,22 +84,6 @@ impl Default for Context {
 }
 
 impl ContextRef {
-    #[must_use]
-    pub fn add_listener<'a>(
-        &self,
-        events: Pin<Box<ContextEvents<'a>>>,
-    ) -> Pin<Box<ContextEvents<'a>>> {
-        unsafe {
-            pw_sys::pw_context_add_listener(
-                self.as_raw_ptr(),
-                events.hook().as_raw_ptr(),
-                events.as_raw_ptr(),
-                &*events as *const _ as *mut _,
-            );
-        }
-        events
-    }
-
     pub unsafe fn get_user_data<T>(&self) -> &mut T {
         let ptr = pw_sys::pw_context_get_user_data(self.as_raw_ptr()) as *mut T;
         &mut *ptr
@@ -185,6 +170,22 @@ impl ContextRef {
     //todo pw_context_find_export_type
     //todo pw_context_set_object
     //todo pw_context_get_object
+}
+
+impl<'a> AddListener<'a> for ContextRef {
+    type Events = ContextEvents<'a>;
+
+    fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
+        unsafe {
+            pw_sys::pw_context_add_listener(
+                self.as_raw_ptr(),
+                events.hook().as_raw_ptr(),
+                events.as_raw_ptr(),
+                &*events as *const _ as *mut _,
+            );
+        }
+        events
+    }
 }
 
 #[test]

@@ -13,6 +13,7 @@ use crate::core_api::properties::Properties;
 use crate::core_api::registry::events::RegistryEventsBuilder;
 use crate::core_api::registry::{Registry, RegistryRef};
 use crate::core_api::type_info::TypeInfo;
+use crate::listeners::AddListener;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
 
@@ -82,21 +83,6 @@ impl Drop for Core {
 }
 
 impl CoreRef {
-    #[must_use]
-    pub fn add_listener<'a>(&'a self, events: Pin<Box<CoreEvents<'a>>>) -> Pin<Box<CoreEvents>> {
-        unsafe {
-            spa_interface_call!(
-                self,
-                add_listener,
-                events.hook().as_raw_ptr(),
-                events.as_raw_ptr(),
-                &*events as *const _ as *mut _
-            )
-        };
-
-        events
-    }
-
     pub fn hello(&self, version: u32) -> crate::Result<()> {
         let result = spa_interface_call!(self, hello, version)?;
         i32_as_void_result(result)
@@ -130,6 +116,24 @@ impl CoreRef {
 
     // todo create_object
     // todo destroy
+}
+
+impl<'a> AddListener<'a> for CoreRef {
+    type Events = CoreEvents<'a>;
+
+    fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
+        unsafe {
+            spa_interface_call!(
+                self,
+                add_listener,
+                events.hook().as_raw_ptr(),
+                events.as_raw_ptr(),
+                &*events as *const _ as *mut _
+            )
+        };
+
+        events
+    }
 }
 
 #[test]

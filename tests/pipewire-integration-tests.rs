@@ -1,28 +1,22 @@
 use std::ffi::CString;
-use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use bitflags::Flags;
-
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::loop_::channel::Channel;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
-use pipewire_wrapper::core_api::node::events::{NodeEvents, NodeEventsBuilder};
+use pipewire_wrapper::core_api::node::events::NodeEventsBuilder;
 use pipewire_wrapper::core_api::node::info::NodeInfoRef;
 use pipewire_wrapper::core_api::node::{Node, NodeRef};
-use pipewire_wrapper::core_api::port::events::{PortEvents, PortEventsBuilder};
+use pipewire_wrapper::core_api::port::events::PortEventsBuilder;
 use pipewire_wrapper::core_api::port::info::PortInfoRef;
 use pipewire_wrapper::core_api::port::{Port, PortRef};
-use pipewire_wrapper::core_api::proxy::{Proxied, Proxy};
+use pipewire_wrapper::core_api::proxy::Proxied;
 use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
 use pipewire_wrapper::core_api::Pipewire;
-use pipewire_wrapper::spa::param::ParamType;
-use pipewire_wrapper::spa::type_::pod::object::ObjectType;
-use pipewire_wrapper::spa::type_::pod::{BasicType, PodRef, PodValue};
-use pipewire_wrapper::spa::type_::Type;
-use pipewire_wrapper::wrapper::RawWrapper;
+use pipewire_wrapper::listeners::OwnListeners;
+use pipewire_wrapper::spa::type_::pod::PodRef;
 
 #[test]
 fn test_init() {

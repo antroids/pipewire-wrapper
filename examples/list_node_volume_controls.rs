@@ -11,7 +11,7 @@ use pipewire_wrapper::core_api::node::{Node, NodeRef};
 use pipewire_wrapper::core_api::proxy::Proxied;
 use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
 use pipewire_wrapper::core_api::registry::Registry;
-use pipewire_wrapper::listeners::ListenerId;
+use pipewire_wrapper::listeners::{ListenerId, OwnListeners};
 use pipewire_wrapper::spa::loop_::EventSource;
 use pipewire_wrapper::spa::param::ParamType;
 use pipewire_wrapper::spa::type_::pod::object::prop::{AudioChannel, ObjectPropType};
@@ -87,9 +87,7 @@ fn add_node_added_event<'a>(
                     let listener = NodeEventsBuilder::default()
                         .param(Box::new(node_param_callback))
                         .build();
-
-                    node.enum_params(0, ParamType::PROPS, 0, u32::MAX, None)
-                        .unwrap();
+                    node.subscribe_params(&[ParamType::PROPS]).unwrap();
                     node.add_listener(listener);
                     nodes.insert(id, node);
                 }
@@ -98,7 +96,7 @@ fn add_node_added_event<'a>(
         .unwrap()
 }
 
-fn node_param_callback(_seq: i32, _type_: ParamType, _index: u32, _next: u32, param: &PodRef) {
+fn node_param_callback(_seq: i32, _type_: ParamType, index: u32, _next: u32, param: &PodRef) {
     let mut info: VolumeInfo = VolumeInfo {
         name: CString::new("UNKNOWN").unwrap(),
         channels: vec![],
@@ -126,11 +124,9 @@ fn node_param_callback(_seq: i32, _type_: ParamType, _index: u32, _next: u32, pa
                     };
                 }
             }
-        } else if let ObjectType::OBJECT_PARAM_ROUTE(route) = object_value {
-            println!("Route: {:?}", route)
         }
     }
     if !info.channel_volumes.is_empty() {
-        println!("Volume info: {:?}", info);
+        println!("Volume info: index {:?} {:?}", index, info);
     }
 }
