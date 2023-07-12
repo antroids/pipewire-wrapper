@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
-use crate::core_api::client_info::ClientInfoRef;
+use crate::core_api::client::info::ClientInfoRef;
 use crate::core_api::context::Context;
 use crate::core_api::core::Core;
 use crate::core_api::properties::{Properties, PropertiesRef};

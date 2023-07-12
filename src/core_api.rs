@@ -16,7 +16,7 @@ use crate::spa::type_::pod::object::param_port_config::Direction;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{error, i32_as_void_result, spa};
 
-pub mod client_info;
+pub mod client;
 pub mod context;
 pub mod core;
 pub mod data_loop;
