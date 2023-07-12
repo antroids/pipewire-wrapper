@@ -2,6 +2,7 @@ use std::io::{Seek, Write};
 
 use pipewire_macro_impl::enum_wrapper;
 
+use crate::spa::type_::pod::array::PodArrayRef;
 use crate::spa::type_::pod::id::{PodIdRef, PodIdType};
 use crate::spa::type_::pod::object::param_port_config::Direction;
 use crate::spa::type_::pod::object::{PodObjectRef, PodPropKeyType, PodPropRef};
@@ -21,9 +22,9 @@ pub enum ParamRouteType<'a> {
     PRIORITY(&'a PodIntRef) = ParamRoute::PRIORITY.raw,
     AVAILABLE(&'a PodIdRef<ParamAvailability>) = ParamRoute::AVAILABLE.raw,
     INFO(&'a PodStructRef) = ParamRoute::INFO.raw,
-    PROFILES(&'a PodIntRef) = ParamRoute::PROFILES.raw,
+    PROFILES(&'a PodArrayRef<PodIntRef>) = ParamRoute::PROFILES.raw,
     PROPS(&'a PodObjectRef) = ParamRoute::PROPS.raw,
-    DEVICES(&'a PodIntRef) = ParamRoute::DEVICES.raw,
+    DEVICES(&'a PodArrayRef<PodIntRef>) = ParamRoute::DEVICES.raw,
     PROFILE(&'a PodIntRef) = ParamRoute::PROFILE.raw,
     SAVE(&'a PodBoolRef) = ParamRoute::SAVE.raw,
 }
@@ -37,6 +38,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamRouteType<'a>>> for ParamRouteType<'a> 
                 ParamRoute::INDEX => Ok(ParamRouteType::INDEX(value.pod().cast()?)),
                 ParamRoute::DIRECTION => Ok(ParamRouteType::DIRECTION(value.pod().cast()?)),
                 ParamRoute::DEVICE => Ok(ParamRouteType::DEVICE(value.pod().cast()?)),
+                ParamRoute::NAME => Ok(ParamRouteType::NAME(value.pod().cast()?)),
                 ParamRoute::DESCRIPTION => Ok(ParamRouteType::DESCRIPTION(value.pod().cast()?)),
                 ParamRoute::PRIORITY => Ok(ParamRouteType::PRIORITY(value.pod().cast()?)),
                 ParamRoute::AVAILABLE => Ok(ParamRouteType::AVAILABLE(value.pod().cast()?)),
