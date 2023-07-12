@@ -21,8 +21,6 @@ pub struct ClientRef {
     raw: pw_sys::pw_client,
 }
 
-impl ClientRef {}
-
 impl<'a> AddListener<'a> for ClientRef {
     type Events = ClientEvents<'a>;
 

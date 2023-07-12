@@ -20,6 +20,7 @@ pub mod client;
 pub mod context;
 pub mod core;
 pub mod data_loop;
+pub mod device;
 pub mod factory;
 pub mod loop_;
 pub mod main_loop;
