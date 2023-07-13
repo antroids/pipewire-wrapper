@@ -96,6 +96,8 @@ impl<'p> ProxyEvents<'p> {
     }
 }
 
+// todo: channel builder
+
 impl<'c> ProxyEventsBuilder<'c> {
     events_builder_build! {
         ProxyEvents<'c>,

@@ -78,6 +78,8 @@ impl<'p> DeviceEvents<'p> {
     }
 }
 
+// todo: channel builder
+
 impl<'p> DeviceEventsBuilder<'p> {
     events_builder_build! {
         DeviceEvents<'p>,

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
 use std::ptr::slice_from_raw_parts;
 use std::slice::from_raw_parts;
@@ -7,7 +9,7 @@ use bitflags::bitflags;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::dict::DictRef;
-use crate::spa::param::ParamInfoRef;
+use crate::spa::param::{ParamInfo, ParamInfoRef};
 use crate::spa::type_::pod::object::param_port_config::Direction;
 use crate::wrapper::RawWrapper;
 
@@ -64,5 +66,48 @@ impl Debug for PortInfoRef {
             .field("props", &self.props())
             .field("params", &self.params())
             .finish()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct PortInfo {
+    id: u32,
+    direction: Direction,
+    change_mask: ChangeMask,
+    props: HashMap<CString, CString>,
+    params: Vec<ParamInfo>,
+}
+
+impl PortInfo {
+    pub fn from_ref(ref_: &PortInfoRef) -> Self {
+        Self {
+            id: ref_.id(),
+            direction: ref_.direction(),
+            change_mask: ref_.change_mask(),
+            props: ref_.props().into(),
+            params: ref_.params().iter().map(|p| p.into()).collect(),
+        }
+    }
+
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+    pub fn direction(&self) -> Direction {
+        self.direction
+    }
+    pub fn change_mask(&self) -> ChangeMask {
+        self.change_mask
+    }
+    pub fn props(&self) -> &HashMap<CString, CString> {
+        &self.props
+    }
+    pub fn params(&self) -> &Vec<ParamInfo> {
+        &self.params
+    }
+}
+
+impl From<&PortInfoRef> for PortInfo {
+    fn from(value: &PortInfoRef) -> Self {
+        PortInfo::from_ref(value)
     }
 }

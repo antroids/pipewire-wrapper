@@ -135,11 +135,7 @@ impl NodeInfo {
             n_output_ports: raw.n_output_ports,
             state: ref_.state(),
             error: ref_.error().map(|s| CString::from(s)),
-            props: HashMap::from_iter(
-                ref_.props()
-                    .iter()
-                    .map(|p| (CString::from(p.key()), CString::from(p.value()))),
-            ),
+            props: ref_.props().into(),
             params: ref_
                 .params()
                 .iter()

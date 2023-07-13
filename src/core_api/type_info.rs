@@ -12,6 +12,10 @@ impl<'a> TypeInfo<'a> {
         Self { type_ }
     }
 
+    pub const fn as_c_str(&self) -> &CStr {
+        self.type_
+    }
+
     pub const unsafe fn from_bytes_with_nul_unchecked(type_bytes: &'a [u8]) -> Self {
         let type_ = CStr::from_bytes_with_nul_unchecked(type_bytes);
         Self { type_ }
@@ -55,6 +59,12 @@ impl<'a> TypeInfo<'a> {
             index += 1;
         }
         index == prefix_len
+    }
+}
+
+impl<'a> From<&'a CStr> for TypeInfo<'a> {
+    fn from(value: &'a CStr) -> Self {
+        TypeInfo::from_c_str(value)
     }
 }
 

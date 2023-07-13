@@ -114,6 +114,8 @@ impl Debug for ContextEvents<'_> {
     }
 }
 
+// todo: channel builder
+
 impl<'c> ContextEventsBuilder<'c> {
     events_builder_build! {
         ContextEvents<'c>,

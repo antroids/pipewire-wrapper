@@ -78,6 +78,12 @@ impl<'a, T> Sender<'a, T> {
     pub fn into_sender(self) -> mpsc::Sender<T> {
         self.sender
     }
+
+    pub fn detach(&self) {
+        let mut channel = self.channel.lock().unwrap();
+        channel.event = None;
+        channel.loop_ = None;
+    }
 }
 
 pub struct Receiver<'a, T: 'a> {

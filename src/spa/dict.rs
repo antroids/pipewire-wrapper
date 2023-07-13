@@ -1,7 +1,8 @@
 use core::slice;
-use std::ffi::CStr;
+use std::collections::HashMap;
+use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
-use std::ptr::{NonNull, slice_from_raw_parts};
+use std::ptr::{slice_from_raw_parts, NonNull};
 use std::slice::Iter;
 
 use bitflags::bitflags;
@@ -103,6 +104,16 @@ impl From<&Vec<(&CStr, &CStr)>> for DictRef {
     fn from(value: &Vec<(&CStr, &CStr)>) -> Self {
         let items: Vec<DictItemRef> = value.iter().map(|v| DictItemRef::from(*v)).collect();
         DictRef::from(&items)
+    }
+}
+
+impl From<&DictRef> for HashMap<CString, CString> {
+    fn from(value: &DictRef) -> Self {
+        HashMap::from_iter(
+            value
+                .iter()
+                .map(|p| (CString::from(p.key()), CString::from(p.value()))),
+        )
     }
 }
 

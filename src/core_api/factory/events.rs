@@ -54,6 +54,8 @@ impl<'f> FactoryEvents<'f> {
     }
 }
 
+// todo: channel builder
+
 impl<'f> FactoryEventsBuilder<'f> {
     events_builder_build! {
         FactoryEvents<'f>,

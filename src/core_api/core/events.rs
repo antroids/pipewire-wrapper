@@ -143,6 +143,8 @@ impl<'c> CoreEvents<'c> {
     }
 }
 
+// todo: channel builder
+
 impl<'c> CoreEventsBuilder<'c> {
     events_builder_build! {
         CoreEvents<'c>,

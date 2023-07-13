@@ -80,6 +80,8 @@ impl<'r> RegistryEvents<'r> {
     }
 }
 
+// todo: channel builder
+
 impl<'c> RegistryEventsBuilder<'c> {
     events_builder_build! {
         RegistryEvents<'c>,

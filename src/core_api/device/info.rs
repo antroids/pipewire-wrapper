@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
 use std::slice;
 
@@ -6,7 +8,7 @@ use bitflags::{bitflags, Flags};
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::dict::DictRef;
-use crate::spa::param::ParamInfoRef;
+use crate::spa::param::{ParamInfo, ParamInfoRef};
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper)]
@@ -57,5 +59,47 @@ impl Debug for DeviceInfoRef {
             .field("props", &self.props())
             .field("params", &self.params())
             .finish()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct DeviceInfo {
+    id: u32,
+    change_mask: ChangeMask,
+    props: HashMap<CString, CString>,
+    params: Vec<ParamInfo>,
+}
+
+impl DeviceInfo {
+    pub fn from_ref(ref_: &DeviceInfoRef) -> Self {
+        Self {
+            id: ref_.id(),
+            change_mask: ref_.change_mask(),
+            props: ref_.props().into(),
+            params: ref_
+                .params()
+                .iter()
+                .map(|p| ParamInfo::from_ref(p))
+                .collect(),
+        }
+    }
+
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+    pub fn change_mask(&self) -> ChangeMask {
+        self.change_mask
+    }
+    pub fn props(&self) -> &HashMap<CString, CString> {
+        &self.props
+    }
+    pub fn params(&self) -> &Vec<ParamInfo> {
+        &self.params
+    }
+}
+
+impl From<&DeviceInfoRef> for DeviceInfo {
+    fn from(value: &DeviceInfoRef) -> Self {
+        DeviceInfo::from_ref(value)
     }
 }

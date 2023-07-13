@@ -78,6 +78,8 @@ impl<'p> PortEvents<'p> {
     }
 }
 
+// todo: channel builder
+
 impl<'p> PortEventsBuilder<'p> {
     events_builder_build! {
         PortEvents<'p>,

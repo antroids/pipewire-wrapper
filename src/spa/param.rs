@@ -89,3 +89,9 @@ impl ParamInfo {
         self.flags
     }
 }
+
+impl From<&ParamInfoRef> for ParamInfo {
+    fn from(value: &ParamInfoRef) -> Self {
+        ParamInfo::from_ref(value)
+    }
+}

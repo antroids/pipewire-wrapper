@@ -71,6 +71,8 @@ impl<'f> ClientEvents<'f> {
     }
 }
 
+// todo: channel builder
+
 impl<'f> ClientEventsBuilder<'f> {
     events_builder_build! {
         ClientEvents<'f>,
