@@ -1,4 +1,5 @@
 use std::ffi::CStr;
+use std::fmt::{Debug, Formatter};
 use std::pin::Pin;
 use std::ptr::NonNull;
 
@@ -38,12 +39,6 @@ pub struct RegistryEvents<'r> {
     global: Option<Box<dyn for<'a> FnMut(u32, Permissions, TypeInfo<'a>, u32, &'a DictRef) + 'r>>,
     #[builder(setter)]
     global_remove: Option<Box<dyn FnMut(u32) + 'r>>,
-}
-
-impl Drop for RegistryEvents<'_> {
-    fn drop(&mut self) {
-        // handled by hook
-    }
 }
 
 impl<'r> RegistryEvents<'r> {
@@ -91,5 +86,13 @@ impl<'c> RegistryEventsBuilder<'c> {
         pw_registry_events,
         global => global_call,
         global_remove => global_remove_call,
+    }
+}
+
+impl Debug for RegistryEvents<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RegistryEvents")
+            .field("raw", &self.raw)
+            .finish()
     }
 }

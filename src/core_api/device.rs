@@ -85,7 +85,7 @@ impl<'a> AddListener<'a> for DeviceRef {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[proxy_wrapper(DeviceRef)]
 pub struct Device<'c> {
     ref_: Proxy<'c>,

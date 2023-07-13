@@ -23,3 +23,4 @@ pw_sys = { package = "pipewire-sys", version = "0.6.0" }
 bitflags = "2.3.1"
 derive_builder = "0.12.0"
 signal-hook = "0.3.15"
+paste = "1.0.13"

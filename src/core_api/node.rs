@@ -84,7 +84,7 @@ impl<'a> AddListener<'a> for NodeRef {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[proxy_wrapper(NodeRef)]
 pub struct Node<'c> {
     ref_: Proxy<'c>,

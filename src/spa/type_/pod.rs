@@ -341,7 +341,7 @@ where
 {
 }
 
-#[derive(RawWrapper)]
+#[derive(RawWrapper, Clone)]
 #[repr(transparent)]
 pub struct PodRef {
     #[raw]

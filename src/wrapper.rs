@@ -3,10 +3,8 @@ use std::ops::{Deref, DerefMut};
 
 use crate::spa::interface::InterfaceRef;
 
-#[allow(drop_bounds)]
 pub trait Wrapper
 where
-    Self: Drop,
     Self: Deref<Target = Self::RawWrapperType>,
     Self: DerefMut<Target = Self::RawWrapperType>,
     Self: AsRef<Self::RawWrapperType>,

@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::pin::Pin;
 use std::ptr::NonNull;
 
@@ -32,12 +33,6 @@ pub struct FactoryEvents<'f> {
     info: Option<Box<dyn for<'a> FnMut(&'a FactoryInfoRef) + 'f>>,
 }
 
-impl Drop for FactoryEvents<'_> {
-    fn drop(&mut self) {
-        // handled by hook
-    }
-}
-
 impl<'f> FactoryEvents<'f> {
     unsafe extern "C" fn info_call(
         data: *mut ::std::os::raw::c_void,
@@ -64,5 +59,13 @@ impl<'f> FactoryEventsBuilder<'f> {
         FactoryEvents<'f>,
         pw_factory_events,
         info => info_call,
+    }
+}
+
+impl Debug for FactoryEvents<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FactoryEvents")
+            .field("raw", &self.raw)
+            .finish()
     }
 }

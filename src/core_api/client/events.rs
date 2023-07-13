@@ -1,4 +1,5 @@
 use core::slice;
+use std::fmt::{Debug, Formatter};
 use std::pin::Pin;
 use std::ptr::NonNull;
 
@@ -34,12 +35,6 @@ pub struct ClientEvents<'f> {
     info: Option<Box<dyn for<'a> FnMut(&'a ClientInfoRef) + 'f>>,
     #[builder(setter)]
     permissions: Option<Box<dyn for<'a> FnMut(u32, &'a [Permissions]) + 'f>>,
-}
-
-impl Drop for ClientEvents<'_> {
-    fn drop(&mut self) {
-        // handled by hook
-    }
 }
 
 impl<'f> ClientEvents<'f> {
@@ -82,5 +77,13 @@ impl<'f> ClientEventsBuilder<'f> {
         pw_client_events,
         info => info_call,
         permissions => permissions_call,
+    }
+}
+
+impl Debug for ClientEvents<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ClientEvents")
+            .field("raw", &self.raw)
+            .finish()
     }
 }

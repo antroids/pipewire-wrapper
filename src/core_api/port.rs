@@ -83,7 +83,7 @@ impl<'a> AddListener<'a> for PortRef {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[proxy_wrapper(PortRef)]
 pub struct Port<'c> {
     ref_: Proxy<'c>,

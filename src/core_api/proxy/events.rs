@@ -1,4 +1,5 @@
 use std::ffi::CStr;
+use std::fmt::{Debug, Formatter};
 use std::pin::Pin;
 use std::ptr::NonNull;
 
@@ -38,12 +39,6 @@ pub struct ProxyEvents<'p> {
     done: Option<Box<dyn FnMut(i32) + 'p>>,
     #[builder(setter)]
     error: Option<Box<dyn for<'a> FnMut(i32, i32, &'a CStr) + 'p>>,
-}
-
-impl Drop for ProxyEvents<'_> {
-    fn drop(&mut self) {
-        // handled by hook
-    }
 }
 
 impl<'p> ProxyEvents<'p> {
@@ -110,5 +105,13 @@ impl<'c> ProxyEventsBuilder<'c> {
         removed => removed_call,
         done => done_call,
         error => error_call,
+    }
+}
+
+impl Debug for ProxyEvents<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProxyEvents")
+            .field("raw", &self.raw)
+            .finish()
     }
 }

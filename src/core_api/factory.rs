@@ -39,7 +39,7 @@ impl<'a> AddListener<'a> for FactoryRef {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[proxy_wrapper(FactoryRef)]
 pub struct Factory<'c> {
     ref_: Proxy<'c>,

@@ -1,18 +1,23 @@
 use std::ffi::CStr;
+use std::fmt::{Debug, Formatter};
 use std::pin::Pin;
 use std::ptr::NonNull;
+use std::sync::mpsc;
 
 use derive_builder::Builder;
 use pw_sys::{pw_node_events, pw_node_info};
 use spa_sys::spa_pod;
 
-use pipewire_macro_impl::events_builder_build;
+use pipewire_macro_impl::{events_builder_build, events_channel_builder};
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
-use crate::core_api::node::info::NodeInfoRef;
+use crate::core_api::loop_;
+use crate::core_api::loop_::channel::{Receiver, Sender};
+use crate::core_api::node::info::{NodeInfo, NodeInfoRef};
 use crate::core_api::node::NodeRef;
 use crate::spa::interface::Hook;
 use crate::spa::param::{ParamInfoRef, ParamType};
+use crate::spa::type_::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::type_::pod::PodRef;
 use crate::wrapper::RawWrapper;
 
@@ -36,12 +41,6 @@ pub struct NodeEvents<'p> {
     info: Option<Box<dyn for<'a> FnMut(&'a NodeInfoRef) + 'p>>,
     #[builder(setter)]
     param: Option<Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>>,
-}
-
-impl Drop for NodeEvents<'_> {
-    fn drop(&mut self) {
-        // handled by hook
-    }
 }
 
 impl<'p> NodeEvents<'p> {
@@ -83,11 +82,51 @@ impl<'p> NodeEvents<'p> {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum NodeEventType {
+    Info(NodeInfo),
+    Param(i32, ParamType, u32, u32, AllocatedData<PodRef>),
+}
+
+impl<'p> NodeEventsChannelBuilder<'p> {
+    fn info_send(
+        sender: Sender<'p, NodeEventType>,
+    ) -> Box<dyn for<'a> FnMut(&'a NodeInfoRef) + 'p> {
+        Box::new(move |i| {
+            sender.send(NodeEventType::Info(i.into()));
+        })
+    }
+
+    fn param_send(
+        sender: Sender<'p, NodeEventType>,
+    ) -> Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p> {
+        Box::new(move |seq, type_, index, next, pod| {
+            if let Ok(pod) = pod.try_into() {
+                sender.send(NodeEventType::Param(seq, type_, index, next, pod));
+            }
+        })
+    }
+}
+
+events_channel_builder! {
+    Node,
+    info => info_send,
+    param => param_send,
+}
+
 impl<'p> NodeEventsBuilder<'p> {
     events_builder_build! {
         NodeEvents<'p>,
         pw_node_events,
         info => info_call,
         param => param_call,
+    }
+}
+
+impl Debug for NodeEvents<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NodeEvents")
+            .field("raw", &self.raw)
+            .finish()
     }
 }

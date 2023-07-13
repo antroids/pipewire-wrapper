@@ -1,4 +1,5 @@
 use std::ffi::CStr;
+use std::fmt::{Debug, Formatter};
 use std::os::fd::RawFd;
 use std::pin::Pin;
 use std::ptr::NonNull;
@@ -46,12 +47,6 @@ pub struct CoreEvents<'c> {
     add_mem: Option<Box<dyn FnMut(u32, u32, RawFd, u32) + 'c>>,
     #[builder(setter)]
     remove_mem: Option<Box<dyn FnMut(u32) + 'c>>,
-}
-
-impl Drop for CoreEvents<'_> {
-    fn drop(&mut self) {
-        // handled by hook
-    }
 }
 
 impl<'c> CoreEvents<'c> {
@@ -160,5 +155,13 @@ impl<'c> CoreEventsBuilder<'c> {
         bound_id => bound_id_call,
         add_mem => add_mem_call,
         remove_mem => remove_mem_call,
+    }
+}
+
+impl Debug for CoreEvents<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CoreEvents")
+            .field("raw", &self.raw)
+            .finish()
     }
 }

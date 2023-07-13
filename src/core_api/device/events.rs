@@ -1,4 +1,5 @@
 use std::ffi::CStr;
+use std::fmt::{Debug, Formatter};
 use std::pin::Pin;
 use std::ptr::NonNull;
 
@@ -36,12 +37,6 @@ pub struct DeviceEvents<'p> {
     info: Option<Box<dyn for<'a> FnMut(&'a DeviceInfoRef) + 'p>>,
     #[builder(setter)]
     param: Option<Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>>,
-}
-
-impl Drop for DeviceEvents<'_> {
-    fn drop(&mut self) {
-        // handled by hook
-    }
 }
 
 impl<'p> DeviceEvents<'p> {
@@ -89,5 +84,13 @@ impl<'p> DeviceEventsBuilder<'p> {
         pw_device_events,
         info => info_call,
         param => param_call,
+    }
+}
+
+impl Debug for DeviceEvents<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DeviceEvents")
+            .field("raw", &self.raw)
+            .finish()
     }
 }

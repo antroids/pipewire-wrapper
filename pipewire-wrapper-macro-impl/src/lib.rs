@@ -382,12 +382,6 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
             type RawWrapperType = #ref_type_ident;
         }
 
-        impl<'c> Drop for #struct_ident <'c> {
-            fn drop(&mut self) {
-                // handled by proxy
-            }
-        }
-
         impl <'c> std::ops::Deref for #struct_ident <'c> {
             type Target = #ref_type_ident;
 

@@ -1,101 +1,112 @@
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
 use std::ops::DerefMut;
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
 
 use crate::core_api::loop_::LoopRef;
 use crate::spa::loop_::EventSource;
 
-pub enum ChannelError {
-    ReceiverNotAttached,
-    ChannelPoisoned,
+#[derive(Debug)]
+pub enum SendError<T> {
+    SendError(mpsc::SendError<T>),
+    CannotSignalEvent(crate::Error),
 }
 
-impl Debug for ChannelError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ChannelError::ReceiverNotAttached => write!(f, "Receiver is not attached to the loop"),
-            ChannelError::ChannelPoisoned => write!(f, "Channel was poisoned"),
+impl<T> From<SendError<T>> for crate::Error {
+    fn from(value: SendError<T>) -> Self {
+        match value {
+            SendError::SendError(e) => {
+                crate::Error::ErrorMessage("Receiver is disconnected, unable to send message")
+            }
+            SendError::CannotSignalEvent(e) => e,
         }
     }
 }
 
-impl From<ChannelError> for crate::error::Error {
-    fn from(value: ChannelError) -> Self {
-        crate::error::Error::ChannelError(value)
-    }
-}
-
-pub type ChannelResult<T> = Result<T, ChannelError>;
-
-pub struct Channel<'a, T> {
+pub struct LoopChannel<'a> {
     loop_: Option<&'a LoopRef>,
     event: Option<EventSource<'a>>,
-    buf: VecDeque<T>,
 }
 
-impl<'a, T> Channel<'a, T> {
-    pub fn channel() -> (Sender<'a, T>, Receiver<'a, T>) {
-        let channel = Arc::new(Mutex::new(Channel {
+impl<'a> LoopChannel<'a> {
+    pub fn channel<T>() -> (Sender<'a, T>, Receiver<'a, T>) {
+        Self::from_channel(mpsc::channel())
+    }
+
+    pub fn from_channel<T>(
+        (sender, receiver): (mpsc::Sender<T>, mpsc::Receiver<T>),
+    ) -> (Sender<'a, T>, Receiver<'a, T>) {
+        let channel = Arc::new(Mutex::new(LoopChannel {
             loop_: None,
             event: None,
-            buf: VecDeque::new(),
         }));
         (
             Sender {
                 channel: channel.clone(),
+                sender,
             },
-            Receiver { channel },
+            Receiver { channel, receiver },
         )
     }
 }
 
+#[derive(Clone)]
 pub struct Sender<'a, T> {
-    channel: Arc<Mutex<Channel<'a, T>>>,
+    sender: mpsc::Sender<T>,
+    channel: Arc<Mutex<LoopChannel<'a>>>,
 }
 
 impl<'a, T> Sender<'a, T> {
-    pub fn send(&mut self, value: T) -> ChannelResult<()> {
+    pub fn send(&self, value: T) -> Result<(), SendError<T>> {
         let mut channel = self.channel.lock().unwrap();
-        if let Channel {
+        self.sender
+            .send(value)
+            .map_err(|e| SendError::SendError(e))?;
+        if let LoopChannel {
             loop_: Some(loop_),
             event: Some(event),
-            buf,
         } = channel.deref_mut()
         {
-            buf.push_back(value);
-            loop_.utils().signal_event(&event).unwrap();
-            Ok(())
-        } else {
-            Err(ChannelError::ReceiverNotAttached)
+            loop_
+                .utils()
+                .signal_event(&event)
+                .map_err(|e| SendError::CannotSignalEvent(e))?;
         }
+        Ok(())
+    }
+
+    pub fn into_sender(self) -> mpsc::Sender<T> {
+        self.sender
     }
 }
 
-pub struct Receiver<'a, T> {
-    channel: Arc<Mutex<Channel<'a, T>>>,
+pub struct Receiver<'a, T: 'a> {
+    receiver: mpsc::Receiver<T>,
+    channel: Arc<Mutex<LoopChannel<'a>>>,
 }
 
 impl<'a, T: 'a> Receiver<'a, T> {
     pub fn attach(
-        &mut self,
+        self,
         loop_: &'a LoopRef,
-        mut callback: Box<dyn FnMut(&mut VecDeque<T>) + 'a>,
-    ) {
-        let event = loop_
-            .utils()
-            .add_event(
-                loop_,
-                Box::new({
-                    let channel = self.channel.clone();
-                    move |_count| {
-                        callback(&mut channel.lock().unwrap().buf);
-                    }
-                }),
-            )
-            .unwrap();
-        let mut channel = self.channel.lock().unwrap();
+        mut callback: Box<dyn FnMut(&mpsc::Receiver<T>) + 'a>,
+    ) -> crate::Result<()> {
+        let channel = self.channel.clone();
+        let event = loop_.utils().add_event(
+            loop_,
+            Box::new({
+                move |_count| {
+                    callback(&self.receiver);
+                }
+            }),
+        )?;
+        let mut channel = channel.lock().unwrap();
         channel.event = Some(event);
         channel.loop_ = Some(loop_);
+        Ok(())
+    }
+
+    pub fn into_receiver(self) -> mpsc::Receiver<T> {
+        self.receiver
     }
 }

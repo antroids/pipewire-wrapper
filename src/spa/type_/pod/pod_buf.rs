@@ -1,12 +1,13 @@
+use std::fmt::{Debug, Formatter};
 use std::io::{ErrorKind, Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::slice_from_raw_parts;
 use std::{io, slice};
 
-use crate::spa::type_::pod::restricted::PodHeader;
+use crate::spa::type_::pod::restricted::{BasicTypePod, PodHeader};
 use crate::spa::type_::pod::{
-    PodBoolRef, PodError, PodLongRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
+    PodBoolRef, PodError, PodLongRef, PodRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -130,6 +131,7 @@ impl<'a, T> Seek for PodBuf<'a, T> {
     }
 }
 
+#[derive(Clone)]
 pub struct AllocatedData<T> {
     data: Vec<AlignedDataType>,
     phantom: PhantomData<T>,
@@ -154,6 +156,28 @@ impl<T> AllocatedData<T> {
 
     pub fn size(&self) -> usize {
         self.data.len() * size_of::<AlignedDataType>()
+    }
+}
+
+impl<T: Debug> Debug for AllocatedData<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AllocatedData")
+            .field("data", &self.data)
+            .finish()
+    }
+}
+
+impl<'a, T> TryFrom<&'a PodRef> for AllocatedData<T>
+where
+    T: 'a,
+    &'a T: WritePod,
+    T: BasicTypePod,
+{
+    type Error = PodError;
+
+    fn try_from(value: &'a PodRef) -> Result<Self, Self::Error> {
+        let pod: &T = value.cast()?;
+        Ok(PodBuf::from_value(&pod.value()?)?.into_pod())
     }
 }
 

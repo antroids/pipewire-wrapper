@@ -4,9 +4,11 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use pipewire_wrapper::core_api::core::Core;
-use pipewire_wrapper::core_api::loop_::channel::Channel;
+use pipewire_wrapper::core_api::loop_::channel::LoopChannel;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
-use pipewire_wrapper::core_api::node::events::NodeEventsBuilder;
+use pipewire_wrapper::core_api::node::events::{
+    NodeEventType, NodeEventsBuilder, NodeEventsChannelBuilder,
+};
 use pipewire_wrapper::core_api::node::info::NodeInfoRef;
 use pipewire_wrapper::core_api::node::{Node, NodeRef};
 use pipewire_wrapper::core_api::port::events::PortEventsBuilder;
@@ -133,7 +135,7 @@ fn test_port_params() {
     let main_loop = core.context().main_loop();
     let ports: Mutex<Vec<Port>> = Mutex::default();
 
-    let (mut port_sender, mut port_receiver) = Channel::<Port>::channel();
+    let (port_sender, port_receiver) = LoopChannel::channel::<Port>();
     let _registry_listener = registry.add_listener(
         RegistryEventsBuilder::default()
             .global(Box::new({
@@ -158,37 +160,39 @@ fn test_port_params() {
         .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
 
-    port_receiver.attach(
-        main_loop.get_loop(),
-        Box::new(move |new_ports| {
-            for port in new_ports.drain(..) {
-                let port_param_callback = |seq, id, index, next, param: &PodRef| {
-                    if let Ok(basic_pod) = param.downcast() {
-                        println!(
-                            "Port params seq {} id {:?} index {} next {} param {:?}",
-                            seq, id, index, next, basic_pod
-                        )
-                    }
-                };
-                let port_info_callback = {
-                    let port = port.clone();
-                    move |port_info: &PortInfoRef| {
-                        println!("Port info {:?}", port_info);
-                        for param in port_info.params() {
-                            println!("Param info {:?}", param);
-                            port.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();
+    port_receiver
+        .attach(
+            main_loop.get_loop(),
+            Box::new(move |new_ports| {
+                for port in new_ports.try_iter() {
+                    let port_param_callback = |seq, id, index, next, param: &PodRef| {
+                        if let Ok(basic_pod) = param.downcast() {
+                            println!(
+                                "Port params seq {} id {:?} index {} next {} param {:?}",
+                                seq, id, index, next, basic_pod
+                            )
                         }
-                    }
-                };
-                let port_listener = PortEventsBuilder::default()
-                    .param(Box::new(port_param_callback))
-                    .info(Box::new(port_info_callback))
-                    .build();
-                port.add_listener(port_listener);
-                ports.lock().unwrap().push(port);
-            }
-        }),
-    );
+                    };
+                    let port_info_callback = {
+                        let port = port.clone();
+                        move |port_info: &PortInfoRef| {
+                            println!("Port info {:?}", port_info);
+                            for param in port_info.params() {
+                                println!("Param info {:?}", param);
+                                port.enum_params(0, param.id(), 0, u32::MAX, None).unwrap();
+                            }
+                        }
+                    };
+                    let port_listener = PortEventsBuilder::default()
+                        .param(Box::new(port_param_callback))
+                        .info(Box::new(port_info_callback))
+                        .build();
+                    port.add_listener(port_listener);
+                    ports.lock().unwrap().push(port);
+                }
+            }),
+        )
+        .unwrap();
     main_loop.run().unwrap();
 }
 
@@ -258,4 +262,72 @@ fn test_node_params() {
 
         main_loop.run().unwrap();
     }
+}
+
+#[test]
+fn test_node_events_via_channel() {
+    let core = Arc::new(Core::default());
+    let main_loop = core.context().main_loop();
+    let nodes = Arc::new(Mutex::new(Vec::<Node>::new()));
+    let registry = core.get_registry(0, 0).unwrap();
+    let quit_main_loop = Box::new(|_| {
+        main_loop.quit().unwrap();
+    });
+    let _sigint_handler = main_loop.add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
+    let _sigterm_handler = main_loop.add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+
+    let (node_sender, node_receiver) = LoopChannel::channel::<Node>();
+
+    let registry_listener = RegistryEventsBuilder::default()
+        .global(Box::new({
+            let registry = registry.clone();
+            move |id, _permission, type_, _flags, _props| {
+                if type_ == NodeRef::type_info() {
+                    let node = registry.bind_proxy(id, 0, 0).unwrap();
+                    node_sender.send(node).unwrap();
+                }
+            }
+        }))
+        .build();
+    registry.add_listener(registry_listener);
+
+    let _attached_node_receiver = node_receiver.attach(
+        main_loop.get_loop(),
+        Box::new(move |new_nodes| {
+            for node in new_nodes.try_iter() {
+                let (node_listener, node_event_receiver) = NodeEventsChannelBuilder::default()
+                    .info()
+                    .param()
+                    .build_loop_channel();
+                node.add_listener(node_listener);
+                node_event_receiver
+                    .attach(
+                        main_loop.get_loop(),
+                        Box::new({
+                            let node = node.clone();
+                            move |events| {
+                                for event in events.try_iter() {
+                                    match event {
+                                        NodeEventType::Info(info) => {
+                                            println!("Node info: {:?}", &info);
+                                            for param in info.params() {
+                                                node.enum_params(0, param.id(), 0, u32::MAX, None)
+                                                    .unwrap();
+                                            }
+                                        }
+                                        NodeEventType::Param(seq, type_, index, next, pod) => {
+                                            println!("Node param (seq={:?} type={:?}, index={:?}, next={:?}): {:?}", seq, type_, index, next, &pod.as_pod().downcast());
+                                        }
+                                    }
+                                }
+                            }
+                        }),
+                    )
+                    .unwrap();
+                nodes.lock().unwrap().push(node);
+            }
+        }),
+    );
+
+    main_loop.run().unwrap();
 }

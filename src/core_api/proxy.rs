@@ -29,12 +29,14 @@ pub struct ProxyRef {
     raw: pw_sys::pw_proxy,
 }
 
+#[derive(Debug)]
 pub struct Proxy<'c> {
     inner: Arc<InnerProxy>,
 
     core: &'c Core,
 }
 
+#[derive(Debug)]
 struct InnerProxy {
     ref_: NonNull<ProxyRef>,
 }

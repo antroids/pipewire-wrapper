@@ -1,16 +1,19 @@
-use std::ffi::CStr;
+use std::collections::HashMap;
+use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
-use std::ptr::slice_from_raw_parts;
+use std::ops::{Deref, DerefMut};
+use std::ptr::{slice_from_raw_parts, NonNull};
 use std::slice::from_raw_parts;
 
 use bitflags::bitflags;
 
 use pipewire_macro_impl::enum_wrapper;
-use pipewire_proc_macro::RawWrapper;
+use pipewire_proc_macro::{RawWrapper, Wrapper};
 
+use crate::core_api::node::Node;
 use crate::spa::dict::DictRef;
-use crate::spa::param::ParamInfoRef;
-use crate::wrapper::RawWrapper;
+use crate::spa::param::{ParamInfo, ParamInfoRef};
+use crate::wrapper::{RawWrapper, Wrapper};
 
 bitflags! {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -103,5 +106,82 @@ impl Debug for NodeInfoRef {
             .field("props", &self.props())
             .field("params", &self.params())
             .finish()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NodeInfo {
+    id: u32,
+    max_input_ports: u32,
+    max_output_ports: u32,
+    change_mask: ChangeMask,
+    n_input_ports: u32,
+    n_output_ports: u32,
+    state: NodeState,
+    error: Option<CString>,
+    props: HashMap<CString, CString>,
+    params: Vec<ParamInfo>,
+}
+
+impl NodeInfo {
+    pub fn from_ref(ref_: &NodeInfoRef) -> Self {
+        let raw = ref_.raw;
+        Self {
+            id: raw.id,
+            max_input_ports: raw.max_input_ports,
+            max_output_ports: raw.max_output_ports,
+            change_mask: ref_.change_mask(),
+            n_input_ports: raw.n_input_ports,
+            n_output_ports: raw.n_output_ports,
+            state: ref_.state(),
+            error: ref_.error().map(|s| CString::from(s)),
+            props: HashMap::from_iter(
+                ref_.props()
+                    .iter()
+                    .map(|p| (CString::from(p.key()), CString::from(p.value()))),
+            ),
+            params: ref_
+                .params()
+                .iter()
+                .map(|p| ParamInfo::from_ref(p))
+                .collect(),
+        }
+    }
+
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+    pub fn max_input_ports(&self) -> u32 {
+        self.max_input_ports
+    }
+    pub fn max_output_ports(&self) -> u32 {
+        self.max_output_ports
+    }
+    pub fn change_mask(&self) -> ChangeMask {
+        self.change_mask
+    }
+    pub fn n_input_ports(&self) -> u32 {
+        self.n_input_ports
+    }
+    pub fn n_output_ports(&self) -> u32 {
+        self.n_output_ports
+    }
+    pub fn state(&self) -> NodeState {
+        self.state
+    }
+    pub fn error(&self) -> &Option<CString> {
+        &self.error
+    }
+    pub fn props(&self) -> &HashMap<CString, CString> {
+        &self.props
+    }
+    pub fn params(&self) -> &Vec<ParamInfo> {
+        &self.params
+    }
+}
+
+impl From<&NodeInfoRef> for NodeInfo {
+    fn from(value: &NodeInfoRef) -> Self {
+        NodeInfo::from_ref(value)
     }
 }

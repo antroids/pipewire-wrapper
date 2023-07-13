@@ -3,7 +3,7 @@ use std::fmt::{Debug, Formatter};
 use bitflags::bitflags;
 
 use pipewire_macro_impl::enum_wrapper;
-use pipewire_proc_macro::RawWrapper;
+use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::wrapper::RawWrapper;
 
@@ -65,5 +65,27 @@ impl Debug for ParamInfoRef {
             .field("id", &self.id())
             .field("flags", &self.flags())
             .finish()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ParamInfo {
+    id: ParamType,
+    flags: Flags,
+}
+
+impl ParamInfo {
+    pub fn from_ref(ref_: &ParamInfoRef) -> Self {
+        Self {
+            id: ref_.id(),
+            flags: ref_.flags(),
+        }
+    }
+
+    pub fn id(&self) -> ParamType {
+        self.id
+    }
+    pub fn flags(&self) -> Flags {
+        self.flags
     }
 }

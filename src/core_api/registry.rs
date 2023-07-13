@@ -70,7 +70,7 @@ impl<'a> AddListener<'a> for RegistryRef {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[proxy_wrapper(RegistryRef)]
 pub struct Registry<'c> {
     ref_: Proxy<'c>,

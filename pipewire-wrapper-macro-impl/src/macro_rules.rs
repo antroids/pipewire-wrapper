@@ -106,7 +106,7 @@ macro_rules! events_builder_build {
             let raw = $events_raw {
                 version: 0,
                 $($callback_field: None,
-                )+
+                )*
             };
             let raw = <$events_struct as crate::wrapper::Wrapper>::RawWrapperType::from_raw(raw);
             let mut pinned_raw = Box::into_pin(Box::new(raw));
@@ -116,13 +116,64 @@ macro_rules! events_builder_build {
                 raw: pinned_raw,
                 hook,
                 $($callback_field: $self.$callback_field.flatten(),
-                )+
+                )*
             }));
 
             $(if events.$callback_field.is_some() {
                 events.raw.raw.$callback_field = Some(<$events_struct>::$callback);
-            })+
+            })*
 
             events
     }};
+}
+
+#[macro_export]
+macro_rules! events_channel_builder {
+    ($struct_name:ident, $($callback_field:ident => $callback:ident,)*) => {
+        paste::paste! {
+            events_channel_builder!(
+                [<$struct_name EventsChannelBuilder>],
+                [<$struct_name EventsBuilder>],
+                [<$struct_name Events>],
+                [<$struct_name EventType>],
+                $($callback_field => $callback,)*);
+        }
+    };
+    ($channel_builder:ident, $events_builder:ident, $events_struct:ident, $events_type:ident, $($callback_field:ident => $callback:ident,)*) => {
+        pub struct $channel_builder<'p> {
+            events_builder: $events_builder<'p>,
+            sender: Sender<'p, $events_type>,
+            receiver: Receiver<'p, $events_type>,
+        }
+
+        impl<'p> $channel_builder<'p> {
+            $(pub fn $callback_field(mut self) -> Self {
+                self.events_builder = self
+                    .events_builder
+                    .$callback_field(Self::$callback(self.sender.clone()));
+                self
+            })*
+
+            pub fn build_loop_channel(self) -> (Pin<Box<$events_struct<'p>>>, Receiver<'p, $events_type>) {
+                let events = self.events_builder.build();
+                (events, self.receiver)
+            }
+
+            pub fn build_channel(self) -> (Pin<Box<$events_struct<'p>>>, mpsc::Receiver<$events_type>) {
+                let (sender, receiver) = self.build_loop_channel();
+                (sender, receiver.into_receiver())
+            }
+        }
+
+        impl Default for $channel_builder<'_> {
+            fn default() -> Self {
+                let (sender, receiver) = loop_::channel::LoopChannel::channel();
+                Self {
+                    events_builder: Default::default(),
+                    sender,
+                    receiver,
+                }
+            }
+        }
+    };
 }
