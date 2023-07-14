@@ -144,76 +144,6 @@ impl FractionRef {
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
-pub struct MetaRef {
-    #[raw]
-    raw: spa_sys::spa_meta,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct MetaHeaderRef {
-    #[raw]
-    raw: spa_sys::spa_meta_header,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct MetaRegionRef {
-    #[raw]
-    raw: spa_sys::spa_meta_region,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct MetaBitmapRef {
-    #[raw]
-    raw: spa_sys::spa_meta_bitmap,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct MetaCursorRef {
-    #[raw]
-    raw: spa_sys::spa_meta_cursor,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct MetaControlRef {
-    #[raw]
-    raw: spa_sys::spa_meta_control,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct MetaBusyRef {
-    #[raw]
-    raw: spa_sys::spa_meta_busy,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct ChunkRef {
-    #[raw]
-    raw: spa_sys::spa_chunk,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct DataRef {
-    #[raw]
-    raw: spa_sys::spa_data,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct BufferRef {
-    #[raw]
-    raw: spa_sys::spa_buffer,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
 pub struct BufferAllocInfoRef {
     #[raw]
     raw: spa_sys::spa_buffer_alloc_info,
@@ -339,31 +269,6 @@ pub struct IORateMatchRef {
 // }
 
 // todo ...
-
-enum_wrapper!(
-    Meta,
-    spa_sys::spa_meta_type,
-    INVALID: spa_sys::SPA_META_Invalid,
-    HEADER: spa_sys::SPA_META_Header,
-    VIDEO_CROP: spa_sys::SPA_META_VideoCrop,
-    VIDEO_DAMAGE: spa_sys::SPA_META_VideoDamage,
-    BITMAP: spa_sys::SPA_META_Bitmap,
-    CURSOR: spa_sys::SPA_META_Cursor,
-    CONTROL: spa_sys::SPA_META_Control,
-    BUSY: spa_sys::SPA_META_Busy,
-    _LAST: spa_sys::_SPA_META_LAST,
-);
-
-enum_wrapper!(
-    Data,
-    spa_sys::spa_data_type,
-    INVALID: spa_sys::SPA_DATA_Invalid,
-    MEM_PTR: spa_sys::SPA_DATA_MemPtr,
-    MEM_FD: spa_sys::SPA_DATA_MemFd,
-    DMA_BUF: spa_sys::SPA_DATA_DmaBuf,
-    MEM_ID: spa_sys::SPA_DATA_MemId,
-    _LAST: spa_sys::_SPA_DATA_LAST,
-);
 
 enum_wrapper!(
     Control,
