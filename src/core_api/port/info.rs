@@ -10,7 +10,7 @@ use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::dict::DictRef;
 use crate::spa::param::{ParamInfo, ParamInfoRef};
-use crate::spa::type_::pod::object::param_port_config::Direction;
+use crate::spa::pod::object::param_port_config::Direction;
 use crate::wrapper::RawWrapper;
 
 bitflags! {

@@ -14,7 +14,7 @@ use crate::core_api::port::info::PortInfoRef;
 use crate::core_api::port::PortRef;
 use crate::spa::interface::Hook;
 use crate::spa::param::{ParamInfoRef, ParamType};
-use crate::spa::type_::pod::PodRef;
+use crate::spa::pod::PodRef;
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper, Debug)]

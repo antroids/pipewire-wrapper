@@ -15,7 +15,7 @@ use crate::core_api::Pipewire;
 use crate::i32_as_void_result;
 use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
 use crate::spa::param::ParamType;
-use crate::spa::type_::pod::PodRef;
+use crate::spa::pod::PodRef;
 use crate::wrapper::{RawWrapper, Wrapper};
 
 pub mod events;

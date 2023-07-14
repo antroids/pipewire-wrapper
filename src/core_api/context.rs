@@ -84,9 +84,9 @@ impl Default for Context {
 }
 
 impl ContextRef {
-    pub unsafe fn get_user_data<T>(&self) -> &mut T {
+    pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         let ptr = pw_sys::pw_context_get_user_data(self.as_raw_ptr()) as *mut T;
-        &mut *ptr
+        ptr.as_mut()
     }
 
     pub fn get_properties(&self) -> &PropertiesRef {

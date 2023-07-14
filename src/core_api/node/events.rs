@@ -17,8 +17,8 @@ use crate::core_api::node::info::{NodeInfo, NodeInfoRef};
 use crate::core_api::node::NodeRef;
 use crate::spa::interface::Hook;
 use crate::spa::param::{ParamInfoRef, ParamType};
-use crate::spa::type_::pod::pod_buf::{AllocatedData, PodBuf};
-use crate::spa::type_::pod::PodRef;
+use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
+use crate::spa::pod::PodRef;
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper, Debug)]

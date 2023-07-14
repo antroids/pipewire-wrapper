@@ -18,6 +18,7 @@ pub mod error;
 pub mod impl_api;
 pub mod listeners;
 pub mod spa;
+pub mod stream;
 pub mod wrapper;
 
 pub const SPA_ID_INVALID: u32 = 0xffffffff;

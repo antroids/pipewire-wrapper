@@ -55,8 +55,8 @@ impl ProtocolRef {
         unsafe { ContextRef::from_raw_ptr(pw_sys::pw_protocol_get_context(self.as_raw_ptr())) }
     }
 
-    pub unsafe fn get_user_data<T>(&self) -> &mut T {
+    pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         let ptr = pw_sys::pw_protocol_get_user_data(self.as_raw_ptr()) as *mut T;
-        &mut *ptr
+        ptr.as_mut()
     }
 }

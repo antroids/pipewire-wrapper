@@ -14,7 +14,7 @@ use crate::core_api::device::info::DeviceInfoRef;
 use crate::core_api::device::DeviceRef;
 use crate::spa::interface::Hook;
 use crate::spa::param::{ParamInfoRef, ParamType};
-use crate::spa::type_::pod::PodRef;
+use crate::spa::pod::PodRef;
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper, Debug)]

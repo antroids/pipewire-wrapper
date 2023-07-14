@@ -31,7 +31,7 @@ macro_rules! enum_wrapper {
         #[repr(transparent)]
         pub struct $name {
             #[raw]
-            raw: $repr_type,
+            pub(crate) raw: $repr_type,
         }
 
         impl $name {

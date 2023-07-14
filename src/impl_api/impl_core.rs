@@ -83,9 +83,9 @@ impl ImplCoreRef {
         i32_as_result(result, ())
     }
 
-    pub unsafe fn get_user_data<T>(&self) -> &mut T {
+    pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         let ptr = pw_sys::pw_impl_core_get_user_data(self.as_raw_ptr()) as *mut T;
-        &mut *ptr
+        ptr.as_mut()
     }
 
     pub fn get_global(&self) -> &GlobalRef {

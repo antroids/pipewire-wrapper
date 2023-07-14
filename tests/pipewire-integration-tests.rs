@@ -18,7 +18,7 @@ use pipewire_wrapper::core_api::proxy::Proxied;
 use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
 use pipewire_wrapper::core_api::Pipewire;
 use pipewire_wrapper::listeners::OwnListeners;
-use pipewire_wrapper::spa::type_::pod::PodRef;
+use pipewire_wrapper::spa::pod::PodRef;
 
 #[test]
 fn test_init() {

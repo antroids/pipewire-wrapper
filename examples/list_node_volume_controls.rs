@@ -14,9 +14,9 @@ use pipewire_wrapper::core_api::registry::Registry;
 use pipewire_wrapper::listeners::{ListenerId, OwnListeners};
 use pipewire_wrapper::spa::loop_::EventSource;
 use pipewire_wrapper::spa::param::ParamType;
-use pipewire_wrapper::spa::type_::pod::object::prop::{AudioChannel, ObjectPropType};
-use pipewire_wrapper::spa::type_::pod::object::ObjectType;
-use pipewire_wrapper::spa::type_::pod::{BasicType, PodRef, PodValue};
+use pipewire_wrapper::spa::pod::object::prop::{AudioChannel, ObjectPropType};
+use pipewire_wrapper::spa::pod::object::ObjectType;
+use pipewire_wrapper::spa::pod::{BasicType, PodRef, PodValue};
 
 #[derive(Debug)]
 pub struct VolumeInfo {

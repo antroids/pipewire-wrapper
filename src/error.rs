@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display, Formatter, Pointer};
 
-use crate::spa::type_::pod::PodError;
+use crate::spa::pod::PodError;
 
 pub enum Error {
     ErrorCode(u32),
