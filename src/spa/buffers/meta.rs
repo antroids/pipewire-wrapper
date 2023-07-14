@@ -134,8 +134,8 @@ pub struct MetaRegionRef {
 }
 
 impl MetaRegionRef {
-    pub fn region(&self) -> RegionRef {
-        RegionRef::from_raw(self.raw.region)
+    pub fn region(&self) -> &RegionRef {
+        unsafe { RegionRef::from_raw_ptr(&self.raw.region) }
     }
 }
 
@@ -151,8 +151,8 @@ impl MetaBitmapRef {
         VideoFormat::from_raw(self.raw.format)
     }
 
-    pub fn size(&self) -> RectangleRef {
-        RectangleRef::from_raw(self.raw.size)
+    pub fn size(&self) -> &RectangleRef {
+        unsafe { RectangleRef::from_raw_ptr(&self.raw.size) }
     }
 
     pub fn strict(&self) -> i32 {
@@ -180,12 +180,12 @@ impl MetaCursorRef {
         self.raw.flags
     }
 
-    pub fn position(&self) -> PointRef {
-        PointRef::from_raw(self.raw.position)
+    pub fn position(&self) -> &PointRef {
+        unsafe { PointRef::from_raw_ptr(&self.raw.position) }
     }
 
-    pub fn hotspot(&self) -> PointRef {
-        PointRef::from_raw(self.raw.hotspot)
+    pub fn hotspot(&self) -> &PointRef {
+        unsafe { PointRef::from_raw_ptr(&self.raw.hotspot) }
     }
 
     pub fn bitmap_offset(&self) -> u32 {

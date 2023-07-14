@@ -14,7 +14,7 @@ use crate::spa::loop_::AsLoopRef;
 use crate::spa::pod::object::param_port_config::Direction;
 use crate::spa::support::SupportRef;
 use crate::wrapper::{RawWrapper, Wrapper};
-use crate::{error, i32_as_void_result, spa};
+use crate::{error, i32_as_void_result, spa, SPA_ID_INVALID};
 
 pub mod client;
 pub mod context;
@@ -31,6 +31,8 @@ pub mod properties;
 pub mod proxy;
 pub mod registry;
 pub mod type_info;
+
+pub const PW_ID_ANY: u32 = SPA_ID_INVALID;
 
 static mut INIT: Once = Once::new();
 

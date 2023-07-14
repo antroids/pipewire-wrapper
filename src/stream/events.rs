@@ -177,6 +177,10 @@ impl<'p> StreamEvents<'p> {
             }
         }
     }
+
+    pub fn hook(&self) -> &Pin<Box<Hook>> {
+        &self.hook
+    }
 }
 
 impl<'p> StreamEventsBuilder<'p> {
