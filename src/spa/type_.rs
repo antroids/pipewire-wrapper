@@ -9,10 +9,8 @@ use spa_sys::spa_pod;
 use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::type_::pod::*;
+use crate::spa::pod::*;
 use crate::wrapper::RawWrapper;
-
-pub mod pod;
 
 #[derive(RawWrapper, Debug, Copy, Clone)]
 #[repr(transparent)]
