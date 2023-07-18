@@ -2,6 +2,7 @@ use std::io::{Seek, Write};
 
 use pipewire_macro_impl::enum_wrapper;
 
+use crate::spa::pod::choice::PodChoiceRef;
 use crate::spa::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::pod::{BasicTypePod, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
@@ -10,12 +11,12 @@ use crate::wrapper::RawWrapper;
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
 pub enum ParamBuffersType<'a> {
-    BUFFERS(&'a PodIntRef) = ParamBuffers::BUFFERS.raw,
-    BLOCKS(&'a PodIntRef) = ParamBuffers::BLOCKS.raw,
-    SIZE(&'a PodIntRef) = ParamBuffers::SIZE.raw,
-    STRIDE(&'a PodIntRef) = ParamBuffers::STRIDE.raw,
-    ALIGN(&'a PodIntRef) = ParamBuffers::ALIGN.raw,
-    DATATYPE(&'a PodIntRef) = ParamBuffers::DATATYPE.raw,
+    BUFFERS(&'a PodChoiceRef<PodIntRef>) = ParamBuffers::BUFFERS.raw,
+    BLOCKS(&'a PodChoiceRef<PodIntRef>) = ParamBuffers::BLOCKS.raw,
+    SIZE(&'a PodChoiceRef<PodIntRef>) = ParamBuffers::SIZE.raw,
+    STRIDE(&'a PodChoiceRef<PodIntRef>) = ParamBuffers::STRIDE.raw,
+    ALIGN(&'a PodChoiceRef<PodIntRef>) = ParamBuffers::ALIGN.raw,
+    DATATYPE(&'a PodChoiceRef<PodIntRef>) = ParamBuffers::DATATYPE.raw,
 }
 
 impl<'a> TryFrom<&'a PodPropRef<'a, ParamBuffersType<'a>>> for ParamBuffersType<'a> {

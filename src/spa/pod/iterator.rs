@@ -154,6 +154,19 @@ impl<E: SizedPod> AllocatedPodIterator<E> {
     }
 }
 
+impl<'a, E> AllocatedPodIterator<E>
+where
+    E: 'a,
+    &'a E: WritePod,
+    E: SizedPod,
+{
+    pub fn from_values(
+        values: impl IntoIterator<Item = &'a <&'a E as PodValue>::Value>,
+    ) -> PodResult<Self> {
+        Ok(PodIteratorBuilder::from_values(values)?.into_pod_iter())
+    }
+}
+
 pub struct PodIteratorBuilder<'a, E: SizedPod> {
     buf: PodBuf<'a, E>,
 }
@@ -186,6 +199,16 @@ where
         <&'a E as WritePod>::write_pod(&mut self.buf, pod_value)?;
         Ok(self)
     }
+
+    pub fn from_values(
+        values: impl IntoIterator<Item = &'a <&'a E as PodValue>::Value>,
+    ) -> PodResult<Self> {
+        let mut builder = Self::new();
+        for v in values {
+            builder = builder.push_value(v)?;
+        }
+        Ok(builder)
+    }
 }
 
 #[test]
@@ -204,7 +227,14 @@ fn test_from_values() {
     let allocated_iter = builder.into_pod_iter();
 
     let v: Vec<i32> = allocated_iter.iter().map(|e| e.value().unwrap()).collect();
-    assert_eq!(v, vec![123, 1, 2, 3, 4])
+    assert_eq!(v, vec![123, 1, 2, 3, 4]);
+
+    let mut builder: PodIteratorBuilder<PodIntRef> =
+        PodIteratorBuilder::from_values([&123, &1, &2, &3, &4]).unwrap();
+    let allocated_iter = builder.into_pod_iter();
+
+    let v: Vec<i32> = allocated_iter.iter().map(|e| e.value().unwrap()).collect();
+    assert_eq!(v, vec![123, 1, 2, 3, 4]);
 }
 
 #[test]

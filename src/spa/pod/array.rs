@@ -44,7 +44,7 @@ impl PodArrayBodyRef {
 }
 
 #[repr(transparent)]
-pub struct PodArrayRef<T: PodValue = PodIdRef> {
+pub struct PodArrayRef<T: PodValue = PodRef> {
     raw: spa_sys::spa_pod_array,
     phantom: PhantomData<T>,
 }

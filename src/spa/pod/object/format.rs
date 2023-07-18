@@ -4,6 +4,7 @@ use pipewire_macro_impl::enum_wrapper;
 
 use crate::spa::pod::array::PodArrayRef;
 use crate::spa::pod::choice::enum_::PodEnumRef;
+use crate::spa::pod::choice::range::PodRangeRef;
 use crate::spa::pod::choice::PodChoiceRef;
 use crate::spa::pod::id::{PodIdRef, PodIdType};
 use crate::spa::pod::object::prop::AudioIec958Codec;
@@ -23,10 +24,10 @@ pub enum ObjectFormatType<'a> {
     MEDIA_SUBTYPE(&'a PodIdRef<MediaSubType>) = Format::MEDIA_SUBTYPE.raw,
 
     // Audio
-    AUDIO_FORMAT(&'a PodIdRef<AudioFormat>) = Format::AUDIO_FORMAT.raw,
+    AUDIO_FORMAT(&'a PodChoiceRef<PodIdRef<AudioFormat>>) = Format::AUDIO_FORMAT.raw,
     AUDIO_FLAGS(&'a PodIntRef) = Format::AUDIO_FLAGS.raw,
-    AUDIO_RATE(&'a PodIntRef) = Format::AUDIO_RATE.raw, // Getting choice
-    AUDIO_CHANNELS(&'a PodIntRef) = Format::AUDIO_CHANNELS.raw,
+    AUDIO_RATE(&'a PodChoiceRef<PodIntRef>) = Format::AUDIO_RATE.raw,
+    AUDIO_CHANNELS(&'a PodChoiceRef<PodIntRef>) = Format::AUDIO_CHANNELS.raw,
     AUDIO_POSITION(&'a PodArrayRef<PodIdRef<u32>>) = Format::AUDIO_POSITION.raw, // Enum in comments, but getting array
     AUDIO_IEC958CODEC(&'a PodEnumRef<PodIdRef<AudioIec958Codec>>) = Format::AUDIO_IEC958CODEC.raw,
     AUDIO_BITORDER(&'a PodEnumRef<PodIdRef<ParamBitorder>>) = Format::AUDIO_BITORDER.raw,
@@ -36,8 +37,8 @@ pub enum ObjectFormatType<'a> {
     // Video
     VIDEO_FORMAT(&'a PodIdRef<VideoFormat>) = Format::VIDEO_FORMAT.raw,
     VIDEO_MODIFIER(&'a PodLongRef) = Format::VIDEO_MODIFIER.raw,
-    VIDEO_SIZE(&'a PodRectangleRef) = Format::VIDEO_SIZE.raw,
-    VIDEO_FRAMERATE(&'a PodChoiceRef) = Format::VIDEO_FRAMERATE.raw, // There is a choice for some reason, but should be fraction
+    VIDEO_SIZE(&'a PodChoiceRef<PodRectangleRef>) = Format::VIDEO_SIZE.raw,
+    VIDEO_FRAMERATE(&'a PodChoiceRef<PodFractionRef>) = Format::VIDEO_FRAMERATE.raw,
     VIDEO_MAX_FRAMERATE(&'a PodFractionRef) = Format::VIDEO_MAX_FRAMERATE.raw,
     VIDEO_VIEWS(&'a PodIntRef) = Format::VIDEO_VIEWS.raw,
     VIDEO_INTERLACE_MODE(&'a PodEnumRef<PodIdRef<VideoInterlaceMode>>) =

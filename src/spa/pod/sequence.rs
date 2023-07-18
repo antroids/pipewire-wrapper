@@ -1,10 +1,11 @@
+use std::io::{Seek, Write};
 use std::ptr::addr_of;
 
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::control::PodControlRef;
 use crate::spa::pod::iterator::PodIterator;
-use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, StaticTypePod, WritePod};
 use crate::spa::pod::{BasicType, PodResult, PodValue, SizedPod};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -56,5 +57,21 @@ impl<'a> PodValue for &'a PodSequenceRef {
 
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
+    }
+}
+
+impl<'a> WritePod for &'a PodSequenceRef {
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    where
+        W: Write + Seek,
+    {
+        let iterator_content = unsafe { value.as_bytes() };
+        let header_size = Self::write_header(
+            buffer,
+            iterator_content.len() as u32,
+            PodSequenceRef::static_type(),
+        )?;
+        buffer.write_all(iterator_content)?;
+        Ok(header_size + iterator_content.len() + Self::write_align_padding(buffer)?)
     }
 }

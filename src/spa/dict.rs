@@ -2,10 +2,12 @@ use core::slice;
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
-use std::ptr::{slice_from_raw_parts, NonNull};
+use std::ops::Deref;
+use std::ptr::{null, null_mut, slice_from_raw_parts, NonNull};
 use std::slice::Iter;
 
 use bitflags::bitflags;
+use spa_sys::{spa_dict, spa_dict_item};
 
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
@@ -41,6 +43,16 @@ impl DictRef {
     pub fn iter(&self) -> DictRefIterator {
         self.items().iter()
     }
+
+    pub(crate) unsafe fn from_items(items: &[DictItemRef], flags: Flags) -> Self {
+        Self {
+            raw: spa_dict {
+                flags: flags.bits(),
+                n_items: items.len() as u32,
+                items: items.as_ptr().cast(),
+            },
+        }
+    }
 }
 
 #[derive(RawWrapper)]
@@ -58,6 +70,16 @@ impl DictItemRef {
     pub fn value(&self) -> &CStr {
         unsafe { CStr::from_ptr(self.raw.value) }
     }
+
+    pub(crate) unsafe fn from_tuple<'a>(value: &'a (&'a CStr, &'a CStr)) -> Self
+    where
+        Self: 'a,
+    {
+        DictItemRef::from_raw(spa_dict_item {
+            key: value.0.as_ptr(),
+            value: value.1.as_ptr(),
+        })
+    }
 }
 
 impl Debug for DictItemRef {
@@ -69,41 +91,11 @@ impl Debug for DictItemRef {
     }
 }
 
-impl From<(&CStr, &CStr)> for DictItemRef {
-    fn from(key_value: (&CStr, &CStr)) -> Self {
-        Self::from_raw(spa_sys::spa_dict_item {
-            key: key_value.0.as_ptr(),
-            value: key_value.1.as_ptr(),
-        })
-    }
-}
-
 bitflags! {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     #[repr(transparent)]
     pub struct Flags: u32 {
         const SORTED = spa_sys::SPA_DICT_FLAG_SORTED;
-    }
-}
-
-impl From<&Vec<DictItemRef>> for DictRef {
-    fn from(value: &Vec<DictItemRef>) -> Self {
-        let flags = Flags::empty().0.bits();
-        let n_items = value.len() as u32;
-        let items = value.as_ptr() as *const spa_sys::spa_dict_item;
-
-        Self::from_raw(spa_sys::spa_dict {
-            flags,
-            n_items,
-            items,
-        })
-    }
-}
-
-impl From<&Vec<(&CStr, &CStr)>> for DictRef {
-    fn from(value: &Vec<(&CStr, &CStr)>) -> Self {
-        let items: Vec<DictItemRef> = value.iter().map(|v| DictItemRef::from(*v)).collect();
-        DictRef::from(&items)
     }
 }
 

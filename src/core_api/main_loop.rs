@@ -14,6 +14,7 @@ use pw_sys::pw_main_loop_events;
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_::{LoopRef, LoopRefIterator};
+use crate::core_api::properties::Properties;
 use crate::core_api::Pipewire;
 use crate::spa::dict::DictRef;
 use crate::spa::interface::{Hook, HookRef};
@@ -168,11 +169,7 @@ impl AsLoopRef for MainLoopRef {
 }
 
 impl MainLoop {
-    pub fn new(
-        pipewire: std::sync::Arc<Pipewire>,
-        props: &Vec<(&CStr, &CStr)>,
-    ) -> crate::Result<Self> {
-        let props = &DictRef::from(props);
+    pub fn new(pipewire: std::sync::Arc<Pipewire>, props: &DictRef) -> crate::Result<Self> {
         let main_loop_ptr = unsafe { pw_sys::pw_main_loop_new(props.as_raw_ptr()) };
         let ref_ = new_instance_raw_wrapper(main_loop_ptr)?;
         Ok(Self { ref_, pipewire })
@@ -181,6 +178,10 @@ impl MainLoop {
 
 impl Default for MainLoop {
     fn default() -> Self {
-        MainLoop::new(std::sync::Arc::new(Pipewire::default()), &Vec::default()).unwrap()
+        MainLoop::new(
+            std::sync::Arc::new(Pipewire::default()),
+            Properties::default().dict(),
+        )
+        .unwrap()
     }
 }

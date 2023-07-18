@@ -28,6 +28,13 @@ impl<T> PodFlagsValue<T> {
     pub fn alternatives(&self) -> &Vec<T> {
         &self.alternatives
     }
+
+    pub fn new(default: T, alternatives: Vec<T>) -> Self {
+        Self {
+            default,
+            alternatives,
+        }
+    }
 }
 
 #[repr(transparent)]
@@ -36,8 +43,8 @@ pub struct PodFlagsRef<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T> PodFlagsRef<T> {
-    pub fn choice(&self) -> &PodChoiceRef {
+impl<T: PodValue> PodFlagsRef<T> {
+    pub fn choice(&self) -> &PodChoiceRef<T> {
         unsafe { PodChoiceRef::from_raw_ptr(addr_of!(self.raw)) }
     }
 }
@@ -74,7 +81,7 @@ where
     T: StaticTypePod,
 {
     fn static_type() -> Type {
-        PodChoiceRef::static_type()
+        PodChoiceRef::<T>::static_type()
     }
 }
 
@@ -103,7 +110,7 @@ where
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         let body = unsafe { PodChoiceBodyRef::from_raw_ptr(ptr) };
         if body.type_() == ChoiceType::FLAGS {
-            if T::static_type() == body.child().type_() {
+            if T::static_type() == body.child().type_() || T::static_type() == Type::POD {
                 let content_size = size - size_of::<Self::RawValue>();
                 let element_size = body.child().size() as usize;
                 let mut iter: PodValueIterator<T> = PodValueIterator::new(
@@ -142,8 +149,9 @@ where
 impl<T> WritePod for PodFlagsRef<T>
 where
     T: PodValue,
-    T: StaticTypePod,
+    T: BasicTypePod,
     T: WriteValue,
+    T: WritePod,
 {
     fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
@@ -159,7 +167,7 @@ where
                     buffer,
                     (value_size + size_of::<spa_sys::spa_pod_choice_body>()) as u32,
                     Type::CHOICE,
-                )? + PodChoiceRef::write_raw_body(
+                )? + PodChoiceRef::<T>::write_raw_body(
                     buffer,
                     ChoiceType::FLAGS,
                     0,

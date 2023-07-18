@@ -149,12 +149,17 @@ where
         let pod_type = self.upcast().type_();
         if target_type == PodRef::static_type() || target_type == pod_type {
             unsafe { Ok(self.cast_unchecked()) }
-        } else if pod_type == PodChoiceRef::static_type() {
-            let choice: &PodChoiceRef = self.cast()?;
-            // Handle fixated choices and wrong values
-            // Due to ugly not restricted format, there can be any kind of data
-            // So, we doing our best to parse at least default value
-            choice.body().child().cast()
+        } else if target_type == Type::CHOICE
+            && (pod_type == Type::BOOL
+                || pod_type == Type::ID
+                || pod_type == Type::INT
+                || pod_type == Type::LONG
+                || pod_type == Type::FLOAT
+                || pod_type == Type::DOUBLE
+                || pod_type == Type::RECTANGLE
+                || pod_type == Type::FRACTION)
+        {
+            unsafe { Ok(self.cast_unchecked()) }
         } else {
             Err(PodError::WrongPodTypeToCast(target_type, pod_type))
         }

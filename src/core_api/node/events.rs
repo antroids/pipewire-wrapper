@@ -101,7 +101,7 @@ impl<'p> NodeEventsChannelBuilder<'p> {
         sender: Sender<'p, NodeEventType>,
     ) -> Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p> {
         Box::new(move |seq, type_, index, next, pod| {
-            if let Ok(pod) = pod.try_into() {
+            if let Ok(pod) = AllocatedData::from_pod(pod) {
                 sender.send(NodeEventType::Param(seq, type_, index, next, pod));
             }
         })

@@ -20,7 +20,7 @@ use sequence::PodSequenceRef;
 use string::PodStringRef;
 use struct_::PodStructRef;
 
-use crate::spa::pod::choice::ChoiceType;
+use crate::spa::pod::choice::{ChoiceType, ChoiceValueType};
 use crate::spa::pod::object::prop::Prop;
 use crate::spa::pod::object::PodObjectRef;
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
@@ -392,8 +392,25 @@ impl PodHeader for PodRef {
     }
 }
 
+impl PodValue for PodRef {
+    type Value = ();
+    type RawValue = spa_sys::spa_pod;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        Ok(())
+    }
+
+    fn value(&self) -> PodResult<Self::Value> {
+        Ok(())
+    }
+}
+
 impl<'a> PodValue for &'a PodRef {
-    type Value = BasicType<'a>;
+    type Value = BasicTypeValue<'a>;
     type RawValue = spa_sys::spa_pod;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -401,7 +418,28 @@ impl<'a> PodValue for &'a PodRef {
     }
 
     fn parse_raw_value(ptr: *const Self::RawValue, _size: usize) -> PodResult<Self::Value> {
-        unsafe { PodRef::from_raw_ptr(ptr).downcast() }
+        Ok(match unsafe { PodRef::from_raw_ptr(ptr).downcast()? } {
+            BasicType::NONE(pod) => BasicTypeValue::NONE,
+            BasicType::BOOL(pod) => BasicTypeValue::BOOL(pod.value()?),
+            BasicType::ID(pod) => BasicTypeValue::ID(pod.value()?),
+            BasicType::INT(pod) => BasicTypeValue::INT(pod.value()?),
+            BasicType::LONG(pod) => BasicTypeValue::LONG(pod.value()?),
+            BasicType::FLOAT(pod) => BasicTypeValue::FLOAT(pod.value()?),
+            BasicType::DOUBLE(pod) => BasicTypeValue::DOUBLE(pod.value()?),
+            BasicType::STRING(pod) => BasicTypeValue::STRING(pod.value()?),
+            BasicType::BYTES(pod) => BasicTypeValue::BYTES(pod.value()?),
+            BasicType::RECTANGLE(pod) => BasicTypeValue::RECTANGLE(pod.value()?),
+            BasicType::FRACTION(pod) => BasicTypeValue::FRACTION(pod.value()?),
+            BasicType::BITMAP(pod) => BasicTypeValue::BITMAP(pod.value()?),
+            BasicType::ARRAY(pod) => BasicTypeValue::ARRAY(pod.value()?),
+            BasicType::STRUCT(pod) => BasicTypeValue::STRUCT(pod.value()?),
+            BasicType::OBJECT(pod) => BasicTypeValue::OBJECT(pod.value()?),
+            BasicType::SEQUENCE(pod) => BasicTypeValue::SEQUENCE(pod.value()?),
+            BasicType::POINTER(pod) => BasicTypeValue::POINTER(pod.value()?),
+            BasicType::FD(pod) => BasicTypeValue::FD(pod.value()?),
+            BasicType::CHOICE(pod) => BasicTypeValue::CHOICE(pod.choice_value()?),
+            _ => return Err(PodError::UnknownPodTypeToDowncast),
+        })
     }
 
     fn value(&self) -> PodResult<Self::Value> {
@@ -415,26 +453,26 @@ impl<'a> WritePod for &'a PodRef {
         W: Write + Seek,
     {
         match value {
-            BasicType::NONE(pod) => pod.clone_to(buffer),
-            BasicType::BOOL(pod) => pod.clone_to(buffer),
-            BasicType::ID(pod) => pod.clone_to(buffer),
-            BasicType::INT(pod) => pod.clone_to(buffer),
-            BasicType::LONG(pod) => pod.clone_to(buffer),
-            BasicType::FLOAT(pod) => pod.clone_to(buffer),
-            BasicType::DOUBLE(pod) => pod.clone_to(buffer),
-            BasicType::STRING(pod) => pod.clone_to(buffer),
-            BasicType::BYTES(pod) => pod.clone_to(buffer),
-            BasicType::RECTANGLE(pod) => pod.clone_to(buffer),
-            BasicType::FRACTION(pod) => pod.clone_to(buffer),
-            BasicType::BITMAP(pod) => pod.clone_to(buffer),
-            BasicType::ARRAY(pod) => pod.clone_to(buffer),
-            BasicType::STRUCT(pod) => pod.clone_to(buffer),
-            BasicType::OBJECT(pod) => pod.clone_to(buffer),
-            BasicType::SEQUENCE(pod) => pod.clone_to(buffer),
-            BasicType::POINTER(pod) => pod.clone_to(buffer),
-            BasicType::FD(pod) => pod.clone_to(buffer),
-            BasicType::CHOICE(pod) => pod.clone_to(buffer),
-            BasicType::POD(pod) => Err(PodError::UnknownPodTypeToDowncast),
+            BasicTypeValue::NONE => Self::write_header(buffer, 0, Type::NONE),
+            BasicTypeValue::BOOL(v) => PodBoolRef::write_pod(buffer, v),
+            BasicTypeValue::ID(v) => PodIdRef::write_pod(buffer, v),
+            BasicTypeValue::INT(v) => PodIntRef::write_pod(buffer, v),
+            BasicTypeValue::LONG(v) => PodLongRef::write_pod(buffer, v),
+            BasicTypeValue::FLOAT(v) => PodFloatRef::write_pod(buffer, v),
+            BasicTypeValue::DOUBLE(v) => PodDoubleRef::write_pod(buffer, v),
+            BasicTypeValue::STRING(v) => <&PodStringRef>::write_pod(buffer, v),
+            BasicTypeValue::BYTES(v) => <&PodBytesRef>::write_pod(buffer, v),
+            BasicTypeValue::RECTANGLE(v) => PodRectangleRef::write_pod(buffer, v),
+            BasicTypeValue::FRACTION(v) => PodFractionRef::write_pod(buffer, v),
+            BasicTypeValue::BITMAP(v) => <&PodBitmapRef>::write_pod(buffer, v),
+            BasicTypeValue::ARRAY(v) => <&PodArrayRef>::write_pod(buffer, v),
+            BasicTypeValue::STRUCT(v) => <&PodStructRef>::write_pod(buffer, v),
+            BasicTypeValue::OBJECT(v) => <&PodObjectRef>::write_pod(buffer, v),
+            BasicTypeValue::SEQUENCE(v) => <&PodSequenceRef>::write_pod(buffer, v),
+            BasicTypeValue::POINTER(v) => <&PodPointerRef>::write_pod(buffer, v),
+            BasicTypeValue::FD(v) => PodFdRef::write_pod(buffer, v),
+            BasicTypeValue::CHOICE(v) => PodChoiceRef::<PodRef>::write_choice_value(buffer, v),
+            BasicTypeValue::POD(v) => Err(PodError::UnknownPodTypeToDowncast),
         }
     }
 }
@@ -450,7 +488,7 @@ impl Debug for PodRef {
         f.debug_struct("PodRef")
             .field("size", &self.size())
             .field("type", &self.type_())
-            .field("value", &self.downcast())
+            .field("value", &self.value())
             .finish()
     }
 }
@@ -485,7 +523,7 @@ pub enum BasicType<'a> {
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
 pub enum BasicTypeValue<'a> {
-    NONE(<&'a PodRef as PodValue>::Value) = Type::NONE.raw,
+    NONE = Type::NONE.raw,
     BOOL(<PodBoolRef as PodValue>::Value) = Type::BOOL.raw,
     ID(<PodIdRef as PodValue>::Value) = Type::ID.raw,
     INT(<PodIntRef as PodValue>::Value) = Type::INT.raw,
@@ -503,8 +541,8 @@ pub enum BasicTypeValue<'a> {
     SEQUENCE(<&'a PodSequenceRef as PodValue>::Value) = Type::SEQUENCE.raw,
     POINTER(<&'a PodPointerRef as PodValue>::Value) = Type::POINTER.raw,
     FD(<PodFdRef as PodValue>::Value) = Type::FD.raw,
-    CHOICE(<&'a PodChoiceRef as PodValue>::Value) = Type::CHOICE.raw,
-    POD(<&'a PodRef as PodValue>::Value) = Type::POD.raw,
+    CHOICE(ChoiceValueType) = Type::CHOICE.raw,
+    POD(&'a PodRef) = Type::POD.raw,
 }
 
 #[derive(RawWrapper)]

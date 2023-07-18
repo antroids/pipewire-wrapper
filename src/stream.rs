@@ -1,17 +1,17 @@
 use std::ffi::{CStr, CString};
 use std::pin::Pin;
-use std::ptr::null_mut;
+use std::ptr::{null_mut, NonNull};
 
 use bitflags::{bitflags, Flags};
 use spa_sys::spa_pod;
 
 use pipewire_macro_impl::{enum_wrapper, spa_interface_call};
-use pipewire_proc_macro::RawWrapper;
+use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::CoreRef;
 use crate::core_api::properties::PropertiesRef;
 use crate::core_api::PW_ID_ANY;
-use crate::listeners::AddListener;
+use crate::listeners::{AddListener, Listeners};
 use crate::spa::dict::DictRef;
 use crate::spa::pod::object::param_port_config::Direction;
 use crate::spa::pod::PodRef;
@@ -20,7 +20,7 @@ use crate::stream::control::ControlRef;
 use crate::stream::events::StreamEvents;
 use crate::stream::time::TimeRef;
 use crate::wrapper::RawWrapper;
-use crate::{i32_as_result, i32_as_void_result, raw_wrapper};
+use crate::{i32_as_result, i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
 
 pub mod buffer;
 pub mod control;
@@ -56,7 +56,7 @@ bitflags! {
     }
 }
 
-#[derive(RawWrapper, Debug)]
+#[derive(RawWrapper, Debug, Clone)]
 #[repr(transparent)]
 pub struct StreamRef {
     #[raw]
@@ -225,5 +225,35 @@ impl<'a> AddListener<'a> for StreamRef {
         };
 
         events
+    }
+}
+
+#[derive(Wrapper, Debug, Clone)]
+pub struct Stream<'a> {
+    #[raw_wrapper]
+    ref_: NonNull<StreamRef>,
+
+    listeners: Listeners<Pin<Box<StreamEvents<'a>>>>,
+}
+
+impl<'a> Stream<'a> {
+    pub fn new(core: &CoreRef, name: &CStr, props: &PropertiesRef) -> crate::Result<Self> {
+        unsafe {
+            let result =
+                pw_sys::pw_stream_new(core.as_raw_ptr(), name.as_ptr(), props.as_raw_ptr());
+            let ref_ = new_instance_raw_wrapper(result)?;
+            Ok(Self {
+                ref_,
+                listeners: Default::default(),
+            })
+        }
+    }
+
+    // todo new_simple
+}
+
+impl Drop for Stream<'_> {
+    fn drop(&mut self) {
+        unsafe { pw_sys::pw_stream_destroy(self.as_raw_ptr()) }
     }
 }

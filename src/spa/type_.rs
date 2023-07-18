@@ -62,6 +62,12 @@ impl RectangleRef {
     pub fn height(&self) -> u32 {
         self.raw.height
     }
+
+    pub fn new(width: u32, height: u32) -> Self {
+        Self {
+            raw: spa_sys::spa_rectangle { width, height },
+        }
+    }
 }
 
 #[derive(RawWrapper, Debug, Copy, Clone)]
@@ -87,6 +93,12 @@ impl PointRef {
 
     pub fn y(&self) -> i32 {
         self.raw.y
+    }
+
+    pub fn new(x: i32, y: i32) -> Self {
+        Self {
+            raw: spa_sys::spa_point { x, y },
+        }
     }
 }
 
@@ -114,6 +126,15 @@ impl RegionRef {
     pub fn size(&self) -> RectangleRef {
         RectangleRef::from_raw(self.raw.size)
     }
+
+    pub fn new(position: PointRef, size: RectangleRef) -> Self {
+        Self {
+            raw: spa_sys::spa_region {
+                position: position.raw,
+                size: size.raw,
+            },
+        }
+    }
 }
 
 #[derive(RawWrapper, Debug, Copy, Clone)]
@@ -139,6 +160,12 @@ impl FractionRef {
 
     pub fn denom(&self) -> u32 {
         self.raw.denom
+    }
+
+    pub fn new(num: u32, denom: u32) -> Self {
+        Self {
+            raw: spa_sys::spa_fraction { num, denom },
+        }
     }
 }
 

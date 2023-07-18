@@ -23,8 +23,8 @@ pub struct PodNoneRef<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T> PodNoneRef<T> {
-    pub fn choice(&self) -> &PodChoiceRef {
+impl<T: PodValue> PodNoneRef<T> {
+    pub fn choice(&self) -> &PodChoiceRef<T> {
         unsafe { PodChoiceRef::from_raw_ptr(addr_of!(self.raw)) }
     }
 }
@@ -61,7 +61,7 @@ where
     T: StaticTypePod,
 {
     fn static_type() -> Type {
-        PodChoiceRef::static_type()
+        PodChoiceRef::<T>::static_type()
     }
 }
 
@@ -80,7 +80,7 @@ where
     T: PodValue,
     T: StaticTypePod,
 {
-    type Value = Option<T::Value>;
+    type Value = T::Value;
     type RawValue = spa_sys::spa_pod_choice_body;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -90,7 +90,7 @@ where
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         let body = unsafe { PodChoiceBodyRef::from_raw_ptr(ptr) };
         if body.type_() == ChoiceType::NONE {
-            if T::static_type() == body.child().type_() {
+            if T::static_type() == body.child().type_() || T::static_type() == Type::POD {
                 let content_size = size - size_of::<Self::RawValue>();
                 let element_size = body.child().size() as usize;
                 let mut iter: PodValueIterator<T> = PodValueIterator::new(
@@ -98,7 +98,10 @@ where
                     content_size,
                     element_size,
                 );
-                Ok(iter.next())
+                let value = iter
+                    .next()
+                    .ok_or(PodError::DataIsTooShort(element_size, content_size))?;
+                Ok(value)
             } else {
                 Err(PodError::WrongPodTypeToCast(
                     T::static_type(),
@@ -121,8 +124,9 @@ where
 impl<T> WritePod for PodNoneRef<T>
 where
     T: PodValue,
-    T: StaticTypePod,
+    T: BasicTypePod,
     T: WriteValue,
+    T: WritePod,
 {
     fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
@@ -136,7 +140,7 @@ where
                     buffer,
                     (value_size + size_of::<spa_sys::spa_pod_choice_body>()) as u32,
                     Type::CHOICE,
-                )? + PodChoiceRef::write_raw_body(
+                )? + PodChoiceRef::<T>::write_raw_body(
                     buffer,
                     ChoiceType::NONE,
                     0,
@@ -159,11 +163,7 @@ where
     where
         W: Write + Seek,
     {
-        if let Some(value) = value.as_ref() {
-            T::write_raw_value(buffer, value)
-        } else {
-            Ok(0)
-        }
+        T::write_raw_value(buffer, value)
     }
 }
 
@@ -185,7 +185,7 @@ where
 
 #[test]
 fn test_from_value() {
-    let allocated_pod = PodBuf::<PodNoneRef<PodLongRef>>::from_primitive_value(Some(1234567i64))
+    let allocated_pod = PodBuf::<PodNoneRef<PodLongRef>>::from_primitive_value(1234567i64)
         .unwrap()
         .into_pod();
     assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
@@ -202,24 +202,5 @@ fn test_from_value() {
         Type::LONG
     );
     assert_eq!(allocated_pod.as_pod().choice().body().child().size(), 8);
-    assert_eq!(allocated_pod.as_pod().value().unwrap(), Some(1234567i64));
-
-    let allocated_pod = PodBuf::<PodNoneRef<PodIntRef>>::from_primitive_value(None)
-        .unwrap()
-        .into_pod();
-    assert_eq!(allocated_pod.as_pod().as_ptr().align_offset(POD_ALIGN), 0);
-    assert_eq!(allocated_pod.as_pod().pod_size(), 24);
-    assert_eq!(allocated_pod.as_pod().pod_header().size, 16);
-    assert_eq!(allocated_pod.as_pod().pod_header().type_, Type::CHOICE.raw);
-    assert_eq!(
-        allocated_pod.as_pod().choice().body().type_(),
-        ChoiceType::NONE
-    );
-    assert_eq!(allocated_pod.as_pod().choice().body().flags(), 0);
-    assert_eq!(
-        allocated_pod.as_pod().choice().body().child().type_(),
-        Type::INT
-    );
-    assert_eq!(allocated_pod.as_pod().choice().body().child().size(), 0);
-    assert_eq!(allocated_pod.as_pod().value().unwrap(), None);
+    assert_eq!(allocated_pod.as_pod().value().unwrap(), 1234567i64);
 }

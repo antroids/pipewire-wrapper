@@ -34,6 +34,10 @@ where
         <&'a T>::write_pod(&mut buf, value)?;
         Ok(buf)
     }
+
+    pub fn from_pod(pod: &'a T) -> PodResult<Self> {
+        Self::from_value(&pod.value()?)
+    }
 }
 
 impl<'a, T> PodBuf<'a, T>
@@ -156,6 +160,29 @@ impl<T> AllocatedData<T> {
 
     pub fn size(&self) -> usize {
         self.data.len() * size_of::<AlignedDataType>()
+    }
+}
+
+impl<'a, T> AllocatedData<T>
+where
+    &'a T: WritePod,
+    T: 'a,
+{
+    pub fn from_pod(pod: &'a T) -> PodResult<Self> {
+        Ok(PodBuf::from_pod(pod)?.into_pod())
+    }
+
+    pub fn from_value(value: &<&'a T as PodValue>::Value) -> PodResult<Self> {
+        Ok(PodBuf::from_value(value)?.into_pod())
+    }
+}
+
+impl<T> AllocatedData<T>
+where
+    T: WritePod,
+{
+    pub fn from_primitive_value(value: T::Value) -> PodResult<Self> {
+        Ok(PodBuf::from_primitive_value(value)?.into_pod())
     }
 }
 

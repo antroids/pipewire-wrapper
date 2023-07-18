@@ -1,16 +1,18 @@
-use std::ffi::CStr;
+use std::ffi::{CStr, CString, NulError};
 use std::fmt::{Debug, Display, Formatter};
 use std::os::raw::c_char;
-use std::ptr::{addr_of, addr_of_mut, NonNull, null};
+use std::ptr::{addr_of, addr_of_mut, null, NonNull};
 use std::slice;
 
 use bitflags::bitflags;
-use pipewire_proc_macro::{RawWrapper, Wrapper};
 use pw_sys::FILE;
 
-use crate::{i32_as_result, i32_as_void_result};
+use pipewire_proc_macro::{RawWrapper, Wrapper};
+
+use crate::spa::dict;
 use crate::spa::dict::{DictItemRef, DictRef, DictRefIterator};
 use crate::wrapper::RawWrapper;
+use crate::{i32_as_result, i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
@@ -232,33 +234,93 @@ impl PropertiesRef {
 }
 
 impl Properties {
-    pub fn new(values: &Vec<(&CStr, &CStr)>) -> Self {
-        values.into()
+    pub fn new_dict(dict: &DictRef) -> crate::Result<Self> {
+        let result = unsafe { pw_sys::pw_properties_new_dict(dict.as_raw_ptr()) };
+        let ref_ = new_instance_raw_wrapper(result)?;
+        Ok(unsafe { Self::from_ref(ref_) })
+    }
+
+    pub fn new_string(string: &CStr) -> crate::Result<Self> {
+        let result = unsafe { pw_sys::pw_properties_new_string(string.as_ptr()) };
+        let ref_ = new_instance_raw_wrapper(result)?;
+        Ok(unsafe { Self::from_ref(ref_) })
+    }
+
+    pub unsafe fn from_ref(ref_: NonNull<PropertiesRef>) -> Self {
+        Self { ref_ }
     }
 }
 
-impl From<DictRef> for Properties {
-    fn from(value: DictRef) -> Self {
-        let ptr = unsafe { pw_sys::pw_properties_new_dict(value.as_raw_ptr()) };
-        Self {
-            ref_: NonNull::new(ptr as *mut PropertiesRef).unwrap(),
+impl From<&DictRef> for Properties {
+    fn from(value: &DictRef) -> Self {
+        Properties::new_dict(value).unwrap()
+    }
+}
+
+impl<'a> FromIterator<&'a (&'a CStr, &'a CStr)> for Properties {
+    fn from_iter<T: IntoIterator<Item = &'a (&'a CStr, &'a CStr)>>(iter: T) -> Self {
+        unsafe {
+            let items: Vec<DictItemRef> = iter
+                .into_iter()
+                .map(|t| DictItemRef::from_tuple(t))
+                .collect();
+            let dict = DictRef::from_items(&items, dict::Flags::empty());
+            Properties::new_dict(&dict).unwrap()
         }
+    }
+}
+
+impl<'a> FromIterator<(&'a CStr, &'a CStr)> for Properties {
+    fn from_iter<T: IntoIterator<Item = (&'a CStr, &'a CStr)>>(iter: T) -> Self {
+        unsafe {
+            let items: Vec<DictItemRef> = iter
+                .into_iter()
+                .map(|t| DictItemRef::from_tuple(&t))
+                .collect();
+            let dict = DictRef::from_items(&items, dict::Flags::empty());
+            Properties::new_dict(&dict).unwrap()
+        }
+    }
+}
+
+impl<'a> FromIterator<&'a (CString, CString)> for Properties {
+    fn from_iter<T: IntoIterator<Item = &'a (CString, CString)>>(iter: T) -> Self {
+        iter.into_iter()
+            .map(|(k, v)| (k.as_c_str(), v.as_c_str()))
+            .collect()
     }
 }
 
 impl From<&Vec<(&CStr, &CStr)>> for Properties {
     fn from(value: &Vec<(&CStr, &CStr)>) -> Self {
-        let dict: DictRef = value.into();
-        dict.into()
+        value.iter().collect()
+    }
+}
+
+impl From<&Vec<(CString, CString)>> for Properties {
+    fn from(value: &Vec<(CString, CString)>) -> Self {
+        value
+            .iter()
+            .map(|(k, v)| (k.as_c_str(), v.as_c_str()))
+            .collect()
+    }
+}
+
+impl<T: Into<Vec<u8>>> TryFrom<Vec<(T, T)>> for Properties {
+    type Error = NulError;
+
+    fn try_from(value: Vec<(T, T)>) -> Result<Self, Self::Error> {
+        let mut vec: Vec<(CString, CString)> = Vec::with_capacity(value.len());
+        for (k, v) in value {
+            vec.push((CString::new(k)?, CString::new(v)?));
+        }
+        Ok(vec.iter().collect())
     }
 }
 
 impl From<&CStr> for Properties {
     fn from(value: &CStr) -> Self {
-        let ptr = unsafe { pw_sys::pw_properties_new_string(value.as_ptr()) };
-        Self {
-            ref_: NonNull::new(ptr as *mut PropertiesRef).unwrap(),
-        }
+        Properties::new_string(value).unwrap()
     }
 }
 
@@ -298,4 +360,41 @@ impl Debug for PropertiesRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_map().entries(self.iter()).finish()
     }
+}
+
+#[macro_export]
+macro_rules! properties_new {
+    ($($key:expr => $val:expr),+ $(,)?) => {{
+        #[allow(temporary_cstring_as_ptr)]
+        let result = unsafe {
+            pw_sys::pw_properties_new(
+                $(
+                {
+                    let bytes = std::convert::AsRef::<[u8]>::as_ref($key);
+                    std::ffi::CStr::from_bytes_with_nul(bytes).unwrap().as_ptr()
+                },
+                {
+                    let bytes = std::convert::AsRef::<[u8]>::as_ref($val);
+                    std::ffi::CStr::from_bytes_with_nul(bytes).unwrap().as_ptr()
+                },
+                )+
+                std::ptr::null::<std::os::raw::c_char>(),
+            )
+        };
+        unsafe { $crate::core_api::properties::Properties::from_ref(core::ptr::NonNull::new(result.cast()).unwrap()) }
+    }};
+}
+
+#[test]
+fn test_properties_new() {
+    let prop = properties_new!("key\0" => b"val\0", "key2\0" => b"val2\0");
+    assert_eq!(prop.n_items(), 2);
+    assert_eq!(
+        prop.get(CString::new("key").unwrap().as_c_str()),
+        Some(CString::new("val").unwrap().as_c_str())
+    );
+    assert_eq!(
+        prop.get(CString::new("key2").unwrap().as_c_str()),
+        Some(CString::new("val2").unwrap().as_c_str())
+    );
 }
