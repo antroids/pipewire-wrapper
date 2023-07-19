@@ -20,20 +20,40 @@ impl DataRef {
         DataType::from_raw(self.raw.type_)
     }
 
+    pub fn set_type(&mut self, type_: DataType) {
+        self.raw.type_ = type_.into()
+    }
+
     pub fn flags(&self) -> Flags {
         Flags::from_bits_retain(self.raw.flags)
+    }
+
+    pub fn set_flags(&mut self, flags: Flags) {
+        self.raw.flags = flags.bits()
     }
 
     pub fn fd(&self) -> RawFd {
         self.raw.fd as RawFd
     }
 
+    pub fn set_fd(&mut self, fd: RawFd) {
+        self.raw.fd = fd as i64
+    }
+
     pub fn map_offset(&self) -> u32 {
         self.raw.mapoffset
     }
 
+    pub fn set_map_offset(&mut self, map_offset: u32) {
+        self.raw.mapoffset = map_offset
+    }
+
     pub fn max_size(&self) -> u32 {
         self.raw.maxsize
+    }
+
+    pub fn set_max_size(&mut self, max_size: u32) {
+        self.raw.maxsize = max_size
     }
 
     pub fn data(&self) -> *mut ::std::os::raw::c_void {
@@ -42,6 +62,10 @@ impl DataRef {
 
     pub fn chunk(&self) -> &ChunkRef {
         unsafe { ChunkRef::from_raw_ptr(self.raw.chunk) }
+    }
+
+    pub fn chunk_mut(&mut self) -> &mut ChunkRef {
+        unsafe { ChunkRef::mut_from_raw_ptr(self.raw.chunk) }
     }
 }
 

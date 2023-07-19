@@ -122,6 +122,10 @@ impl MainLoopRef {
             .update_timer(source, value, interval, absolute)
     }
 
+    pub fn disable_timer(&self, source: &TimerSource) -> crate::Result<()> {
+        self.get_loop().utils().disable_timer(source)
+    }
+
     pub fn add_signal<'l, F>(
         &'l self,
         signal_number: i32,

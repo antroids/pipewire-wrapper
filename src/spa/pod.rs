@@ -137,8 +137,8 @@ macro_rules! primitive_type_pod_impl {
             fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
                 unsafe {
                     f.debug_struct(stringify!($pod_ref_type))
-                        .field("pod.type", &self.upcast().type_())
-                        .field("pod.size", &self.upcast().size())
+                        .field("pod.type", &self.pod_type())
+                        .field("pod.size", &self.pod_size())
                         .field("value", &self.value())
                         .finish()
                 }
@@ -251,6 +251,14 @@ where
     fn from_value(value: &<&'a Self as PodValue>::Value) -> PodResult<AllocatedData<Self>>;
 }
 
+pub trait FromPrimitiveValue
+where
+    Self: Sized,
+    Self: WritePod,
+{
+    fn from_primitive(value: <Self as PodValue>::Value) -> PodResult<AllocatedData<Self>>;
+}
+
 impl<'a, T> FromValue<'a> for T
 where
     T: Sized,
@@ -259,6 +267,16 @@ where
 {
     fn from_value(value: &<&'a Self as PodValue>::Value) -> PodResult<AllocatedData<Self>> {
         Ok(PodBuf::<Self>::from_value(value)?.into_pod())
+    }
+}
+
+impl<T> FromPrimitiveValue for T
+where
+    T: Sized,
+    T: WritePod,
+{
+    fn from_primitive(value: <Self as PodValue>::Value) -> PodResult<AllocatedData<Self>> {
+        Ok(PodBuf::<Self>::from_primitive_value(value)?.into_pod())
     }
 }
 
@@ -341,6 +359,16 @@ where
 {
 }
 
+pub trait Upcast {
+    fn upcast(&self) -> &PodRef;
+}
+
+impl<'a, T: BasicTypePod> Upcast for &'a T {
+    fn upcast(&self) -> &PodRef {
+        unsafe { PodRef::from_raw_ptr(self.pod_header()) }
+    }
+}
+
 #[derive(RawWrapper, Clone)]
 #[repr(transparent)]
 pub struct PodRef {
@@ -359,8 +387,8 @@ impl PodRef {
 
     pub fn downcast(&self) -> PodResult<BasicType> {
         unsafe {
-            match self.upcast().type_() {
-                Type::NONE => Ok(BasicType::NONE(self.upcast())),
+            match self.pod_type() {
+                Type::NONE => Ok(BasicType::NONE),
                 Type::BOOL => self.cast().map(|r| BasicType::BOOL(r)),
                 Type::ID => self.cast().map(|r| BasicType::ID(r)),
                 Type::INT => self.cast().map(|r| BasicType::INT(r)),
@@ -419,7 +447,7 @@ impl<'a> PodValue for &'a PodRef {
 
     fn parse_raw_value(ptr: *const Self::RawValue, _size: usize) -> PodResult<Self::Value> {
         Ok(match unsafe { PodRef::from_raw_ptr(ptr).downcast()? } {
-            BasicType::NONE(pod) => BasicTypeValue::NONE,
+            BasicType::NONE => BasicTypeValue::NONE,
             BasicType::BOOL(pod) => BasicTypeValue::BOOL(pod.value()?),
             BasicType::ID(pod) => BasicTypeValue::ID(pod.value()?),
             BasicType::INT(pod) => BasicTypeValue::INT(pod.value()?),
@@ -497,7 +525,7 @@ impl Debug for PodRef {
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
 pub enum BasicType<'a> {
-    NONE(&'a PodRef) = Type::NONE.raw,
+    NONE = Type::NONE.raw,
     BOOL(&'a PodBoolRef) = Type::BOOL.raw,
     ID(&'a PodIdRef) = Type::ID.raw,
     INT(&'a PodIntRef) = Type::INT.raw,

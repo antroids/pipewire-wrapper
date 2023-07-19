@@ -137,16 +137,12 @@ where
     Self: RawWrapper,
     Self: Debug,
 {
-    fn upcast(&self) -> &PodRef {
-        unsafe { PodRef::from_raw_ptr(self.pod_header()) }
-    }
-
     fn cast<T>(&self) -> PodResult<&T>
     where
         T: BasicTypePod,
     {
         let target_type = T::static_type();
-        let pod_type = self.upcast().type_();
+        let pod_type = self.pod_type();
         if target_type == PodRef::static_type() || target_type == pod_type {
             unsafe { Ok(self.cast_unchecked()) }
         } else if target_type == Type::CHOICE

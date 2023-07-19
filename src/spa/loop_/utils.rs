@@ -1,5 +1,5 @@
 use std::os::fd::RawFd;
-use std::ptr::NonNull;
+use std::ptr::{null_mut, NonNull};
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -169,6 +169,18 @@ impl LoopUtilsRef {
             value.as_raw_ptr(),
             interval.as_raw_ptr(),
             absolute
+        )?;
+        i32_as_void_result(result)
+    }
+
+    pub fn disable_timer(&self, source: &TimerSource) -> crate::Result<()> {
+        let result = spa_interface_call!(
+            self,
+            update_timer,
+            source.as_raw(),
+            null_mut(),
+            null_mut(),
+            false
         )?;
         i32_as_void_result(result)
     }

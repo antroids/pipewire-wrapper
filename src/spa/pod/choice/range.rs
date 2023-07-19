@@ -10,7 +10,7 @@ use crate::spa::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::pod::iterator::PodValueIterator;
 use crate::spa::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue,
+    BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -46,6 +46,12 @@ pub struct PodRangeRef<T> {
 impl<T: PodValue> PodRangeRef<T> {
     pub fn choice(&self) -> &PodChoiceRef<T> {
         unsafe { PodChoiceRef::from_raw_ptr(addr_of!(self.raw)) }
+    }
+}
+
+impl<'a, T: PodValue> From<&'a PodRangeRef<T>> for &'a PodChoiceRef<T> {
+    fn from(value: &'a PodRangeRef<T>) -> Self {
+        value.choice()
     }
 }
 
@@ -208,8 +214,8 @@ where
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodRangeRef")
-            .field("pod.type", &self.upcast().type_())
-            .field("pod.size", &self.upcast().size())
+            .field("pod.type", &self.pod_type())
+            .field("pod.size", &self.pod_size())
             .field("value", &self.value())
             .finish()
     }

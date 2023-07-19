@@ -26,6 +26,7 @@ use crate::spa::pod::object::param_profile::ParamProfileType;
 use crate::spa::pod::object::param_route::ParamRouteType;
 use crate::spa::pod::object::profiler::ProfilerType;
 use crate::spa::pod::object::prop::Prop;
+use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::pod::restricted::{CloneTo, PodHeader, StaticTypePod};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::struct_::PodStructRef;
@@ -98,8 +99,8 @@ impl Debug for PodObjectRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         unsafe {
             f.debug_struct("PodObjectRef")
-                .field("pod.type", &self.upcast().type_())
-                .field("pod.size", &self.upcast().size())
+                .field("pod.type", &self.pod_type())
+                .field("pod.size", &self.pod_size())
                 .field("body_type", &self.body_type())
                 .field("body_id", &self.body_id())
                 .field(
@@ -163,6 +164,15 @@ impl PodObjectRef {
 
     pub fn set_body_id(&mut self, id: u32) {
         self.raw.body.id = id;
+    }
+
+    pub fn from_id_and_value(
+        id: impl Into<u32>,
+        value: &<&Self as PodValue>::Value,
+    ) -> PodResult<AllocatedData<Self>> {
+        let mut obj = PodBuf::<Self>::from_value(value)?.into_pod();
+        obj.as_pod_mut().set_body_id(id.into());
+        Ok(obj)
     }
 }
 

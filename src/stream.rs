@@ -9,9 +9,9 @@ use pipewire_macro_impl::{enum_wrapper, spa_interface_call};
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::CoreRef;
-use crate::core_api::properties::PropertiesRef;
+use crate::core_api::properties::{Properties, PropertiesRef};
 use crate::core_api::PW_ID_ANY;
-use crate::listeners::{AddListener, Listeners};
+use crate::listeners::{AddListener, Listeners, OwnListeners};
 use crate::spa::dict::DictRef;
 use crate::spa::pod::object::param_port_config::Direction;
 use crate::spa::pod::PodRef;
@@ -19,7 +19,7 @@ use crate::stream::buffer::BufferRef;
 use crate::stream::control::ControlRef;
 use crate::stream::events::StreamEvents;
 use crate::stream::time::TimeRef;
-use crate::wrapper::RawWrapper;
+use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_result, i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
 
 pub mod buffer;
@@ -181,8 +181,12 @@ impl StreamRef {
         i32_as_result(result, time)
     }
 
-    pub fn dequeue_buffer(&self) -> crate::Result<&BufferRef> {
-        unsafe { raw_wrapper(pw_sys::pw_stream_dequeue_buffer(self.as_raw_ptr())) }
+    pub fn dequeue_buffer(&self) -> Option<&mut BufferRef> {
+        unsafe {
+            pw_sys::pw_stream_dequeue_buffer(self.as_raw_ptr())
+                .as_mut()
+                .map(|ptr| BufferRef::mut_from_raw_ptr(ptr))
+        }
     }
 
     pub fn queue_buffer(&self, buffer: &BufferRef) -> crate::Result<()> {
@@ -228,7 +232,7 @@ impl<'a> AddListener<'a> for StreamRef {
     }
 }
 
-#[derive(Wrapper, Debug, Clone)]
+#[derive(Wrapper, Debug)]
 pub struct Stream<'a> {
     #[raw_wrapper]
     ref_: NonNull<StreamRef>,
@@ -237,10 +241,9 @@ pub struct Stream<'a> {
 }
 
 impl<'a> Stream<'a> {
-    pub fn new(core: &CoreRef, name: &CStr, props: &PropertiesRef) -> crate::Result<Self> {
+    pub fn new(core: &CoreRef, name: &CStr, props: Properties) -> crate::Result<Self> {
         unsafe {
-            let result =
-                pw_sys::pw_stream_new(core.as_raw_ptr(), name.as_ptr(), props.as_raw_ptr());
+            let result = pw_sys::pw_stream_new(core.as_raw_ptr(), name.as_ptr(), props.into_raw());
             let ref_ = new_instance_raw_wrapper(result)?;
             Ok(Self {
                 ref_,
@@ -250,6 +253,14 @@ impl<'a> Stream<'a> {
     }
 
     // todo new_simple
+}
+
+impl<'a> OwnListeners<'a> for Stream<'a> {
+    fn listeners(
+        &self,
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+        &self.listeners
+    }
 }
 
 impl Drop for Stream<'_> {

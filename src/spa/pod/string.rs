@@ -96,8 +96,8 @@ impl Debug for PodStringRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         unsafe {
             f.debug_struct("PodStringRef")
-                .field("pod.type", &self.upcast().type_())
-                .field("pod.size", &self.upcast().size())
+                .field("pod.type", &self.pod_type())
+                .field("pod.size", &self.pod_size())
                 .field("value", &self.value())
                 .finish()
         }

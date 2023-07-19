@@ -21,7 +21,7 @@ use crate::spa::pod::struct_::PodStructRef;
 use crate::spa::pod::{
     BasicType, BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFdRef,
     PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodPointerRef, PodRectangleRef, PodRef,
-    PodResult, PodValue, SizedPod, WritePod, WriteValue,
+    PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -144,8 +144,8 @@ where
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodArrayRef")
-            .field("pod.type", &self.upcast().type_())
-            .field("pod.size", &self.upcast().size())
+            .field("pod.type", &self.pod_type())
+            .field("pod.size", &self.pod_size())
             .field("body", &self.body())
             .field("value", &self.value().map(|i| i.collect::<Vec<_>>()))
             .finish()

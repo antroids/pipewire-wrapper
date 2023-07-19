@@ -9,7 +9,7 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::pod::pod_buf::PodBuf;
 use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, PodResult, PodValue, SizedPod, WritePod, WriteValue, POD_ALIGN,
+    BasicTypePod, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -87,8 +87,8 @@ impl Debug for PodBytesRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         unsafe {
             f.debug_struct("PodBytesRef")
-                .field("pod.type", &self.upcast().type_())
-                .field("pod.size", &self.upcast().size())
+                .field("pod.type", &self.pod_type())
+                .field("pod.size", &self.pod_size())
                 .field("value", &self.value())
                 .finish()
         }

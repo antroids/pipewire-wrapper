@@ -14,16 +14,32 @@ impl ChunkRef {
         self.raw.offset
     }
 
+    pub fn set_offset(&mut self, offset: u32) {
+        self.raw.offset = offset
+    }
+
     pub fn size(&self) -> u32 {
         self.raw.size
+    }
+
+    pub fn set_size(&mut self, size: u32) {
+        self.raw.size = size
     }
 
     pub fn stride(&self) -> i32 {
         self.raw.stride
     }
 
+    pub fn set_stride(&mut self, stride: i32) {
+        self.raw.stride = stride
+    }
+
     pub fn flags(&self) -> Flags {
         Flags::from_bits_retain(self.raw.flags)
+    }
+
+    pub fn set_flags(&mut self, flags: Flags) {
+        self.raw.flags = flags.bits()
     }
 }
 

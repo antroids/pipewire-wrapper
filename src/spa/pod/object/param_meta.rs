@@ -2,6 +2,7 @@ use std::io::{Seek, Write};
 
 use pipewire_macro_impl::enum_wrapper;
 
+use crate::spa::pod::choice::PodChoiceRef;
 use crate::spa::pod::id::{PodIdRef, PodIdType};
 use crate::spa::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::pod::{BasicTypePod, PodError, PodIntRef, PodResult};
@@ -11,7 +12,7 @@ use crate::wrapper::RawWrapper;
 #[derive(Debug)]
 pub enum ParamMetaType<'a> {
     TYPE(&'a PodIdRef<MetaType>) = ParamMeta::TYPE.raw,
-    SIZE(&'a PodIntRef) = ParamMeta::SIZE.raw,
+    SIZE(&'a PodChoiceRef<PodIntRef>) = ParamMeta::SIZE.raw,
 }
 
 impl<'a> TryFrom<&'a PodPropRef<'a, ParamMetaType<'a>>> for ParamMetaType<'a> {
@@ -53,8 +54,8 @@ enum_wrapper!(
     spa_sys::spa_meta_type,
     INVALID: spa_sys::SPA_META_Invalid,
     HEADER: spa_sys::SPA_META_Header,
-    VIDEOCROP: spa_sys::SPA_META_VideoCrop,
-    VIDEODAMAGE: spa_sys::SPA_META_VideoDamage,
+    VIDEO_CROP: spa_sys::SPA_META_VideoCrop,
+    VIDEO_DAMAGE: spa_sys::SPA_META_VideoDamage,
     BITMAP: spa_sys::SPA_META_Bitmap,
     CURSOR: spa_sys::SPA_META_Cursor,
     CONTROL: spa_sys::SPA_META_Control,

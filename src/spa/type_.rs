@@ -63,6 +63,19 @@ impl RectangleRef {
         self.raw.height
     }
 
+    pub fn set_height(&mut self, h: u32) {
+        self.raw.height = h;
+    }
+
+    pub fn set_width(&mut self, w: u32) {
+        self.raw.width = w;
+    }
+
+    pub fn set_value(&mut self, width: u32, height: u32) {
+        self.raw.width = width;
+        self.raw.height = height;
+    }
+
     pub fn new(width: u32, height: u32) -> Self {
         Self {
             raw: spa_sys::spa_rectangle { width, height },
@@ -95,6 +108,19 @@ impl PointRef {
         self.raw.y
     }
 
+    pub fn set_x(&mut self, x: i32) {
+        self.raw.x = x;
+    }
+
+    pub fn set_y(&mut self, y: i32) {
+        self.raw.y = y;
+    }
+
+    pub fn set_value(&mut self, x: i32, y: i32) {
+        self.raw.x = x;
+        self.raw.y = y;
+    }
+
     pub fn new(x: i32, y: i32) -> Self {
         Self {
             raw: spa_sys::spa_point { x, y },
@@ -119,12 +145,27 @@ impl From<(PointRef, RectangleRef)> for RegionRef {
 }
 
 impl RegionRef {
-    pub fn position(&self) -> PointRef {
-        PointRef::from_raw(self.raw.position)
+    pub fn position(&self) -> &PointRef {
+        unsafe { PointRef::from_raw_ptr(&self.raw.position) }
     }
 
-    pub fn size(&self) -> RectangleRef {
-        RectangleRef::from_raw(self.raw.size)
+    pub fn position_mut(&mut self) -> &mut PointRef {
+        unsafe { PointRef::mut_from_raw_ptr(&mut self.raw.position) }
+    }
+
+    pub fn size(&self) -> &RectangleRef {
+        unsafe { RectangleRef::from_raw_ptr(&self.raw.size) }
+    }
+
+    pub fn size_mut(&mut self) -> &mut RectangleRef {
+        unsafe { RectangleRef::mut_from_raw_ptr(&mut self.raw.size) }
+    }
+
+    pub fn set_value(&mut self, x: i32, y: i32, width: u32, height: u32) {
+        self.raw.position.x = x;
+        self.raw.position.y = y;
+        self.raw.size.width = width;
+        self.raw.size.height = height;
     }
 
     pub fn new(position: PointRef, size: RectangleRef) -> Self {

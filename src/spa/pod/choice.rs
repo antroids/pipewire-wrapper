@@ -286,8 +286,8 @@ where
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodChoiceRef")
-            .field("pod.type", &self.upcast().type_())
-            .field("pod.size", &self.upcast().size())
+            .field("pod.type", &self.pod_type())
+            .field("pod.size", &self.pod_size())
             .field("value", &self.value())
             .finish()
     }
