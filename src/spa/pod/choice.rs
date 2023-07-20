@@ -382,3 +382,8 @@ impl<'a, T: WriteValue> From<&'a T> for &'a PodChoiceRef<T> {
         unsafe { PodChoiceRef::from_raw_ptr(value as *const T as *const _) }
     }
 }
+
+#[test]
+fn test_choice() {
+    //let enum_choice =
+}

@@ -8,6 +8,7 @@ use spa_sys::spa_pod;
 
 use crate::spa::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::pod::iterator::PodValueIterator;
+use crate::spa::pod::pod_buf::AllocatedData;
 use crate::spa::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::pod::{
     BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
@@ -36,10 +37,21 @@ impl<T> PodFlagsValue<T> {
         }
     }
 
+    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<P>>
+    where
+        P: WritePod,
+        P: PodValue<Value = Self>,
+        P: PrimitiveValue,
+    {
+        AllocatedData::from_value(self)
+    }
+}
+
+impl<T: Clone> PodFlagsValue<T> {
     pub fn from_default(default: T) -> Self {
         Self {
-            default,
-            alternatives: Vec::new(),
+            default: default.clone(),
+            alternatives: vec![default],
         }
     }
 }

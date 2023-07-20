@@ -113,13 +113,12 @@ impl StreamRef {
         params: &[&PodRef],
     ) -> crate::Result<()> {
         let result = unsafe {
-            let params_ptr = params as *const [&PodRef] as *mut *const spa_pod;
             pw_sys::pw_stream_connect(
                 self.as_raw_ptr(),
                 direction.raw,
                 PW_ID_ANY,
                 flags.bits(),
-                params_ptr,
+                params.as_ptr() as *const *const spa_pod as *mut *const spa_pod,
                 params.len() as u32,
             )
         };

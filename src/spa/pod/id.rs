@@ -51,7 +51,7 @@ where
     Self: Debug,
     Self: Clone,
 {
-    fn as_allocated_pod(&self) -> AllocatedData<PodIdRef<Self>> {
+    fn as_alloc_pod(&self) -> AllocatedData<PodIdRef<Self>> {
         PodIdRef::from_value(self).unwrap()
     }
 }

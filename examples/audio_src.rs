@@ -8,7 +8,7 @@ use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::listeners::OwnListeners;
 use pipewire_wrapper::properties_new;
 use pipewire_wrapper::spa::param::ParamType;
-use pipewire_wrapper::spa::pod::choice::enum_::{PodEnumRef, PodEnumValue};
+use pipewire_wrapper::spa::pod::choice::enum_::PodEnumValue;
 use pipewire_wrapper::spa::pod::id::PodIdType;
 use pipewire_wrapper::spa::pod::iterator::AllocatedPodIterator;
 use pipewire_wrapper::spa::pod::object::format::{
@@ -23,9 +23,11 @@ use pipewire_wrapper::stream::{Stream, StreamFlags};
 
 const RATE: f64 = 44100f64;
 const CHANNELS: u32 = 2;
-const VOLUME: f64 = 0.2f64;
+const VOLUME: f64 = 0.7f64;
 
 const PI_POW_2: f64 = std::f64::consts::PI * std::f64::consts::PI;
+
+type AudioDataType = i16;
 
 pub fn main() {
     let core = Arc::new(Core::default());
@@ -72,13 +74,14 @@ pub fn main() {
 
 fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
     Ok(PodObjectRef::from_id_and_value(
-        ParamType::FORMAT,
+        ParamType::ENUM_FORMAT,
         &ObjectType::OBJECT_FORMAT(
             AllocatedPodIterator::from_values(&[
-                ObjectFormatType::MEDIA_TYPE(MediaType::AUDIO.as_allocated_pod().as_pod()),
-                ObjectFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_allocated_pod().as_pod()),
+                ObjectFormatType::MEDIA_TYPE(MediaType::AUDIO.as_alloc_pod().as_pod()),
+                ObjectFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_alloc_pod().as_pod()),
                 ObjectFormatType::AUDIO_FORMAT(
-                    &PodEnumRef::from_primitive(PodEnumValue::new(AudioFormat::F32, Vec::new()))?
+                    PodEnumValue::from_default(AudioFormat::S16)
+                        .to_alloc_pod()?
                         .as_pod(),
                 ),
                 ObjectFormatType::AUDIO_CHANNELS(
@@ -98,11 +101,11 @@ fn on_process(stream: &Arc<Stream>, accumulator: &Arc<Mutex<f64>>) {
         let spa_buf = buf.buffer_mut();
         if let Some(data) = spa_buf.datas_mut().first_mut() {
             if !data.data().is_null() {
-                let stride = CHANNELS * size_of::<f32>() as u32;
+                let stride = CHANNELS * size_of::<AudioDataType>() as u32;
                 let n_frames = data.max_size() / stride; // Since 0.3.49 buf.requested can be used here
                 let data_slice = unsafe {
                     slice::from_raw_parts_mut(
-                        data.data() as *mut f32,
+                        data.data() as *mut AudioDataType,
                         (n_frames * CHANNELS) as usize,
                     )
                 };
@@ -110,7 +113,7 @@ fn on_process(stream: &Arc<Stream>, accumulator: &Arc<Mutex<f64>>) {
                 let mut accumulator = accumulator.lock().unwrap();
                 for i in 0..n_frames {
                     *accumulator = accumulator.add(PI_POW_2 * 440f64 / RATE) % PI_POW_2;
-                    let val = (accumulator.sin() * VOLUME) as f32;
+                    let val = (accumulator.sin() * VOLUME * 16767f64) as AudioDataType;
                     for c in 0..CHANNELS {
                         data_slice[(i * CHANNELS + c) as usize] = val;
                     }

@@ -38,10 +38,21 @@ impl<T> PodEnumValue<T> {
         }
     }
 
+    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<P>>
+    where
+        P: WritePod,
+        P: PodValue<Value = Self>,
+        P: PrimitiveValue,
+    {
+        AllocatedData::from_value(self)
+    }
+}
+
+impl<T: Clone> PodEnumValue<T> {
     pub fn from_default(default: T) -> Self {
         Self {
-            default,
-            alternatives: Vec::new(),
+            default: default.clone(),
+            alternatives: vec![default],
         }
     }
 }
