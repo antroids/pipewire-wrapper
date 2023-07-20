@@ -314,7 +314,8 @@ where
         let value_size = self.pod_header().size as usize;
         let pod_type = self.pod_type();
         // Sometimes we can use Choice in place of primitives to specify possible values for given format
-        // So, I added VALUE choice type to handle this
+        // VALUE choice type is added to handle this.
+        // There is also NONE choice type, but it's not used as single value for some reason
         if pod_type == PodChoiceRef::<T>::static_type() {
             Self::parse_raw_value(value_ptr, value_size)
         } else if pod_type == T::static_type() {

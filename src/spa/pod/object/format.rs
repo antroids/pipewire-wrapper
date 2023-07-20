@@ -24,18 +24,18 @@ pub enum ObjectFormatType<'a> {
     MEDIA_SUBTYPE(&'a PodIdRef<MediaSubType>) = Format::MEDIA_SUBTYPE.raw,
 
     // Audio
-    AUDIO_FORMAT(&'a PodChoiceRef<PodIdRef<AudioFormat>>) = Format::AUDIO_FORMAT.raw,
+    AUDIO_FORMAT(&'a PodEnumRef<PodIdRef<AudioFormat>>) = Format::AUDIO_FORMAT.raw,
     AUDIO_FLAGS(&'a PodIntRef) = Format::AUDIO_FLAGS.raw,
     AUDIO_RATE(&'a PodChoiceRef<PodIntRef>) = Format::AUDIO_RATE.raw,
     AUDIO_CHANNELS(&'a PodChoiceRef<PodIntRef>) = Format::AUDIO_CHANNELS.raw,
     AUDIO_POSITION(&'a PodArrayRef<PodIdRef<u32>>) = Format::AUDIO_POSITION.raw, // Enum in comments, but getting array
     AUDIO_IEC958CODEC(&'a PodEnumRef<PodIdRef<AudioIec958Codec>>) = Format::AUDIO_IEC958CODEC.raw,
     AUDIO_BITORDER(&'a PodEnumRef<PodIdRef<ParamBitorder>>) = Format::AUDIO_BITORDER.raw,
-    AUDIO_INTERLEAVE(&'a PodIntRef) = Format::AUDIO_INTERLEAVE.raw,
+    AUDIO_INTERLEAVE(&'a PodChoiceRef<PodIntRef>) = Format::AUDIO_INTERLEAVE.raw,
     // missing audio params
 
     // Video
-    VIDEO_FORMAT(&'a PodIdRef<VideoFormat>) = Format::VIDEO_FORMAT.raw,
+    VIDEO_FORMAT(&'a PodEnumRef<PodIdRef<VideoFormat>>) = Format::VIDEO_FORMAT.raw,
     VIDEO_MODIFIER(&'a PodLongRef) = Format::VIDEO_MODIFIER.raw,
     VIDEO_SIZE(&'a PodChoiceRef<PodRectangleRef>) = Format::VIDEO_SIZE.raw,
     VIDEO_FRAMERATE(&'a PodChoiceRef<PodFractionRef>) = Format::VIDEO_FRAMERATE.raw,
@@ -43,7 +43,8 @@ pub enum ObjectFormatType<'a> {
     VIDEO_VIEWS(&'a PodIntRef) = Format::VIDEO_VIEWS.raw,
     VIDEO_INTERLACE_MODE(&'a PodEnumRef<PodIdRef<VideoInterlaceMode>>) =
         Format::VIDEO_INTERLACE_MODE.raw,
-    VIDEO_PIXEL_ASPECT_RATIO(&'a PodRectangleRef) = Format::VIDEO_PIXEL_ASPECT_RATIO.raw,
+    VIDEO_PIXEL_ASPECT_RATIO(&'a PodChoiceRef<PodRectangleRef>) =
+        Format::VIDEO_PIXEL_ASPECT_RATIO.raw,
     VIDEO_MULTIVIEW_MODE(&'a PodEnumRef<PodIdRef<VideoMultiviewMode>>) =
         Format::VIDEO_MULTIVIEW_MODE.raw,
     VIDEO_MULTIVIEW_FLAGS(&'a PodEnumRef<PodIdRef<VideoMultiviewFlags>>) =
@@ -55,8 +56,8 @@ pub enum ObjectFormatType<'a> {
         Format::VIDEO_TRANSFER_FUNCTION.raw,
     VIDEO_COLOR_PRIMARIES(&'a PodEnumRef<PodIdRef<VideoColorPrimaries>>) =
         Format::VIDEO_COLOR_PRIMARIES.raw,
-    VIDEO_PROFILE(&'a PodIntRef) = Format::VIDEO_PROFILE.raw,
-    VIDEO_LEVEL(&'a PodIntRef) = Format::VIDEO_LEVEL.raw,
+    VIDEO_PROFILE(&'a PodChoiceRef<PodIntRef>) = Format::VIDEO_PROFILE.raw,
+    VIDEO_LEVEL(&'a PodChoiceRef<PodIntRef>) = Format::VIDEO_LEVEL.raw,
     VIDEO_H264_STREAM_FORMAT(&'a PodEnumRef<PodIdRef<VideoH264StreamFormat>>) =
         Format::VIDEO_H264_STREAM_FORMAT.raw,
     VIDEO_H264_ALIGNMENT(&'a PodEnumRef<PodIdRef<VideoH264Alignment>>) =
