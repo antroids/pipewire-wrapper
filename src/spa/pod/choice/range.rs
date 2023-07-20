@@ -37,6 +37,16 @@ impl<T> PodRangeValue<T> {
     }
 }
 
+impl<T: Clone> PodRangeValue<T> {
+    pub fn from_default(default: T) -> Self {
+        Self {
+            default: default.clone(),
+            min: default.clone(),
+            max: default,
+        }
+    }
+}
+
 #[repr(transparent)]
 pub struct PodRangeRef<T> {
     raw: spa_sys::spa_pod_choice,

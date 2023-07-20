@@ -12,9 +12,10 @@ use pipewire_wrapper::listeners::OwnListeners;
 use pipewire_wrapper::spa::buffers::meta::{HeaderFlags, MetaBitmapRef, MetaCursorRef, MetaData};
 use pipewire_wrapper::spa::loop_::TimerSource;
 use pipewire_wrapper::spa::param::ParamType;
+use pipewire_wrapper::spa::pod::choice::enum_::{PodEnumRef, PodEnumValue};
 use pipewire_wrapper::spa::pod::choice::none::PodNoneRef;
 use pipewire_wrapper::spa::pod::choice::range::{PodRangeRef, PodRangeValue};
-use pipewire_wrapper::spa::pod::id::PodIdRef;
+use pipewire_wrapper::spa::pod::id::PodIdType;
 use pipewire_wrapper::spa::pod::iterator::AllocatedPodIterator;
 use pipewire_wrapper::spa::pod::object::format::{
     MediaSubType, MediaType, ObjectFormatType, VideoFormat,
@@ -288,11 +289,12 @@ fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
         ParamType::ENUM_FORMAT,
         &ObjectType::OBJECT_FORMAT(
             AllocatedPodIterator::from_values([
-                &ObjectFormatType::MEDIA_TYPE(&PodIdRef::from_value(&MediaType::VIDEO)?.as_pod()),
-                &ObjectFormatType::MEDIA_SUBTYPE(
-                    &PodIdRef::from_value(&MediaSubType::RAW)?.as_pod(),
+                &ObjectFormatType::MEDIA_TYPE(MediaType::VIDEO.as_allocated_pod().as_pod()),
+                &ObjectFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_allocated_pod().as_pod()),
+                &ObjectFormatType::VIDEO_FORMAT(
+                    &PodEnumRef::from_primitive(PodEnumValue::from_default(VideoFormat::RGB))?
+                        .as_pod(),
                 ),
-                &ObjectFormatType::VIDEO_FORMAT(&PodIdRef::from_value(&VideoFormat::RGB)?.as_pod()),
                 &ObjectFormatType::VIDEO_SIZE(
                     &PodRangeRef::<PodRectangleRef>::from_value(&PodRangeValue::new(
                         RectangleRef::new(320, 240),
@@ -344,7 +346,7 @@ fn stream_params(
         ParamType::META,
         &ObjectType::OBJECT_PARAM_META(
             AllocatedPodIterator::from_values([
-                &ParamMetaType::TYPE(&PodIdRef::from_primitive(MetaType::HEADER)?.as_pod()),
+                &ParamMetaType::TYPE(MetaType::HEADER.as_allocated_pod().as_pod()),
                 &ParamMetaType::SIZE(
                     &PodNoneRef::from_primitive(size_of::<spa_sys::spa_meta_header>() as i32)?
                         .as_pod()
@@ -358,7 +360,7 @@ fn stream_params(
         ParamType::META,
         &ObjectType::OBJECT_PARAM_META(
             AllocatedPodIterator::from_values([
-                &ParamMetaType::TYPE(&PodIdRef::from_primitive(MetaType::VIDEO_DAMAGE)?.as_pod()),
+                &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.as_allocated_pod().as_pod()),
                 &ParamMetaType::SIZE(
                     &PodRangeRef::from_primitive(PodRangeValue::new(
                         size_of::<spa_sys::spa_meta_region>() as i32 * 16,
@@ -376,7 +378,7 @@ fn stream_params(
         ParamType::META,
         &ObjectType::OBJECT_PARAM_META(
             AllocatedPodIterator::from_values([
-                &ParamMetaType::TYPE(&PodIdRef::from_primitive(MetaType::VIDEO_CROP)?.as_pod()),
+                &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.as_allocated_pod().as_pod()),
                 &ParamMetaType::SIZE(
                     &PodNoneRef::from_primitive(size_of::<spa_sys::spa_meta_region>() as i32)?
                         .as_pod()
@@ -390,7 +392,7 @@ fn stream_params(
         ParamType::META,
         &ObjectType::OBJECT_PARAM_META(
             AllocatedPodIterator::from_values([
-                &ParamMetaType::TYPE(&PodIdRef::from_primitive(MetaType::CURSOR)?.as_pod()),
+                &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.as_allocated_pod().as_pod()),
                 &ParamMetaType::SIZE(
                     &PodNoneRef::from_primitive(
                         (size_of::<spa_sys::spa_meta_cursor>() as u32

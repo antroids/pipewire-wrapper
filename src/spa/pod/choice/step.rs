@@ -47,6 +47,17 @@ impl<T> PodStepValue<T> {
     }
 }
 
+impl<T: Clone> PodStepValue<T> {
+    pub fn from_default(default: T) -> Self {
+        Self {
+            default: default.clone(),
+            min: default.clone(),
+            max: default.clone(),
+            step: default,
+        }
+    }
+}
+
 #[repr(transparent)]
 pub struct PodStepRef<T> {
     raw: spa_sys::spa_pod_choice,

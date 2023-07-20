@@ -17,6 +17,7 @@ use crate::spa::pod::choice::range::{PodRangeRef, PodRangeValue};
 use crate::spa::pod::choice::step::{PodStepRef, PodStepValue};
 use crate::spa::pod::id::PodIdRef;
 use crate::spa::pod::iterator::PodValueIterator;
+use crate::spa::pod::pod_buf::AllocatedData;
 use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::{
@@ -146,7 +147,11 @@ where
     T: PodValue,
 {
     pub(crate) fn body(&self) -> &PodChoiceBodyRef {
-        unsafe { PodChoiceBodyRef::from_raw_ptr(addr_of!(self.raw.body)) }
+        if self.value_choice() {
+            unsafe { PodChoiceBodyRef::from_raw_ptr(addr_of!(self.raw.body)) }
+        } else {
+            panic!("Choice with VALUE type cannot have body");
+        }
     }
 
     pub fn value_choice(&self) -> bool {
@@ -154,34 +159,11 @@ where
     }
 
     pub fn fixated(&self) -> bool {
-        self.body().type_() == ChoiceType::NONE
+        self.value_choice() && self.body().type_() == ChoiceType::NONE
     }
 
     fn content_size(&self) -> usize {
         self.raw.pod.size as usize - size_of::<PodChoiceRef<T>>()
-    }
-
-    fn parse_choice(
-        ptr: *const spa_sys::spa_pod_choice_body,
-        size: usize,
-    ) -> PodResult<ChoiceStructType<T>>
-    where
-        T: PodValue,
-        T: StaticTypePod,
-    {
-        match unsafe { PodChoiceBodyRef::from_raw_ptr(ptr).type_() } {
-            ChoiceType::NONE => <PodNoneRef<T> as PodValue>::parse_raw_value(ptr, size)
-                .map(|r| ChoiceStructType::NONE(r)),
-            ChoiceType::RANGE => <PodRangeRef<T> as PodValue>::parse_raw_value(ptr, size)
-                .map(|r| ChoiceStructType::RANGE(r)),
-            ChoiceType::STEP => <PodStepRef<T> as PodValue>::parse_raw_value(ptr, size)
-                .map(|r| ChoiceStructType::STEP(r)),
-            ChoiceType::ENUM => <PodEnumRef<T> as PodValue>::parse_raw_value(ptr, size)
-                .map(|r| ChoiceStructType::ENUM(r)),
-            ChoiceType::FLAGS => <PodFlagsRef<T> as PodValue>::parse_raw_value(ptr, size)
-                .map(|r| ChoiceStructType::FLAGS(r)),
-            _ => Err(PodError::UnknownPodTypeToDowncast),
-        }
     }
 
     fn write_raw_body<W>(
@@ -216,7 +198,6 @@ where
         T: WriteValue,
         T: WritePod,
         T: BasicTypePod,
-        T: StaticTypePod,
     {
         match value {
             ChoiceStructType::NONE(val) => PodNoneRef::<T>::write_pod(buffer, val),
@@ -229,37 +210,76 @@ where
     }
 }
 
+fn parse_choice<P>(
+    ptr: *const spa_sys::spa_pod_choice_body,
+    size: usize,
+) -> PodResult<ChoiceStructType<P>>
+where
+    P: PodValue,
+    P: StaticTypePod,
+{
+    match unsafe { PodChoiceBodyRef::from_raw_ptr(ptr).type_() } {
+        ChoiceType::NONE => <PodNoneRef<P> as PodValue>::parse_raw_value(ptr, size)
+            .map(|r| ChoiceStructType::NONE(r)),
+        ChoiceType::RANGE => <PodRangeRef<P> as PodValue>::parse_raw_value(ptr, size)
+            .map(|r| ChoiceStructType::RANGE(r)),
+        ChoiceType::STEP => <PodStepRef<P> as PodValue>::parse_raw_value(ptr, size)
+            .map(|r| ChoiceStructType::STEP(r)),
+        ChoiceType::ENUM => <PodEnumRef<P> as PodValue>::parse_raw_value(ptr, size)
+            .map(|r| ChoiceStructType::ENUM(r)),
+        ChoiceType::FLAGS => <PodFlagsRef<P> as PodValue>::parse_raw_value(ptr, size)
+            .map(|r| ChoiceStructType::FLAGS(r)),
+        _ => Err(PodError::UnknownPodTypeToDowncast),
+    }
+}
+
 impl PodChoiceRef<PodRef> {
     pub fn choice_value(&self) -> PodResult<ChoiceValueType> {
-        let size = self.pod_header().size as usize;
-        let body_ptr = self.body().as_raw_ptr();
-        Ok(match self.body().child().type_() {
-            Type::BOOL => {
-                ChoiceValueType::BOOL(PodChoiceRef::<PodBoolRef>::parse_choice(body_ptr, size)?)
-            }
-            Type::ID => {
-                ChoiceValueType::ID(PodChoiceRef::<PodIdRef>::parse_choice(body_ptr, size)?)
-            }
-            Type::INT => {
-                ChoiceValueType::INT(PodChoiceRef::<PodIntRef>::parse_choice(body_ptr, size)?)
-            }
-            Type::LONG => {
-                ChoiceValueType::LONG(PodChoiceRef::<PodLongRef>::parse_choice(body_ptr, size)?)
-            }
-            Type::FLOAT => {
-                ChoiceValueType::FLOAT(PodChoiceRef::<PodFloatRef>::parse_choice(body_ptr, size)?)
-            }
-            Type::DOUBLE => {
-                ChoiceValueType::DOUBLE(PodChoiceRef::<PodDoubleRef>::parse_choice(body_ptr, size)?)
-            }
-            Type::RECTANGLE => ChoiceValueType::RECTANGLE(
-                PodChoiceRef::<PodRectangleRef>::parse_choice(body_ptr, size)?,
-            ),
-            Type::FRACTION => ChoiceValueType::FRACTION(
-                PodChoiceRef::<PodFractionRef>::parse_choice(body_ptr, size)?,
-            ),
-            type_ => return Err(PodError::UnsupportedChoiceElementType),
-        })
+        if self.value_choice() {
+            let size = self.pod_header().size as usize;
+            let body_ptr = self.body().as_raw_ptr();
+            Ok(match self.body().child().type_() {
+                Type::BOOL => ChoiceValueType::BOOL(parse_choice(body_ptr, size)?),
+                Type::ID => ChoiceValueType::ID(parse_choice(body_ptr, size)?),
+                Type::INT => ChoiceValueType::INT(parse_choice(body_ptr, size)?),
+                Type::LONG => ChoiceValueType::LONG(parse_choice(body_ptr, size)?),
+                Type::FLOAT => ChoiceValueType::FLOAT(parse_choice(body_ptr, size)?),
+                Type::DOUBLE => ChoiceValueType::DOUBLE(parse_choice(body_ptr, size)?),
+                Type::RECTANGLE => ChoiceValueType::RECTANGLE(parse_choice(body_ptr, size)?),
+                Type::FRACTION => ChoiceValueType::FRACTION(parse_choice(body_ptr, size)?),
+                type_ => return Err(PodError::UnsupportedChoiceElementType),
+            })
+        } else {
+            let size = self.pod_size();
+            let body_ptr = self.raw_value_ptr();
+            Ok(match self.pod_type() {
+                Type::BOOL => ChoiceValueType::BOOL(ChoiceStructType::VALUE(
+                    PodBoolRef::parse_raw_value(body_ptr.cast(), size)?,
+                )),
+                Type::ID => ChoiceValueType::ID(ChoiceStructType::VALUE(
+                    PodIdRef::parse_raw_value(body_ptr.cast(), size)?,
+                )),
+                Type::INT => ChoiceValueType::INT(ChoiceStructType::VALUE(
+                    PodIntRef::parse_raw_value(body_ptr.cast(), size)?,
+                )),
+                Type::LONG => ChoiceValueType::LONG(ChoiceStructType::VALUE(
+                    PodLongRef::parse_raw_value(body_ptr.cast(), size)?,
+                )),
+                Type::FLOAT => ChoiceValueType::FLOAT(ChoiceStructType::VALUE(
+                    PodFloatRef::parse_raw_value(body_ptr.cast(), size)?,
+                )),
+                Type::DOUBLE => ChoiceValueType::DOUBLE(ChoiceStructType::VALUE(
+                    PodDoubleRef::parse_raw_value(body_ptr.cast(), size)?,
+                )),
+                Type::RECTANGLE => ChoiceValueType::RECTANGLE(ChoiceStructType::VALUE(
+                    PodRectangleRef::parse_raw_value(body_ptr.cast(), size)?,
+                )),
+                Type::FRACTION => ChoiceValueType::FRACTION(ChoiceStructType::VALUE(
+                    PodFractionRef::parse_raw_value(body_ptr.cast(), size)?,
+                )),
+                type_ => return Err(PodError::UnsupportedChoiceElementType),
+            })
+        }
     }
 
     pub fn write_choice_value<W>(buffer: &mut W, value: &ChoiceValueType) -> PodResult<usize>
@@ -306,7 +326,7 @@ where
     }
 
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
-        PodChoiceRef::<T>::parse_choice(ptr, size)
+        parse_choice(ptr, size)
     }
 
     fn value(&self) -> PodResult<Self::Value> {
@@ -353,5 +373,12 @@ impl<T: PodValue> PodHeader for PodChoiceRef<T> {
 impl<T: PodValue> StaticTypePod for PodChoiceRef<T> {
     fn static_type() -> Type {
         Type::CHOICE
+    }
+}
+
+impl<'a, T: WriteValue> From<&'a T> for &'a PodChoiceRef<T> {
+    fn from(value: &'a T) -> Self {
+        // Extremely unsafe, choice should be able to parse any pod
+        unsafe { PodChoiceRef::from_raw_ptr(value as *const T as *const _) }
     }
 }

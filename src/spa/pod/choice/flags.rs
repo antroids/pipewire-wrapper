@@ -35,6 +35,13 @@ impl<T> PodFlagsValue<T> {
             alternatives,
         }
     }
+
+    pub fn from_default(default: T) -> Self {
+        Self {
+            default,
+            alternatives: Vec::new(),
+        }
+    }
 }
 
 #[repr(transparent)]

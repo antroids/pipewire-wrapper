@@ -6,10 +6,11 @@ use std::mem::size_of;
 use spa_sys::spa_pod;
 
 use crate::spa::pod::object::prop::Prop;
-use crate::spa::pod::pod_buf::PodBuf;
+use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, PodError, PodResult, PodValue, SizedPod, WritePod, WriteValue, POD_ALIGN,
+    BasicTypePod, FromPrimitiveValue, FromValue, PodError, PodResult, PodValue, SizedPod, WritePod,
+    WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -50,6 +51,9 @@ where
     Self: Debug,
     Self: Clone,
 {
+    fn as_allocated_pod(&self) -> AllocatedData<PodIdRef<Self>> {
+        PodIdRef::from_value(self).unwrap()
+    }
 }
 
 impl PodIdType for u32 {}
