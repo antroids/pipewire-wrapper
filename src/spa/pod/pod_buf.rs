@@ -135,10 +135,18 @@ impl<'a, T> Seek for PodBuf<'a, T> {
     }
 }
 
-#[derive(Clone)]
 pub struct AllocatedData<T> {
     data: Vec<AlignedDataType>,
     phantom: PhantomData<T>,
+}
+
+impl<T> Clone for AllocatedData<T> {
+    fn clone(&self) -> Self {
+        Self {
+            data: self.data.clone(),
+            phantom: PhantomData::default(),
+        }
+    }
 }
 
 impl<T> AllocatedData<T> {

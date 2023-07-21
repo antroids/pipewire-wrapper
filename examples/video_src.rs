@@ -12,11 +12,12 @@ use pipewire_wrapper::listeners::OwnListeners;
 use pipewire_wrapper::spa::buffers::meta::{HeaderFlags, MetaBitmapRef, MetaCursorRef, MetaData};
 use pipewire_wrapper::spa::loop_::TimerSource;
 use pipewire_wrapper::spa::param::ParamType;
-use pipewire_wrapper::spa::pod::choice::enum_::{PodEnumRef, PodEnumValue};
+use pipewire_wrapper::spa::pod::choice::enum_::PodEnumValue;
 use pipewire_wrapper::spa::pod::choice::none::PodNoneRef;
 use pipewire_wrapper::spa::pod::choice::range::{PodRangeRef, PodRangeValue};
 use pipewire_wrapper::spa::pod::id::PodIdType;
 use pipewire_wrapper::spa::pod::iterator::AllocatedPodIterator;
+use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatType;
 use pipewire_wrapper::spa::pod::object::format::{
     MediaSubType, MediaType, ObjectFormatType, VideoFormat,
 };
@@ -261,11 +262,11 @@ fn on_format_changed(
     pod: &PodRef,
 ) -> pipewire_wrapper::Result<()> {
     if let BasicType::OBJECT(obj) = pod.downcast().unwrap() {
-        if let ObjectType::OBJECT_FORMAT(format) = obj.value().unwrap() {
+        if let ObjectType::OBJECT_FORMAT(format) = obj.param_value(ParamType::FORMAT).unwrap() {
             for prop in format {
                 if let ObjectFormatType::VIDEO_SIZE(size) = prop.value()? {
                     let mut state = state.lock().unwrap();
-                    let size = *size.value()?.default();
+                    let size = size.value()?;
                     state.size = Some(size);
                     let allocated_stream_params = stream_params(size, state.stride().unwrap())?;
                     let stream_objects_params: Vec<&PodObjectRef> = allocated_stream_params
@@ -287,16 +288,17 @@ fn on_format_changed(
 fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
     let format = PodObjectRef::from_id_and_value(
         ParamType::ENUM_FORMAT,
-        &ObjectType::OBJECT_FORMAT(
+        &ObjectType::OBJECT_ENUM_FORMAT(
             AllocatedPodIterator::from_values([
-                &ObjectFormatType::MEDIA_TYPE(MediaType::VIDEO.as_alloc_pod().as_pod()),
-                &ObjectFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_alloc_pod().as_pod()),
-                &ObjectFormatType::VIDEO_FORMAT(
+                &ObjectEnumFormatType::MEDIA_TYPE(MediaType::VIDEO.as_alloc_pod().as_pod()),
+                &ObjectEnumFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_alloc_pod().as_pod()),
+                &ObjectEnumFormatType::VIDEO_FORMAT(
                     PodEnumValue::from_default(VideoFormat::RGB)
                         .to_alloc_pod()?
-                        .as_pod(),
+                        .as_pod()
+                        .choice(),
                 ),
-                &ObjectFormatType::VIDEO_SIZE(
+                &ObjectEnumFormatType::VIDEO_SIZE(
                     &PodRangeRef::<PodRectangleRef>::from_value(&PodRangeValue::new(
                         RectangleRef::new(320, 240),
                         RectangleRef::new(1, 1),
@@ -305,7 +307,7 @@ fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
                     .as_pod()
                     .choice(),
                 ),
-                &ObjectFormatType::VIDEO_FRAMERATE(
+                &ObjectEnumFormatType::VIDEO_FRAMERATE(
                     &PodNoneRef::<PodFractionRef>::from_value(&FractionRef::new(25, 1))?
                         .as_pod()
                         .choice(),

@@ -37,11 +37,11 @@ impl<T> PodFlagsValue<T> {
         }
     }
 
-    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<P>>
+    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<PodFlagsRef<P>>>
     where
-        P: WritePod,
-        P: PodValue<Value = Self>,
-        P: PrimitiveValue,
+        PodFlagsRef<P>: WritePod,
+        PodFlagsRef<P>: PodValue<Value = Self>,
+        PodFlagsRef<P>: PrimitiveValue,
     {
         AllocatedData::from_value(self)
     }

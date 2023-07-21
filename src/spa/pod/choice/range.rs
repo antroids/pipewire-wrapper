@@ -37,11 +37,11 @@ impl<T> PodRangeValue<T> {
         Self { default, min, max }
     }
 
-    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<P>>
+    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<PodRangeRef<P>>>
     where
-        P: WritePod,
-        P: PodValue<Value = Self>,
-        P: PrimitiveValue,
+        PodRangeRef<P>: WritePod,
+        PodRangeRef<P>: PodValue<Value = Self>,
+        PodRangeRef<P>: PrimitiveValue,
     {
         AllocatedData::from_value(self)
     }

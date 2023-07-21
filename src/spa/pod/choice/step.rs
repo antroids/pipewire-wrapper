@@ -47,11 +47,11 @@ impl<T> PodStepValue<T> {
         }
     }
 
-    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<P>>
+    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<PodStepRef<P>>>
     where
-        P: WritePod,
-        P: PodValue<Value = Self>,
-        P: PrimitiveValue,
+        PodStepRef<P>: WritePod,
+        PodStepRef<P>: PodValue<Value = Self>,
+        PodStepRef<P>: PrimitiveValue,
     {
         AllocatedData::from_value(self)
     }

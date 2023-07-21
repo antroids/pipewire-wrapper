@@ -11,6 +11,7 @@ use pipewire_wrapper::spa::param::ParamType;
 use pipewire_wrapper::spa::pod::choice::enum_::PodEnumValue;
 use pipewire_wrapper::spa::pod::id::PodIdType;
 use pipewire_wrapper::spa::pod::iterator::AllocatedPodIterator;
+use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatType;
 use pipewire_wrapper::spa::pod::object::format::{
     AudioFormat, MediaSubType, MediaType, ObjectFormatType,
 };
@@ -75,19 +76,20 @@ pub fn main() {
 fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
     Ok(PodObjectRef::from_id_and_value(
         ParamType::ENUM_FORMAT,
-        &ObjectType::OBJECT_FORMAT(
+        &ObjectType::OBJECT_ENUM_FORMAT(
             AllocatedPodIterator::from_values(&[
-                ObjectFormatType::MEDIA_TYPE(MediaType::AUDIO.as_alloc_pod().as_pod()),
-                ObjectFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_alloc_pod().as_pod()),
-                ObjectFormatType::AUDIO_FORMAT(
+                ObjectEnumFormatType::MEDIA_TYPE(MediaType::AUDIO.as_alloc_pod().as_pod()),
+                ObjectEnumFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_alloc_pod().as_pod()),
+                ObjectEnumFormatType::AUDIO_FORMAT(
                     PodEnumValue::from_default(AudioFormat::S16)
                         .to_alloc_pod()?
-                        .as_pod(),
+                        .as_pod()
+                        .choice(),
                 ),
-                ObjectFormatType::AUDIO_CHANNELS(
+                ObjectEnumFormatType::AUDIO_CHANNELS(
                     PodIntRef::from_primitive(CHANNELS as i32)?.as_pod().into(),
                 ),
-                ObjectFormatType::AUDIO_RATE(
+                ObjectEnumFormatType::AUDIO_RATE(
                     PodIntRef::from_primitive(RATE as i32)?.as_pod().into(),
                 ),
             ])?

@@ -38,11 +38,11 @@ impl<T> PodEnumValue<T> {
         }
     }
 
-    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<P>>
+    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<PodEnumRef<P>>>
     where
-        P: WritePod,
-        P: PodValue<Value = Self>,
-        P: PrimitiveValue,
+        PodEnumRef<P>: WritePod,
+        PodEnumRef<P>: PodValue<Value = Self>,
+        PodEnumRef<P>: PrimitiveValue,
     {
         AllocatedData::from_value(self)
     }

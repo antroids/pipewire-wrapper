@@ -17,6 +17,7 @@ use crate::spa::pod::choice::range::{PodRangeRef, PodRangeValue};
 use crate::spa::pod::choice::step::{PodStepRef, PodStepValue};
 use crate::spa::pod::id::PodIdRef;
 use crate::spa::pod::iterator::PodValueIterator;
+use crate::spa::pod::object::PodObjectRef;
 use crate::spa::pod::pod_buf::AllocatedData;
 use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::pod::string::PodStringRef;
@@ -55,6 +56,10 @@ where
     STEP(PodStepValue<T::Value>) = ChoiceType::STEP.raw,
     ENUM(PodEnumValue<T::Value>) = ChoiceType::ENUM.raw,
     FLAGS(PodFlagsValue<T::Value>) = ChoiceType::FLAGS.raw,
+    /// Any Pod could be here, at least primitives.
+    /// This value is used to be able to parse Format as EnumFormat without errors.
+    /// It's possible to force object to parse value as format by call
+    /// [param_value](PodObjectRef::param_value)
     VALUE(T::Value),
 }
 

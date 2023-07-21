@@ -5,16 +5,19 @@ use std::mem::size_of;
 use std::ptr::addr_of;
 
 use bitflags::{bitflags, Flags};
+use spa_sys::spa_pod_object_body;
 
 use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 use prop::ObjectPropType;
 use prop_info::ObjectPropInfoType;
 
+use crate::spa::param::ParamType;
 use crate::spa::pod::array::PodArrayRef;
 use crate::spa::pod::choice::PodChoiceRef;
 use crate::spa::pod::id::{PodIdRef, PodIdType};
 use crate::spa::pod::iterator::PodIterator;
+use crate::spa::pod::object::enum_format::ObjectEnumFormatType;
 use crate::spa::pod::object::format::{MediaSubType, MediaType, ObjectFormatType};
 use crate::spa::pod::object::param_buffers::ParamBuffersType;
 use crate::spa::pod::object::param_io::ParamIoType;
@@ -37,6 +40,7 @@ use crate::spa::pod::{
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
+pub mod enum_format;
 pub mod format;
 pub mod param_buffers;
 pub mod param_io;
@@ -115,6 +119,9 @@ impl Debug for PodObjectRef {
                         ObjectType::OBJECT_FORMAT(iter) => {
                             iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
                         }
+                        ObjectType::OBJECT_ENUM_FORMAT(iter) => {
+                            iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
+                        }
                         ObjectType::OBJECT_PARAM_BUFFERS(iter) => {
                             iter.map(|p| format!("{:?}", p.value())).collect::<Vec<_>>()
                         }
@@ -174,22 +181,28 @@ impl PodObjectRef {
         obj.as_pod_mut().set_body_id(id.into());
         Ok(obj)
     }
-}
 
-impl<'a> PodValue for &'a PodObjectRef {
-    type Value = ObjectType<'a>;
-    type RawValue = spa_sys::spa_pod_object_body;
-
-    fn raw_value_ptr(&self) -> *const Self::RawValue {
-        &self.raw.body
+    /// Can be used to retrieve object value with specified body.id value,
+    /// because body.id value can be Invalid for some reason.
+    pub fn param_value(&self, param_type: ParamType) -> PodResult<ObjectType> {
+        PodObjectRef::parse_raw_body(
+            self.body().as_raw_ptr(),
+            self.pod_size(),
+            self.body_type(),
+            param_type.raw,
+        )
     }
 
-    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
-        let body = unsafe { PodObjectBodyRef::from_raw_ptr(ptr) };
-        let first_element_ptr = unsafe { ptr.offset(1) };
+    fn parse_raw_body<'a>(
+        body_ptr: *const spa_pod_object_body,
+        size: usize,
+        body_type: Type,
+        body_id: u32,
+    ) -> PodResult<ObjectType<'a>> {
+        let first_element_ptr = unsafe { body_ptr.offset(1) };
         let size = size - size_of::<spa_sys::spa_pod_object_body>();
 
-        Ok(match body.type_() {
+        Ok(match body_type {
             Type::OBJECT_PROP_INFO => {
                 ObjectType::OBJECT_PROP_INFO(PodIterator::new(first_element_ptr.cast(), size))
             }
@@ -197,7 +210,11 @@ impl<'a> PodValue for &'a PodObjectRef {
                 ObjectType::OBJECT_PROPS(PodIterator::new(first_element_ptr.cast(), size))
             }
             Type::OBJECT_FORMAT => {
-                ObjectType::OBJECT_FORMAT(PodIterator::new(first_element_ptr.cast(), size))
+                if body_id == ParamType::FORMAT.raw {
+                    ObjectType::OBJECT_FORMAT(PodIterator::new(first_element_ptr.cast(), size))
+                } else {
+                    ObjectType::OBJECT_ENUM_FORMAT(PodIterator::new(first_element_ptr.cast(), size))
+                }
             }
             Type::OBJECT_PARAM_BUFFERS => {
                 ObjectType::OBJECT_PARAM_BUFFERS(PodIterator::new(first_element_ptr.cast(), size))
@@ -229,9 +246,23 @@ impl<'a> PodValue for &'a PodObjectRef {
             type_ => return Err(PodError::UnexpectedObjectType(type_.raw)),
         })
     }
+}
+
+impl<'a> PodValue for &'a PodObjectRef {
+    type Value = ObjectType<'a>;
+    type RawValue = spa_sys::spa_pod_object_body;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw.body
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        let body = unsafe { PodObjectBodyRef::from_raw_ptr(ptr) };
+        PodObjectRef::parse_raw_body(body.as_raw_ptr(), size, body.type_(), body.id())
+    }
 
     fn value(&self) -> PodResult<Self::Value> {
-        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_size())
     }
 }
 
@@ -245,6 +276,7 @@ impl<'a> WritePod for &'a PodObjectRef {
                 ObjectType::OBJECT_PROP_INFO(iter) => (Type::OBJECT_PROP_INFO, iter.as_bytes()),
                 ObjectType::OBJECT_PROPS(iter) => (Type::OBJECT_PROPS, iter.as_bytes()),
                 ObjectType::OBJECT_FORMAT(iter) => (Type::OBJECT_FORMAT, iter.as_bytes()),
+                ObjectType::OBJECT_ENUM_FORMAT(iter) => (Type::OBJECT_FORMAT, iter.as_bytes()),
                 ObjectType::OBJECT_PARAM_BUFFERS(iter) => {
                     (Type::OBJECT_PARAM_BUFFERS, iter.as_bytes())
                 }
@@ -414,6 +446,8 @@ pub enum ObjectType<'a> {
     OBJECT_PROP_INFO(ObjectPropsIterator<'a, ObjectPropInfoType<'a>>) = Type::OBJECT_PROP_INFO.raw,
     OBJECT_PROPS(ObjectPropsIterator<'a, ObjectPropType<'a>>) = Type::OBJECT_PROPS.raw,
     OBJECT_FORMAT(ObjectPropsIterator<'a, ObjectFormatType<'a>>) = Type::OBJECT_FORMAT.raw,
+    OBJECT_ENUM_FORMAT(ObjectPropsIterator<'a, ObjectEnumFormatType<'a>>) =
+        Type::_OBJECT_LAST.raw + Type::OBJECT_FORMAT.raw,
     OBJECT_PARAM_BUFFERS(ObjectPropsIterator<'a, ParamBuffersType<'a>>) =
         Type::OBJECT_PARAM_BUFFERS.raw,
     OBJECT_PARAM_META(ObjectPropsIterator<'a, ParamMetaType<'a>>) = Type::OBJECT_PARAM_META.raw,
