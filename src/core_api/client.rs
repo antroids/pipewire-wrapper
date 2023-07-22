@@ -13,6 +13,7 @@ use crate::wrapper::{RawWrapper, Wrapper};
 pub mod events;
 pub mod info;
 
+/// Wrapper for the external [pw_sys::pw_client] value.
 #[derive(RawWrapper, Debug)]
 #[interface(methods=pw_sys::pw_client_methods, interface="Client")]
 #[repr(transparent)]
@@ -39,6 +40,7 @@ impl<'a> AddListener<'a> for ClientRef {
     }
 }
 
+/// Wrapper for the Client proxy, can be obtained from the [crate::core_api::registry::Registry].
 #[derive(Clone)]
 #[proxy_wrapper(ClientRef)]
 pub struct Client<'c> {

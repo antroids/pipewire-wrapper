@@ -11,7 +11,7 @@ use crate::core_api::proxy::{Proxy, ProxyRef};
 use crate::core_api::registry::restricted::RegistryBind;
 use crate::core_api::registry::Registry;
 use crate::core_api::type_info::TypeInfo;
-use crate::core_api::Pipewire;
+use crate::core_api::PipeWire;
 use crate::i32_as_void_result;
 use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
 use crate::spa::param::ParamType;

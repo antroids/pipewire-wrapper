@@ -216,57 +216,6 @@ where
     }
 }
 
-// pub struct PodBufFrame<'a, T>
-// where
-//     T: 'a,
-// {
-//     buf: &'a mut PodBuf<'a, T>,
-//     start_pos: u64,
-// }
-//
-// impl<'a, T> PodBufFrame<'a, T> {
-//     pub(crate) fn from_buf(buffer: &'a mut PodBuf<'a, T>) -> PodResult<Self> {
-//         let position = buffer.stream_position()?;
-//         Ok(Self {
-//             buf: buffer,
-//             start_pos: position,
-//         })
-//     }
-// }
-//
-// impl<'a, T> Write for PodBufFrame<'a, T> {
-//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-//         self.buf.write(buf)
-//     }
-//
-//     fn flush(&mut self) -> io::Result<()> {
-//         Ok(())
-//     }
-// }
-//
-// impl<'a, T> Seek for PodBufFrame<'a, T> {
-//     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
-//         let (from, offset) = match pos {
-//             SeekFrom::Start(pos) => return self.buf.seek(SeekFrom::Start(self.start_pos + pos)),
-//             SeekFrom::End(pos_from_end) => {
-//                 (self.buf.data_size() as u64 - self.start_pos, pos_from_end)
-//             }
-//             SeekFrom::Current(pos_from_current) => {
-//                 (self.buf.pos - self.start_pos, pos_from_current)
-//             }
-//         };
-//
-//         if let Some(pos) = from.checked_add_signed(offset) {
-//             self.seek(SeekFrom::Start(pos))
-//         } else {
-//             Err(std::io::Error::new(
-//                 ErrorKind::InvalidInput,
-//                 "invalid seek to a negative or overflowing position",
-//             ))
-//         }
-//     }
-// }
-
 #[test]
 fn test_buf_from_value() {
     let allocated_pod = PodBuf::<PodBoolRef>::from_primitive_value(true)

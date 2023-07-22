@@ -187,7 +187,7 @@ impl PodObjectRef {
     pub fn param_value(&self, param_type: ParamType) -> PodResult<ObjectType> {
         PodObjectRef::parse_raw_body(
             self.body().as_raw_ptr(),
-            self.pod_size(),
+            self.pod_header().size as usize,
             self.body_type(),
             param_type.raw,
         )
@@ -213,6 +213,7 @@ impl PodObjectRef {
                 if body_id == ParamType::FORMAT.raw {
                     ObjectType::OBJECT_FORMAT(PodIterator::new(first_element_ptr.cast(), size))
                 } else {
+                    // Parse as EnumFormat by default, because it can handle the both variants
                     ObjectType::OBJECT_ENUM_FORMAT(PodIterator::new(first_element_ptr.cast(), size))
                 }
             }
@@ -262,7 +263,7 @@ impl<'a> PodValue for &'a PodObjectRef {
     }
 
     fn value(&self) -> PodResult<Self::Value> {
-        Self::parse_raw_value(self.raw_value_ptr(), self.pod_size())
+        Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
 }
 
@@ -484,7 +485,9 @@ fn from_value() {
 
     assert_eq!(allocated.as_pod().body_id(), 123);
 
-    if let ObjectType::OBJECT_FORMAT(mut props) = allocated.as_pod().value().unwrap() {
+    if let ObjectType::OBJECT_FORMAT(mut props) =
+        allocated.as_pod().param_value(ParamType::FORMAT).unwrap()
+    {
         if let ObjectFormatType::MEDIA_TYPE(v) = props.next().unwrap().value().unwrap() {
             assert_eq!(v.value().unwrap(), MediaType::AUDIO);
         } else {

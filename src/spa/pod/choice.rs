@@ -15,16 +15,17 @@ use crate::spa::pod::choice::flags::{PodFlagsRef, PodFlagsValue};
 use crate::spa::pod::choice::none::PodNoneRef;
 use crate::spa::pod::choice::range::{PodRangeRef, PodRangeValue};
 use crate::spa::pod::choice::step::{PodStepRef, PodStepValue};
-use crate::spa::pod::id::PodIdRef;
+use crate::spa::pod::id::{PodIdRef, PodIdType};
 use crate::spa::pod::iterator::PodValueIterator;
+use crate::spa::pod::object::format::AudioFormat;
 use crate::spa::pod::object::PodObjectRef;
 use crate::spa::pod::pod_buf::AllocatedData;
 use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::{
-    BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFloatRef, PodFractionRef,
-    PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodValue, SizedPod, WritePod,
-    WriteValue,
+    BasicType, BasicTypePod, BasicTypeValue, FromPrimitiveValue, PodBoolRef, PodDoubleRef,
+    PodError, PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef, PodRef,
+    PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
 };
 use crate::spa::type_::{PointRef, Type};
 use crate::wrapper::RawWrapper;
@@ -152,7 +153,7 @@ where
     T: PodValue,
 {
     pub(crate) fn body(&self) -> &PodChoiceBodyRef {
-        if self.value_choice() {
+        if !self.value_choice() {
             unsafe { PodChoiceBodyRef::from_raw_ptr(addr_of!(self.raw.body)) }
         } else {
             panic!("Choice with VALUE type cannot have body");
@@ -164,7 +165,7 @@ where
     }
 
     pub fn fixated(&self) -> bool {
-        self.value_choice() && self.body().type_() == ChoiceType::NONE
+        !self.value_choice() && self.body().type_() == ChoiceType::NONE
     }
 
     fn content_size(&self) -> usize {
@@ -240,7 +241,7 @@ where
 
 impl PodChoiceRef<PodRef> {
     pub fn choice_value(&self) -> PodResult<ChoiceValueType> {
-        if self.value_choice() {
+        if !self.value_choice() {
             let size = self.pod_header().size as usize;
             let body_ptr = self.body().as_raw_ptr();
             Ok(match self.body().child().type_() {
@@ -389,6 +390,163 @@ impl<'a, T: WriteValue> From<&'a T> for &'a PodChoiceRef<T> {
 }
 
 #[test]
-fn test_choice() {
-    //let enum_choice =
+fn test_enum_choice() {
+    let enum_choice = PodEnumValue::new(5, vec![1, 2, 3])
+        .to_alloc_pod::<PodIntRef>()
+        .unwrap();
+    let enum_choice_pod = enum_choice.as_pod();
+
+    assert_eq!(enum_choice_pod.pod_type(), Type::CHOICE);
+    assert!(!enum_choice_pod.choice().value_choice());
+    assert!(!enum_choice_pod.choice().fixated());
+    if let ChoiceStructType::ENUM(val) = enum_choice_pod.choice().value().unwrap() {
+        assert_eq!(val.default(), &5);
+        assert_eq!(val.alternatives(), &vec![1, 2, 3]);
+    } else {
+        assert!(false)
+    }
+    if let BasicType::CHOICE(choice) = enum_choice_pod.upcast().downcast().unwrap() {
+        if let ChoiceValueType::INT(ChoiceStructType::ENUM(val)) = choice.choice_value().unwrap() {
+            assert_eq!(val.default(), &5);
+            assert_eq!(val.alternatives(), &vec![1, 2, 3]);
+        } else {
+            assert!(false)
+        }
+    } else {
+        assert!(false)
+    }
+}
+
+#[test]
+fn test_flags_choice() {
+    let flags_choice = PodFlagsValue::new(5, vec![1, 2, 3])
+        .to_alloc_pod::<PodIntRef>()
+        .unwrap();
+    let flags_choice_pod = flags_choice.as_pod();
+
+    assert_eq!(flags_choice_pod.pod_type(), Type::CHOICE);
+    assert!(!flags_choice_pod.choice().value_choice());
+    assert!(!flags_choice_pod.choice().fixated());
+    if let ChoiceStructType::FLAGS(val) = flags_choice_pod.choice().value().unwrap() {
+        assert_eq!(val.default(), &5);
+        assert_eq!(val.alternatives(), &vec![1, 2, 3]);
+    } else {
+        assert!(false)
+    }
+    if let BasicType::CHOICE(choice) = flags_choice_pod.upcast().downcast().unwrap() {
+        if let ChoiceValueType::INT(ChoiceStructType::FLAGS(val)) = choice.choice_value().unwrap() {
+            assert_eq!(val.default(), &5);
+            assert_eq!(val.alternatives(), &vec![1, 2, 3]);
+        } else {
+            assert!(false)
+        }
+    } else {
+        assert!(false)
+    }
+}
+
+#[test]
+fn test_range_choice() {
+    let range_choice = PodRangeValue::new(5, 1, 10)
+        .to_alloc_pod::<PodIntRef>()
+        .unwrap();
+    let range_choice_pod = range_choice.as_pod();
+
+    assert_eq!(range_choice_pod.pod_type(), Type::CHOICE);
+    assert!(!range_choice_pod.choice().value_choice());
+    assert!(!range_choice_pod.choice().fixated());
+    if let ChoiceStructType::RANGE(val) = range_choice_pod.choice().value().unwrap() {
+        assert_eq!(val.default(), &5);
+        assert_eq!(val.min(), &1);
+        assert_eq!(val.max(), &10);
+    } else {
+        assert!(false)
+    }
+    if let BasicType::CHOICE(choice) = range_choice_pod.upcast().downcast().unwrap() {
+        if let ChoiceValueType::INT(ChoiceStructType::RANGE(val)) = choice.choice_value().unwrap() {
+            assert_eq!(val.default(), &5);
+            assert_eq!(val.min(), &1);
+            assert_eq!(val.max(), &10);
+        } else {
+            assert!(false)
+        }
+    } else {
+        assert!(false)
+    }
+}
+
+#[test]
+fn test_step_choice() {
+    let step_choice = PodStepValue::new(5, 1, 10, 2)
+        .to_alloc_pod::<PodIntRef>()
+        .unwrap();
+    let step_choice_pod = step_choice.as_pod();
+
+    assert_eq!(step_choice_pod.pod_type(), Type::CHOICE);
+    assert!(!step_choice_pod.choice().value_choice());
+    assert!(!step_choice_pod.choice().fixated());
+    if let ChoiceStructType::STEP(val) = step_choice_pod.choice().value().unwrap() {
+        assert_eq!(val.default(), &5);
+        assert_eq!(val.min(), &1);
+        assert_eq!(val.max(), &10);
+        assert_eq!(val.step(), &2);
+    } else {
+        assert!(false)
+    }
+    if let BasicType::CHOICE(choice) = step_choice_pod.upcast().downcast().unwrap() {
+        if let ChoiceValueType::INT(ChoiceStructType::STEP(val)) = choice.choice_value().unwrap() {
+            assert_eq!(val.default(), &5);
+            assert_eq!(val.min(), &1);
+            assert_eq!(val.max(), &10);
+            assert_eq!(val.step(), &2);
+        } else {
+            assert!(false)
+        }
+    } else {
+        assert!(false)
+    }
+}
+
+#[test]
+fn test_none_choice() {
+    let none_choice = PodNoneRef::from_primitive(123).unwrap();
+    let none_choice_pod: &PodNoneRef<PodIntRef> = none_choice.as_pod();
+
+    assert_eq!(none_choice_pod.pod_type(), Type::CHOICE);
+    assert!(!none_choice_pod.choice().value_choice());
+    assert!(none_choice_pod.choice().fixated());
+    if let ChoiceStructType::NONE(val) = none_choice_pod.choice().value().unwrap() {
+        assert_eq!(val, 123);
+    } else {
+        assert!(false)
+    }
+    if let BasicType::CHOICE(choice) = none_choice_pod.upcast().downcast().unwrap() {
+        if let ChoiceValueType::INT(ChoiceStructType::NONE(val)) = choice.choice_value().unwrap() {
+            assert_eq!(val, 123);
+        } else {
+            assert!(false)
+        }
+    } else {
+        assert!(false)
+    }
+}
+
+#[test]
+fn test_value_choice() {
+    let pod = AudioFormat::F32.as_alloc_pod();
+    let choice: &PodChoiceRef<PodIdRef<AudioFormat>> = pod.as_pod().into();
+
+    assert_eq!(choice.pod_type(), Type::ID);
+    assert!(choice.value_choice());
+    assert!(!choice.fixated());
+    if let ChoiceStructType::VALUE(val) = choice.value().unwrap() {
+        assert_eq!(val, AudioFormat::F32);
+    } else {
+        assert!(false)
+    }
+    if let BasicType::ID(val) = choice.upcast().downcast().unwrap() {
+        assert_eq!(val.value().unwrap(), AudioFormat::F32.raw);
+    } else {
+        assert!(false)
+    }
 }

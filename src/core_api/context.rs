@@ -27,6 +27,23 @@ use crate::{i32_as_result, new_instance_raw_wrapper};
 
 pub mod events;
 
+/// Wrapper for the external [pw_sys::pw_context] value.
+/// The PipeWire context object manages all locally available resources.
+///
+/// It is used by both clients and servers.
+///
+/// The context is used to:
+///
+/// Load modules and extend the functionality. This includes extending the protocol with new
+/// object types or creating any of the available objects.
+///
+/// Create implementations of various objects like nodes, devices, factories, modules, etc..
+/// This will usually also create pw_global objects that can then be shared with clients.
+///
+/// Connect to another PipeWire instance (the main daemon, for example) and interact with
+/// it (See page_core_api).
+///
+/// Export a local implementation of an object to another instance.
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct ContextRef {
@@ -34,6 +51,7 @@ pub struct ContextRef {
     raw: pw_sys::pw_context,
 }
 
+/// Owned wrapper for the [ContextRef].
 #[derive(Wrapper, Debug)]
 pub struct Context {
     #[raw_wrapper]
@@ -49,6 +67,13 @@ impl Drop for Context {
 }
 
 impl Context {
+    /// Creates a new [Context] for the given [MainLoop].
+    ///
+    /// # Arguments
+    ///
+    /// * `main_loop` - main loop
+    /// * `properties` - extra properties for the context
+    /// * `user_data_size` - extra user data size
     pub fn new(
         main_loop: std::sync::Arc<MainLoop>,
         properties: Properties,
@@ -67,6 +92,7 @@ impl Context {
         })
     }
 
+    /// Main loop
     pub fn main_loop(&self) -> &std::sync::Arc<MainLoop> {
         &self.main_loop
     }
@@ -84,15 +110,18 @@ impl Default for Context {
 }
 
 impl ContextRef {
+    /// Extra User data assigned to the context
     pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         let ptr = pw_sys::pw_context_get_user_data(self.as_raw_ptr()) as *mut T;
         ptr.as_mut()
     }
 
+    /// Context properties
     pub fn get_properties(&self) -> &PropertiesRef {
         unsafe { PropertiesRef::from_raw_ptr(pw_sys::pw_context_get_properties(self.as_raw_ptr())) }
     }
 
+    /// Update context properties, returns the count of updated properties
     pub fn update_properties(&self, properties: &DictRef) -> i32 {
         unsafe { pw_sys::pw_context_update_properties(self.as_raw_ptr(), properties.as_raw_ptr()) }
     }
@@ -103,6 +132,7 @@ impl ContextRef {
     //todo pw_context_conf_section_match_rules
     //todo pw_context_conf_section_match_rules
 
+    /// Get [SupportRef] list, associated with the [Context]
     pub fn get_support(&self) -> &[SupportRef] {
         let mut support_elements = 0u32;
         let support_array =
@@ -112,6 +142,7 @@ impl ContextRef {
         }
     }
 
+    /// Get [MainLoopRef]
     pub fn get_main_loop(&self) -> &LoopRef {
         unsafe { LoopRef::from_raw_ptr(pw_sys::pw_context_get_main_loop(self.as_raw_ptr())) }
     }
@@ -121,10 +152,19 @@ impl ContextRef {
     //     unsafe { DataLoopRef::from_raw_ptr(pw_sys::pw_context_get_data_loop(self.as_raw_ptr())) }
     // }
 
+    /// Work queue
     pub fn get_work_queue(&self) -> &WorkQueueRef {
         unsafe { WorkQueueRef::from_raw_ptr(pw_sys::pw_context_get_work_queue(self.as_raw_ptr())) }
     }
 
+    /// Evaluate the callback for each global
+    ///
+    /// # Arguments
+    ///
+    /// * `callback` - callback to evaluate, should return 0 to continue
+    /// or any other value to return from the cycle.
+    ///
+    /// Return the value from last evaluated callback
     pub fn for_each_global<F>(&self, callback: F) -> crate::Result<i32>
     where
         F: FnMut(&GlobalRef) -> i32,
@@ -154,6 +194,11 @@ impl ContextRef {
         i32_as_result(result, result)
     }
 
+    /// Find global by id
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - id of the Global object
     pub fn find_global(&self, id: u32) -> Option<&GlobalRef> {
         let ptr = unsafe { pw_sys::pw_context_find_global(self.as_raw_ptr(), id) };
         if ptr.is_null() {

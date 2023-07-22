@@ -36,11 +36,17 @@ pub const PW_ID_ANY: u32 = SPA_ID_INVALID;
 
 static mut INIT: Once = Once::new();
 
+/// PipeWire structure
 #[derive(Debug)]
-pub struct Pipewire {}
+pub struct PipeWire {}
 
-impl Pipewire {
-    pub fn init(args: &Vec<&CStr>) -> Pipewire {
+impl PipeWire {
+    /// Init the pipewire, can be called several times, but the PipeWire will be initialized only once.
+    ///
+    /// # Arguments
+    ///
+    /// * `args` - arguments
+    pub fn init(args: &Vec<&CStr>) -> PipeWire {
         unsafe {
             INIT.call_once_force(|_state| {
                 let argc = &mut (args.len() as i32) as *mut ::std::os::raw::c_int;
@@ -48,13 +54,20 @@ impl Pipewire {
                 pw_sys::pw_init(argc, argv);
             });
         }
-        Pipewire {}
+        PipeWire {}
     }
 
+    /// Check if a debug category is enabled.
+    /// Debugging categories can be enabled by using the PIPEWIRE_DEBUG environment variable.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - the name of the category to check
     pub fn debug_is_category_enabled(&self, name: &CString) -> bool {
         unsafe { pw_sys::pw_debug_is_category_enabled(name.as_ptr()) }
     }
 
+    /// Application name.
     pub fn get_application_name(&self) -> Option<&CStr> {
         unsafe {
             pw_sys::pw_get_application_name()
@@ -63,6 +76,7 @@ impl Pipewire {
         }
     }
 
+    /// Program name.
     pub fn get_prgname(&self) -> Option<&CStr> {
         unsafe {
             pw_sys::pw_get_prgname()
@@ -71,6 +85,7 @@ impl Pipewire {
         }
     }
 
+    /// User name
     pub fn get_user_name(&self) -> Option<&CStr> {
         unsafe {
             pw_sys::pw_get_user_name()
@@ -79,6 +94,7 @@ impl Pipewire {
         }
     }
 
+    /// Host name
     pub fn get_host_name(&self) -> Option<&CStr> {
         unsafe {
             pw_sys::pw_get_host_name()
@@ -87,6 +103,7 @@ impl Pipewire {
         }
     }
 
+    /// Client name
     pub fn get_client_name(&self) -> Option<&CStr> {
         unsafe {
             pw_sys::pw_get_client_name()
@@ -95,22 +112,27 @@ impl Pipewire {
         }
     }
 
+    /// Is PipeWire running on Valgrind
     pub fn in_valgrind(&self) -> bool {
         unsafe { pw_sys::pw_in_valgrind() }
     }
 
+    /// Check option switch, i.e. in-valgrind, no-color, no-config, do-dlclose
     pub fn check_option(&self, option: &CStr, value: &CStr) -> bool {
         unsafe { pw_sys::pw_check_option(option.as_ptr(), value.as_ptr()) }
     }
 
+    /// Get reversed [Direction]
     pub fn direction_reverse(direction: &Direction) -> Direction {
         Direction::from_raw(unsafe { pw_sys::pw_direction_reverse(*direction.as_raw()) })
     }
 
+    /// Set domain
     pub fn set_domain(&self, domain: &CStr) -> crate::Result<()> {
         unsafe { i32_as_void_result(pw_sys::pw_set_domain(domain.as_ptr())) }
     }
 
+    /// Domain
     pub fn get_domain(&self) -> Option<&CStr> {
         unsafe {
             pw_sys::pw_get_domain()
@@ -119,6 +141,7 @@ impl Pipewire {
         }
     }
 
+    /// Get support list
     pub fn get_spa_support(&self, max_support_elements: usize) -> Vec<SupportRef> {
         let mut support_vec: Vec<SupportRef> = Vec::with_capacity(max_support_elements);
         let support_count = unsafe {
@@ -131,6 +154,7 @@ impl Pipewire {
         support_vec
     }
 
+    /// Load SPA handle
     pub fn load_spa_handle(
         &self,
         lib: &CStr,
@@ -150,12 +174,13 @@ impl Pipewire {
         unsafe { (handle as *mut HandleRef).as_ref() }
     }
 
+    /// Unload handle
     pub fn unload_spa_handle(&self, handle: &HandleRef) -> crate::Result<()> {
         unsafe { i32_as_void_result(pw_sys::pw_unload_spa_handle(handle.as_raw_ptr())) }
     }
 }
 
-impl Drop for Pipewire {
+impl Drop for PipeWire {
     fn drop(&mut self) {
         unsafe {
             if INIT.is_completed() {
@@ -166,8 +191,8 @@ impl Drop for Pipewire {
     }
 }
 
-impl Default for Pipewire {
+impl Default for PipeWire {
     fn default() -> Self {
-        Pipewire::init(&Vec::default())
+        PipeWire::init(&Vec::default())
     }
 }

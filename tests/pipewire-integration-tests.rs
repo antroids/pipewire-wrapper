@@ -16,14 +16,14 @@ use pipewire_wrapper::core_api::port::info::PortInfoRef;
 use pipewire_wrapper::core_api::port::{Port, PortRef};
 use pipewire_wrapper::core_api::proxy::Proxied;
 use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
-use pipewire_wrapper::core_api::Pipewire;
+use pipewire_wrapper::core_api::PipeWire;
 use pipewire_wrapper::listeners::OwnListeners;
 use pipewire_wrapper::spa::pod::PodRef;
 
 #[test]
 fn test_init() {
     let arg = CString::new("test_arg").unwrap();
-    let pw = Pipewire::init(&vec![&arg]);
+    let pw = PipeWire::init(&vec![&arg]);
 
     println!("Spa support{:?}", pw.get_spa_support(5));
     println!("User name {:?}", pw.get_user_name());

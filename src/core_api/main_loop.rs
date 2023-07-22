@@ -15,7 +15,7 @@ use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_::{LoopRef, LoopRefIterator};
 use crate::core_api::properties::Properties;
-use crate::core_api::Pipewire;
+use crate::core_api::PipeWire;
 use crate::spa::dict::DictRef;
 use crate::spa::interface::{Hook, HookRef};
 use crate::spa::list::ListElement;
@@ -37,7 +37,7 @@ pub struct MainLoop {
     #[raw_wrapper]
     ref_: NonNull<MainLoopRef>,
 
-    pipewire: std::sync::Arc<Pipewire>,
+    pipewire: std::sync::Arc<PipeWire>,
 }
 
 impl MainLoopRef {
@@ -173,7 +173,7 @@ impl AsLoopRef for MainLoopRef {
 }
 
 impl MainLoop {
-    pub fn new(pipewire: std::sync::Arc<Pipewire>, props: &DictRef) -> crate::Result<Self> {
+    pub fn new(pipewire: std::sync::Arc<PipeWire>, props: &DictRef) -> crate::Result<Self> {
         let main_loop_ptr = unsafe { pw_sys::pw_main_loop_new(props.as_raw_ptr()) };
         let ref_ = new_instance_raw_wrapper(main_loop_ptr)?;
         Ok(Self { ref_, pipewire })
@@ -183,7 +183,7 @@ impl MainLoop {
 impl Default for MainLoop {
     fn default() -> Self {
         MainLoop::new(
-            std::sync::Arc::new(Pipewire::default()),
+            std::sync::Arc::new(PipeWire::default()),
             Properties::default().dict(),
         )
         .unwrap()

@@ -15,20 +15,35 @@ use crate::wrapper::RawWrapper;
 
 pub mod core_api;
 pub mod error;
+pub mod filter;
 pub mod impl_api;
 pub mod listeners;
 pub mod spa;
 pub mod stream;
 pub mod wrapper;
 
+/// Invalid ID value
 pub const SPA_ID_INVALID: u32 = 0xffffffff;
 
+/// Result type used in the library
 pub type Result<T> = std::result::Result<T, error::Error>;
 
+/// Convert i32 result to the [Result<()>] value.
+/// PipeWire uses i32 >= 0 for success and -err_core for errors.
+/// # Arguments
+///
+/// * `result` - result received from PipeWire
 fn i32_as_void_result(result: i32) -> crate::Result<()> {
     i32_as_result(result, ())
 }
 
+/// Convert i32 result to the [Result<T>] value.
+/// PipeWire uses i32 >= 0 for success and -err_core for errors.
+///
+/// # Arguments
+///
+/// * `result` - result received from PipeWire
+/// * `result_value` - value used as result on success
 fn i32_as_result<T>(result: i32, result_value: T) -> crate::Result<T> {
     if result >= 0 {
         Ok(result_value)
@@ -37,10 +52,12 @@ fn i32_as_result<T>(result: i32, result_value: T) -> crate::Result<T> {
     }
 }
 
+/// NonNull from the external type pointer or [Error::CannotCreateInstance] if the ptr is null
 fn new_instance_raw_wrapper<T: RawWrapper>(ptr: *mut T::CType) -> crate::Result<NonNull<T>> {
     NonNull::new(ptr as *mut T).ok_or_else(|| Error::CannotCreateInstance)
 }
 
+/// [RawWrapper] from the raw pointer to the external type or [Error::NullPointer]
 fn raw_wrapper<'a, T: RawWrapper>(ptr: *mut T::CType) -> crate::Result<&'a T> {
     if let Some(raw_wrapper) = unsafe { (ptr as *mut T).as_ref() } {
         Ok(raw_wrapper)

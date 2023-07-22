@@ -13,13 +13,18 @@ use crate::core_api::properties::Properties;
 use crate::core_api::registry::events::RegistryEventsBuilder;
 use crate::core_api::registry::{Registry, RegistryRef};
 use crate::core_api::type_info::TypeInfo;
-use crate::listeners::AddListener;
+use crate::listeners::{AddListener, OwnListeners};
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
 
 pub mod events;
 pub mod info;
 
+/// Wrapper for the external [pw_sys::pw_core] value.
+/// This is a special singleton object.
+/// It is used for internal PipeWire protocol features.
+/// Connecting to a PipeWire instance returns one core object, the caller should then register
+/// event listeners using add_listener method.
 #[derive(RawWrapper, Debug)]
 #[interface(methods=pw_sys::pw_core_methods, interface="Core")]
 #[repr(transparent)]
@@ -28,6 +33,7 @@ pub struct CoreRef {
     raw: pw_sys::pw_core,
 }
 
+/// Owned Wrapper for the [CoreRef]
 #[derive(Wrapper, Debug)]
 pub struct Core {
     #[raw_wrapper]
@@ -37,6 +43,13 @@ pub struct Core {
 }
 
 impl Core {
+    /// Connect to a PipeWire instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `context` - [Context]
+    /// * `properties` - properties for the [Core]
+    /// * `user_data_size` - extra user data size
     pub fn connect(
         context: &std::sync::Arc<Context>,
         properties: Properties,
@@ -51,10 +64,18 @@ impl Core {
         })
     }
 
+    /// Context
     pub fn context(&self) -> &std::sync::Arc<Context> {
         &self.context
     }
 
+    /// Create a new [Registry] proxy.
+    /// The registry object will emit a global event for each global currently in the registry.
+    ///
+    /// # Arguments
+    ///
+    /// * `version` - registry version
+    /// * `user_data_size` - extra user data size
     pub fn get_registry(&self, version: u32, user_data_size: usize) -> crate::Result<Registry> {
         use crate::core_api::proxy::Proxied;
         use crate::core_api::registry::restricted::RegistryBind;

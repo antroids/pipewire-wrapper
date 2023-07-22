@@ -6,7 +6,7 @@ use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_::LoopRef;
 use crate::core_api::properties::Properties;
-use crate::core_api::Pipewire;
+use crate::core_api::PipeWire;
 use crate::spa::dict::DictRef;
 use crate::spa::thread::ThreadRef;
 use crate::wrapper::RawWrapper;
@@ -24,7 +24,7 @@ pub struct DataLoop {
     #[raw_wrapper]
     ref_: NonNull<DataLoopRef>,
 
-    pipewire: std::sync::Arc<Pipewire>,
+    pipewire: std::sync::Arc<PipeWire>,
 }
 
 impl Drop for DataLoop {
@@ -36,7 +36,7 @@ impl Drop for DataLoop {
 impl Default for DataLoop {
     fn default() -> Self {
         Self::new(
-            &std::sync::Arc::new(Pipewire::default()),
+            &std::sync::Arc::new(PipeWire::default()),
             Properties::default().dict(),
         )
         .unwrap()
@@ -44,7 +44,7 @@ impl Default for DataLoop {
 }
 
 impl DataLoop {
-    pub fn new(pipewire: &std::sync::Arc<Pipewire>, properties: &DictRef) -> crate::Result<Self> {
+    pub fn new(pipewire: &std::sync::Arc<PipeWire>, properties: &DictRef) -> crate::Result<Self> {
         let ptr = unsafe { pw_sys::pw_data_loop_new(properties.as_raw_ptr()) };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
