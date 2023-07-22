@@ -337,8 +337,10 @@ where
     }
 }
 
+#[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodPropRef<'a, T: PodPropKeyType<'a>> {
+    #[raw]
     raw: spa_sys::spa_pod_prop,
     phantom_type: PhantomData<&'a T>,
 }
@@ -352,29 +354,6 @@ bitflags! {
         const HINT_DICT = spa_sys::SPA_POD_PROP_FLAG_HINT_DICT;
         const MANDATORY = spa_sys::SPA_POD_PROP_FLAG_MANDATORY;
         const DONT_FIXATE = spa_sys::SPA_POD_PROP_FLAG_DONT_FIXATE;
-    }
-}
-
-impl<'a, T: PodPropKeyType<'a>> RawWrapper for PodPropRef<'a, T> {
-    type CType = spa_sys::spa_pod_prop;
-
-    fn as_raw_ptr(&self) -> *mut Self::CType {
-        &self.raw as *const _ as *mut _
-    }
-
-    fn as_raw(&self) -> &Self::CType {
-        &self.raw
-    }
-
-    fn from_raw(raw: Self::CType) -> Self {
-        Self {
-            raw,
-            phantom_type: PhantomData::default(),
-        }
-    }
-
-    unsafe fn mut_from_raw_ptr<'b>(raw: *mut Self::CType) -> &'b mut Self {
-        &mut *(raw as *mut PodPropRef<T>)
     }
 }
 

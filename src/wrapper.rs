@@ -32,7 +32,7 @@ where
     }
 }
 
-/// Wrapper for the external type.
+/// Wrapper for the external type, must not be null.
 /// By convention, all wrapped structures should with the Ref prefix.
 /// #\[repr(transparent)\] should be used where possible.
 pub trait RawWrapper
@@ -52,6 +52,7 @@ where
     fn from_raw(raw: Self::CType) -> Self;
 
     /// Cast external pointer to the borrowed wrapper.
+    /// Panic when pointer is null.
     /// Lifetime is not reliable and should be guaranteed explicitly.
     ///
     /// # Arguments
@@ -62,6 +63,7 @@ where
     }
 
     /// Cast external pointer to the borrowed mutable wrapper.
+    /// Panic when pointer is null.
     /// Lifetime is not reliable and should be guaranteed explicitly.
     ///
     /// # Arguments

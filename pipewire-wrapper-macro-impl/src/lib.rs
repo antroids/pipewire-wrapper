@@ -4,8 +4,8 @@ use syn;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::{
-    parse2, AttrStyle, Attribute, Expr, Field, GenericArgument, Generics, ItemStruct, Lit, LitStr,
-    Meta, MetaNameValue, PathArguments, Token, Type, TypePath,
+    parse2, AttrStyle, Attribute, Expr, Field, GenericArgument, GenericParam, Generics, ItemStruct,
+    Lit, LitStr, Meta, MetaNameValue, PathArguments, Token, Type, TypePath,
 };
 
 pub mod macro_rules;
@@ -20,16 +20,20 @@ struct WrappedRawStructInfo {
     struct_ident: Ident,
     struct_generics: Generics,
     raw_field: Field,
+    other_fields: Vec<Field>,
 }
 
 impl Parse for WrappedRawStructInfo {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         match parse_wrapped_struct_info(input, ATTR_RAW) {
-            Ok((struct_ident, struct_generics, raw_field)) => Ok(WrappedRawStructInfo {
-                struct_ident,
-                struct_generics,
-                raw_field,
-            }),
+            Ok((struct_ident, struct_generics, raw_field, other_fields)) => {
+                Ok(WrappedRawStructInfo {
+                    struct_ident,
+                    struct_generics,
+                    raw_field,
+                    other_fields,
+                })
+            }
             Err(error) => Err(error),
         }
     }
@@ -44,7 +48,7 @@ struct WrappedStructInfo {
 impl Parse for WrappedStructInfo {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         match parse_wrapped_struct_info(input, ATTR_RAW_WRAPPER) {
-            Ok((struct_ident, struct_generics, raw_wrapper_field)) => Ok(WrappedStructInfo {
+            Ok((struct_ident, struct_generics, raw_wrapper_field, _)) => Ok(WrappedStructInfo {
                 struct_ident,
                 struct_generics,
                 raw_wrapper_field,
@@ -57,22 +61,30 @@ impl Parse for WrappedStructInfo {
 fn parse_wrapped_struct_info(
     input: ParseStream,
     attr_ident_name: &'static str,
-) -> syn::Result<(Ident, Generics, Field)> {
+) -> syn::Result<(Ident, Generics, Field, Vec<Field>)> {
     let item_struct: ItemStruct = input.parse()?;
 
-    let field_with_attr = item_struct
-        .fields
-        .iter()
-        .find(|field| {
-            field
-                .attrs
-                .iter()
-                .any(|attr| is_attribute_with_ident_name(attr, attr_ident_name))
-        })
-        .cloned();
+    let mut field_with_attr: Option<Field> = None;
+    let mut other_fields: Vec<Field> = Vec::new();
+    for field in item_struct.fields {
+        if field
+            .attrs
+            .iter()
+            .any(|attr| is_attribute_with_ident_name(attr, attr_ident_name))
+        {
+            field_with_attr = Some(field);
+        } else {
+            other_fields.push(field);
+        }
+    }
 
     if let Some(field_with_attr) = field_with_attr {
-        Ok((item_struct.ident, item_struct.generics, field_with_attr))
+        Ok((
+            item_struct.ident,
+            item_struct.generics,
+            field_with_attr,
+            other_fields,
+        ))
     } else {
         Err(input.error(format!(
             "Cannot find field with #[{}] attribute in wrapped struct",
@@ -181,16 +193,46 @@ pub fn derive_raw_wrapper(input: TokenStream) -> TokenStream {
     };
 
     let struct_ident = &struct_info.struct_ident;
-    let struct_generics = &struct_info.struct_generics;
     let raw_field_ident = &struct_info.raw_field.ident;
     let raw_field_type = &struct_info.raw_field.ty;
+    let other_fields_idents: Vec<&Ident> = struct_info
+        .other_fields
+        .iter()
+        .map(|f| {
+            f.ident
+                .as_ref()
+                .expect("Anonymous fields are not supported")
+        })
+        .collect();
+
+    let mut struct_generics_without_default = struct_info.struct_generics.clone();
+    struct_generics_without_default
+        .params
+        .iter_mut()
+        .for_each(|p| {
+            if let GenericParam::Type(ty) = p {
+                ty.eq_token = None;
+                ty.default = None;
+            }
+        });
+
+    let mut struct_generics_without_bounds = struct_generics_without_default.clone();
+    struct_generics_without_bounds
+        .params
+        .iter_mut()
+        .for_each(|p| {
+            if let GenericParam::Type(ty) = p {
+                ty.colon_token = None;
+                ty.bounds = Punctuated::default();
+            }
+        });
 
     quote!(
-        impl #struct_generics crate::wrapper::RawWrapper for #struct_ident #struct_generics {
+        impl #struct_generics_without_default crate::wrapper::RawWrapper for #struct_ident #struct_generics_without_bounds {
             type CType = #raw_field_type;
 
             fn as_raw_ptr(&self) -> *mut Self::CType {
-                &self.#raw_field_ident as *const _ as *mut _
+                std::ptr::addr_of!(self.#raw_field_ident) as *mut _
             }
 
             fn as_raw(&self) -> &Self::CType {
@@ -198,23 +240,26 @@ pub fn derive_raw_wrapper(input: TokenStream) -> TokenStream {
             }
 
             fn from_raw(raw: Self::CType) -> Self {
-                Self { #raw_field_ident: raw }
+                Self {
+                    #raw_field_ident: raw,
+                    #(#other_fields_idents: std::default::Default::default()),*
+                }
             }
 
-            unsafe fn mut_from_raw_ptr<'a>(raw: *mut Self::CType) -> &'a mut Self {
-                &mut *(raw as *mut #struct_ident #struct_generics)
+            unsafe fn mut_from_raw_ptr<'lft>(raw: *mut Self::CType) -> &'lft mut Self {
+                (raw as *mut #struct_ident #struct_generics_without_bounds).as_mut().unwrap()
             }
         }
 
-        impl #struct_generics From<#raw_field_type> for #struct_ident #struct_generics {
+        impl #struct_generics_without_default From<#raw_field_type> for #struct_ident #struct_generics_without_bounds {
             fn from(value: #raw_field_type) -> Self {
                 use crate::wrapper::RawWrapper;
                 Self::from_raw(value)
             }
         }
 
-        impl #struct_generics From<#struct_ident #struct_generics> for #raw_field_type {
-            fn from(value: #struct_ident #struct_generics) -> Self {
+        impl #struct_generics_without_default From<#struct_ident #struct_generics_without_bounds> for #raw_field_type {
+            fn from(value: #struct_ident #struct_generics_without_bounds) -> Self {
                 value.#raw_field_ident
             }
         }
@@ -296,7 +341,7 @@ pub fn spa_interface(attr: TokenStream, input: TokenStream) -> TokenStream {
                         "Objects with spa_interface should contain the iface pointer, they cannot \
                         be zero-size pointers. Probably #[pw_interface(...)] should be used here");
                     crate::spa::interface::InterfaceRef::from_raw_ptr(
-                        &self.#raw_field_ident.iface as *const spa_sys::spa_interface)
+                        std::ptr::addr_of!(self.#raw_field_ident).cast())
                 }
             }
         }
@@ -343,7 +388,7 @@ pub fn interface(attr: TokenStream, input: TokenStream) -> TokenStream {
                         "Objects with pw_interface should not have any data, they are just zero-size \
                         pointers. Probably #[spa_interface(...)] should be used here");
                     crate::spa::interface::InterfaceRef::from_raw_ptr(
-                        &self.#raw_field_ident as *const _ as *const spa_sys::spa_interface)
+                        std::ptr::addr_of!(self.#raw_field_ident).cast())
                 }
             }
         }
@@ -369,14 +414,6 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
                 self.ref_.is_bound()
             }
         }
-
-        // impl<'c> crate::core_api::registry::restricted::RegistryBind<'c> for #struct_ident <'c> {
-        //     fn from_ref(core: &'c crate::core_api::core::Core, ref_: &crate::core_api::proxy::ProxyRef) -> Self {
-        //         Self {
-        //             ref_: crate::core_api::proxy::Proxy::from_ref(core, ref_),
-        //         }
-        //     }
-        // }
 
         impl<'c> crate::wrapper::Wrapper for #struct_ident <'c> {
             type RawWrapperType = #ref_type_ident;

@@ -43,37 +43,12 @@ impl PodArrayBodyRef {
     }
 }
 
+#[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodArrayRef<T: PodValue = PodRef> {
+    #[raw]
     raw: spa_sys::spa_pod_array,
     phantom: PhantomData<T>,
-}
-
-impl<T> crate::wrapper::RawWrapper for PodArrayRef<T>
-where
-    T: PodValue,
-    T: BasicTypePod,
-{
-    type CType = spa_sys::spa_pod_array;
-
-    fn as_raw_ptr(&self) -> *mut Self::CType {
-        &self.raw as *const _ as *mut _
-    }
-
-    fn as_raw(&self) -> &Self::CType {
-        &self.raw
-    }
-
-    fn from_raw(raw: Self::CType) -> Self {
-        Self {
-            raw,
-            phantom: PhantomData::default(),
-        }
-    }
-
-    unsafe fn mut_from_raw_ptr<'a>(raw: *mut Self::CType) -> &'a mut Self {
-        &mut *(raw as *mut PodArrayRef<T>)
-    }
 }
 
 impl<T> PodHeader for PodArrayRef<T>

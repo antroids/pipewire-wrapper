@@ -1,4 +1,5 @@
 use std::ffi::CStr;
+use std::marker::PhantomData;
 
 use bitflags::bitflags;
 
@@ -11,9 +12,10 @@ pub mod events;
 /// The filter object provides a convenient way to implement processing filters.
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
-pub struct FilterRef {
+pub struct FilterRef<T> {
     #[raw]
     raw: pw_sys::pw_filter,
+    phantom: PhantomData<T>,
 }
 
 bitflags! {
@@ -54,7 +56,7 @@ impl FilterState {
     }
 }
 
-impl FilterRef {}
+impl<T> FilterRef<T> {}
 
 // impl<'a> AddListener<'a> for FilterRef {
 //     type Events = FilterEvents<'a>;

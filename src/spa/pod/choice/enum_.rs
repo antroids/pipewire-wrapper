@@ -6,6 +6,8 @@ use std::ptr::addr_of;
 
 use spa_sys::spa_pod;
 
+use pipewire_proc_macro::RawWrapper;
+
 use crate::spa::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::pod::iterator::PodValueIterator;
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
@@ -57,8 +59,10 @@ impl<T: Clone> PodEnumValue<T> {
     }
 }
 
+#[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodEnumRef<T> {
+    #[raw]
     raw: spa_sys::spa_pod_choice,
     phantom: PhantomData<T>,
 }
@@ -72,32 +76,6 @@ impl<T: PodValue> PodEnumRef<T> {
 impl<'a, T: PodValue> From<&'a PodEnumRef<T>> for &'a PodChoiceRef<T> {
     fn from(value: &'a PodEnumRef<T>) -> Self {
         value.choice()
-    }
-}
-
-impl<T> crate::wrapper::RawWrapper for PodEnumRef<T>
-where
-    T: PodValue,
-{
-    type CType = spa_sys::spa_pod_choice;
-
-    fn as_raw_ptr(&self) -> *mut Self::CType {
-        &self.raw as *const _ as *mut _
-    }
-
-    fn as_raw(&self) -> &Self::CType {
-        &self.raw
-    }
-
-    fn from_raw(raw: Self::CType) -> Self {
-        Self {
-            raw,
-            phantom: PhantomData::default(),
-        }
-    }
-
-    unsafe fn mut_from_raw_ptr<'a>(raw: *mut Self::CType) -> &'a mut Self {
-        &mut *(raw as *mut PodEnumRef<T>)
     }
 }
 

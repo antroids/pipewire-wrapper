@@ -5,6 +5,8 @@ use std::mem::size_of;
 
 use spa_sys::spa_pod;
 
+use pipewire_proc_macro::RawWrapper;
+
 use crate::spa::pod::object::prop::Prop;
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
@@ -15,33 +17,12 @@ use crate::spa::pod::{
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
+#[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodIdRef<T: PodIdType = u32> {
+    #[raw]
     raw: spa_sys::spa_pod_id,
     phantom: PhantomData<T>,
-}
-
-impl<T: PodIdType> crate::wrapper::RawWrapper for PodIdRef<T> {
-    type CType = spa_sys::spa_pod_id;
-
-    fn as_raw_ptr(&self) -> *mut Self::CType {
-        &self.raw as *const _ as *mut _
-    }
-
-    fn as_raw(&self) -> &Self::CType {
-        &self.raw
-    }
-
-    fn from_raw(raw: Self::CType) -> Self {
-        Self {
-            raw,
-            phantom: PhantomData::default(),
-        }
-    }
-
-    unsafe fn mut_from_raw_ptr<'a>(raw: *mut Self::CType) -> &'a mut Self {
-        &mut *(raw as *mut PodIdRef<T>)
-    }
 }
 
 pub trait PodIdType
