@@ -116,6 +116,24 @@ fn get_field_type(field: &Field) -> &Type {
     &field.ty
 }
 
+fn strip_defaults_from_generics(generics: &mut Generics) {
+    generics.params.iter_mut().for_each(|p| {
+        if let GenericParam::Type(ty) = p {
+            ty.eq_token = None;
+            ty.default = None;
+        }
+    });
+}
+
+fn strip_bounds_from_generics(generics: &mut Generics) {
+    generics.params.iter_mut().for_each(|p| {
+        if let GenericParam::Type(ty) = p {
+            ty.colon_token = None;
+            ty.bounds = Punctuated::default();
+        }
+    });
+}
+
 struct SpaInterfaceAttr {
     methods: Type,
 }
@@ -206,26 +224,10 @@ pub fn derive_raw_wrapper(input: TokenStream) -> TokenStream {
         .collect();
 
     let mut struct_generics_without_default = struct_info.struct_generics.clone();
-    struct_generics_without_default
-        .params
-        .iter_mut()
-        .for_each(|p| {
-            if let GenericParam::Type(ty) = p {
-                ty.eq_token = None;
-                ty.default = None;
-            }
-        });
+    strip_defaults_from_generics(&mut struct_generics_without_default);
 
     let mut struct_generics_without_bounds = struct_generics_without_default.clone();
-    struct_generics_without_bounds
-        .params
-        .iter_mut()
-        .for_each(|p| {
-            if let GenericParam::Type(ty) = p {
-                ty.colon_token = None;
-                ty.bounds = Punctuated::default();
-            }
-        });
+    strip_bounds_from_generics(&mut struct_generics_without_bounds);
 
     quote!(
         impl #struct_generics_without_default crate::wrapper::RawWrapper for #struct_ident #struct_generics_without_bounds {
@@ -273,30 +275,35 @@ pub fn derive_wrapper(input: TokenStream) -> TokenStream {
     };
 
     let struct_ident = &struct_info.struct_ident;
-    let struct_generics = &struct_info.struct_generics;
     let raw_wrapper_field_ident = &struct_info.raw_wrapper_field.ident;
     let raw_wrapper_field_type = get_field_type(&struct_info.raw_wrapper_field);
 
+    let mut struct_generics_without_default = struct_info.struct_generics.clone();
+    strip_defaults_from_generics(&mut struct_generics_without_default);
+
+    let mut struct_generics_without_bounds = struct_generics_without_default.clone();
+    strip_bounds_from_generics(&mut struct_generics_without_bounds);
+
     quote!(
-        impl #struct_generics crate::wrapper::Wrapper for #struct_ident #struct_generics {
+        impl #struct_generics_without_default crate::wrapper::Wrapper for #struct_ident #struct_generics_without_bounds {
             type RawWrapperType = #raw_wrapper_field_type;
         }
 
-        impl #struct_generics AsRef<#raw_wrapper_field_type> for #struct_ident #struct_generics {
+        impl #struct_generics_without_default AsRef<#raw_wrapper_field_type> for #struct_ident #struct_generics_without_bounds {
             fn as_ref(&self) -> &<Self as crate::wrapper::Wrapper>::RawWrapperType {
                 use crate::wrapper::RawWrapper;
                 unsafe { self.#raw_wrapper_field_ident.as_ref() }
             }
         }
 
-        impl #struct_generics AsMut<#raw_wrapper_field_type> for #struct_ident #struct_generics {
+        impl #struct_generics_without_default AsMut<#raw_wrapper_field_type> for #struct_ident #struct_generics_without_bounds {
             fn as_mut(&mut self) -> &mut <Self as crate::wrapper::Wrapper>::RawWrapperType {
                 use crate::wrapper::RawWrapper;
                 unsafe { self.#raw_wrapper_field_ident.as_mut() }
             }
         }
 
-        impl #struct_generics std::ops::Deref for #struct_ident #struct_generics {
+        impl #struct_generics_without_default std::ops::Deref for #struct_ident #struct_generics_without_bounds {
             type Target = <Self as crate::wrapper::Wrapper>::RawWrapperType;
 
             fn deref(&self) -> &Self::Target {
@@ -305,7 +312,7 @@ pub fn derive_wrapper(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl #struct_generics std::ops::DerefMut for #struct_ident #struct_generics {
+        impl #struct_generics_without_default std::ops::DerefMut for #struct_ident #struct_generics_without_bounds {
             fn deref_mut(&mut self) -> &mut Self::Target {
                 use crate::wrapper::RawWrapper;
                 unsafe { self.#raw_wrapper_field_ident.as_mut() }

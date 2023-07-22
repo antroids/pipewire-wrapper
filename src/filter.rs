@@ -12,7 +12,7 @@ pub mod events;
 /// The filter object provides a convenient way to implement processing filters.
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
-pub struct FilterRef<T> {
+pub struct FilterRef<T: Default> {
     #[raw]
     raw: pw_sys::pw_filter,
     phantom: PhantomData<T>,
@@ -56,7 +56,7 @@ impl FilterState {
     }
 }
 
-impl<T> FilterRef<T> {}
+impl<T: Default> FilterRef<T> {}
 
 // impl<'a> AddListener<'a> for FilterRef {
 //     type Events = FilterEvents<'a>;
