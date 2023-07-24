@@ -91,16 +91,21 @@ macro_rules! spa_interface_call_impl {
 
 #[macro_export]
 macro_rules! events_builder_build {
-     ($events_struct:ident<$lifetime:lifetime>, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {
+    ($events_struct:ident<$lifetime:lifetime, $generic_type:ident>, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {
+         pub fn build(self) -> Pin<Box<$events_struct<$lifetime, $generic_type>>> {
+            events_builder_build!(@function_body_generic self, $events_struct<$generic_type>, $events_raw, $($callback_field => $callback,)*)
+         }
+    };
+    ($events_struct:ident<$lifetime:lifetime>, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {
          pub fn build(self) -> Pin<Box<$events_struct<$lifetime>>> {
             events_builder_build!(@function_body self, $events_struct, $events_raw, $($callback_field => $callback,)*)
          }
-     };
+    };
     ($events_struct:ident, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {
          pub fn build(self) -> Pin<Box<$events_struct>> {
             events_builder_build!(@function_body self, $events_struct, $events_raw, $($callback_field => $callback,)*)
          }
-     };
+    };
     (@function_body $self:ident, $events_struct:ident, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {{
             let hook = crate::spa::interface::Hook::new();
             let raw = $events_raw {
@@ -121,6 +126,30 @@ macro_rules! events_builder_build {
 
             $(if events.$callback_field.is_some() {
                 events.raw.raw.$callback_field = Some(<$events_struct>::$callback);
+            })*
+
+            events
+    }};
+    (@function_body_generic $self:ident, $events_struct:ident<$generic_type:ident>, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {{
+            let hook = crate::spa::interface::Hook::new();
+            let raw = $events_raw {
+                version: 0,
+                $($callback_field: None,
+                )*
+            };
+            let raw = <$events_struct<$generic_type> as crate::wrapper::Wrapper>::RawWrapperType::from_raw(raw);
+            let mut pinned_raw = Box::into_pin(Box::new(raw));
+
+            let mut events = Box::into_pin(Box::new($events_struct {
+                ref_: NonNull::new(pinned_raw.as_ptr()).unwrap(),
+                raw: pinned_raw,
+                hook,
+                $($callback_field: $self.$callback_field.flatten(),
+                )*
+            }));
+
+            $(if events.$callback_field.is_some() {
+                events.raw.raw.$callback_field = Some(<$events_struct::<$generic_type>>::$callback);
             })*
 
             events

@@ -1,9 +1,12 @@
 use std::any::TypeId;
+use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
 use std::mem::size_of;
 use std::ptr::addr_of;
+use std::slice;
 use std::time::Duration;
 
+use bitflags::bitflags;
 use spa_sys::spa_pod;
 
 use pipewire_macro_impl::enum_wrapper;
@@ -252,83 +255,6 @@ pub struct IOBuffersRef {
     raw: spa_sys::spa_io_buffers,
 }
 
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOMemoryRef {
-    #[raw]
-    raw: spa_sys::spa_io_memory,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IORangeRef {
-    #[raw]
-    raw: spa_sys::spa_io_range,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOClockRef {
-    #[raw]
-    raw: spa_sys::spa_io_clock,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOVideoSizeRef {
-    #[raw]
-    raw: spa_sys::spa_io_video_size,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOLatencyRef {
-    #[raw]
-    raw: spa_sys::spa_io_latency,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOSequenceRef {
-    #[raw]
-    raw: spa_sys::spa_io_sequence,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOSegmentBarRef {
-    #[raw]
-    raw: spa_sys::spa_io_segment_bar,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOSegmentVideoRef {
-    #[raw]
-    raw: spa_sys::spa_io_segment_video,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOSegmentRef {
-    #[raw]
-    raw: spa_sys::spa_io_segment,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IOPositionRef {
-    #[raw]
-    raw: spa_sys::spa_io_position,
-}
-
-#[derive(RawWrapper)]
-#[repr(transparent)]
-pub struct IORateMatchRef {
-    #[raw]
-    raw: spa_sys::spa_io_rate_match,
-}
-
 // #[derive(RawWrapper)]
 // #[repr(transparent)]
 // pub struct Ref {
@@ -337,6 +263,14 @@ pub struct IORateMatchRef {
 // }
 
 // todo ...
+
+enum_wrapper!(
+    PositionState,
+    spa_sys::spa_io_position_state,
+    STOPPED: spa_sys::SPA_IO_POSITION_STATE_STOPPED,
+    STARTING: spa_sys::SPA_IO_POSITION_STATE_STARTING,
+    RUNNING: spa_sys::SPA_IO_POSITION_STATE_RUNNING,
+);
 
 enum_wrapper!(
     Control,

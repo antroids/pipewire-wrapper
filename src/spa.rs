@@ -6,6 +6,7 @@ pub mod buffers;
 pub mod dict;
 pub mod handle;
 pub mod interface;
+pub mod io;
 pub mod list;
 pub mod loop_;
 pub mod param;

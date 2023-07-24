@@ -12,9 +12,7 @@ use pipewire_wrapper::spa::pod::choice::enum_::PodEnumValue;
 use pipewire_wrapper::spa::pod::id::PodIdType;
 use pipewire_wrapper::spa::pod::iterator::AllocatedPodIterator;
 use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatType;
-use pipewire_wrapper::spa::pod::object::format::{
-    AudioFormat, MediaSubType, MediaType, ObjectFormatType,
-};
+use pipewire_wrapper::spa::pod::object::format::{AudioFormat, MediaSubType, MediaType};
 use pipewire_wrapper::spa::pod::object::param_port_config::Direction;
 use pipewire_wrapper::spa::pod::object::{ObjectType, PodObjectRef};
 use pipewire_wrapper::spa::pod::pod_buf::AllocatedData;
@@ -28,7 +26,7 @@ const VOLUME: f64 = 0.7f64;
 
 const PI_POW_2: f64 = std::f64::consts::PI * std::f64::consts::PI;
 
-type AudioDataType = i16;
+type AudioDataType = f32;
 
 pub fn main() {
     let core = Arc::new(Core::default());
@@ -81,7 +79,7 @@ fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
                 ObjectEnumFormatType::MEDIA_TYPE(MediaType::AUDIO.as_alloc_pod().as_pod()),
                 ObjectEnumFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_alloc_pod().as_pod()),
                 ObjectEnumFormatType::AUDIO_FORMAT(
-                    PodEnumValue::from_default(AudioFormat::S16)
+                    PodEnumValue::from_default(AudioFormat::F32)
                         .to_alloc_pod()?
                         .as_pod()
                         .choice(),
