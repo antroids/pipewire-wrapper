@@ -20,6 +20,8 @@ pub struct FactoryEventsRef {
     raw: pw_sys::pw_factory_events,
 }
 
+pub type InfoCallback<'f> = Box<dyn for<'a> FnMut(&'a FactoryInfoRef) + 'f>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct FactoryEvents<'f> {
@@ -30,7 +32,7 @@ pub struct FactoryEvents<'f> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<Box<dyn for<'a> FnMut(&'a FactoryInfoRef) + 'f>>,
+    info: Option<InfoCallback<'f>>,
 }
 
 impl<'f> FactoryEvents<'f> {

@@ -28,6 +28,9 @@ pub struct NodeEventsRef {
     raw: pw_sys::pw_node_events,
 }
 
+pub type InfoCallback<'p> = Box<dyn for<'a> FnMut(&'a NodeInfoRef) + 'p>;
+pub type ParamCallback<'p> = Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct NodeEvents<'p> {
@@ -38,9 +41,9 @@ pub struct NodeEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<Box<dyn for<'a> FnMut(&'a NodeInfoRef) + 'p>>,
+    info: Option<InfoCallback<'p>>,
     #[builder(setter)]
-    param: Option<Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>>,
+    param: Option<ParamCallback<'p>>,
 }
 
 impl<'p> NodeEvents<'p> {
@@ -89,17 +92,13 @@ pub enum NodeEventType {
 }
 
 impl<'p> NodeEventsChannelBuilder<'p> {
-    fn info_send(
-        sender: Sender<'p, NodeEventType>,
-    ) -> Box<dyn for<'a> FnMut(&'a NodeInfoRef) + 'p> {
+    fn info_send(sender: Sender<'p, NodeEventType>) -> InfoCallback<'p> {
         Box::new(move |i| {
             sender.send(NodeEventType::Info(i.into()));
         })
     }
 
-    fn param_send(
-        sender: Sender<'p, NodeEventType>,
-    ) -> Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p> {
+    fn param_send(sender: Sender<'p, NodeEventType>) -> ParamCallback<'p> {
         Box::new(move |seq, type_, index, next, pod| {
             if let Ok(pod) = AllocatedData::from_pod(pod) {
                 sender.send(NodeEventType::Param(seq, type_, index, next, pod));

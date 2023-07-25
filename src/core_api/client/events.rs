@@ -22,6 +22,9 @@ pub struct ClientEventsRef {
     raw: pw_sys::pw_client_events,
 }
 
+pub type InfoCallback<'f> = Box<dyn for<'a> FnMut(&'a ClientInfoRef) + 'f>;
+pub type PermissionsCallback<'f> = Box<dyn for<'a> FnMut(u32, &'a [Permissions]) + 'f>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct ClientEvents<'f> {
@@ -32,9 +35,9 @@ pub struct ClientEvents<'f> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<Box<dyn for<'a> FnMut(&'a ClientInfoRef) + 'f>>,
+    info: Option<InfoCallback<'f>>,
     #[builder(setter)]
-    permissions: Option<Box<dyn for<'a> FnMut(u32, &'a [Permissions]) + 'f>>,
+    permissions: Option<PermissionsCallback<'f>>,
 }
 
 impl<'f> ClientEvents<'f> {

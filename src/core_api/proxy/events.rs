@@ -20,6 +20,12 @@ pub struct ProxyEventsRef {
     raw: pw_sys::pw_proxy_events,
 }
 
+pub type DestroyCallback<'p> = Box<dyn FnMut() + 'p>;
+pub type BoundCallback<'p> = Box<dyn FnMut(u32) + 'p>;
+pub type RemovedCallback<'p> = Box<dyn FnMut() + 'p>;
+pub type DoneCallback<'p> = Box<dyn FnMut(i32) + 'p>;
+pub type ErrorCallback<'p> = Box<dyn for<'a> FnMut(i32, i32, &'a CStr) + 'p>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct ProxyEvents<'p> {
@@ -30,15 +36,15 @@ pub struct ProxyEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    destroy: Option<Box<dyn FnMut() + 'p>>,
+    destroy: Option<DestroyCallback<'p>>,
     #[builder(setter)]
-    bound: Option<Box<dyn FnMut(u32) + 'p>>,
+    bound: Option<BoundCallback<'p>>,
     #[builder(setter)]
-    removed: Option<Box<dyn FnMut() + 'p>>,
+    removed: Option<RemovedCallback<'p>>,
     #[builder(setter)]
-    done: Option<Box<dyn FnMut(i32) + 'p>>,
+    done: Option<DoneCallback<'p>>,
     #[builder(setter)]
-    error: Option<Box<dyn for<'a> FnMut(i32, i32, &'a CStr) + 'p>>,
+    error: Option<ErrorCallback<'p>>,
 }
 
 impl<'p> ProxyEvents<'p> {

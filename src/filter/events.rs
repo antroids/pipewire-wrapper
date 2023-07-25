@@ -25,6 +25,18 @@ pub struct FilterEventsRef {
     raw: pw_sys::pw_filter_events,
 }
 
+pub type DestroyCallback<'p> = Box<dyn FnMut() + 'p>;
+pub type StateChangedCallback<'p> =
+    Box<dyn for<'a> FnMut(FilterState, FilterState, Option<&'a CStr>) + 'p>;
+pub type IOChangedCallback<'p, T> =
+    Box<dyn for<'a> FnMut(Option<&mut T>, u32, *mut ::std::os::raw::c_void, u32) + 'p>;
+pub type ParamChangedCallback<'p, T> = Box<dyn for<'a> FnMut(Option<&mut T>, u32, &'a PodRef) + 'p>;
+pub type AddBufferCallback<'p, T> = Box<dyn for<'a> FnMut(&mut T, &'a BufferRef) + 'p>;
+pub type RemoveBufferCallback<'p, T> = Box<dyn for<'a> FnMut(&mut T, &'a BufferRef) + 'p>;
+pub type ProcessCallback<'p> = Box<dyn for<'a> FnMut(&'a IOPositionRef) + 'p>;
+pub type DrainedCallback<'p> = Box<dyn FnMut() + 'p>;
+pub type CommandCallback<'p> = Box<dyn for<'a> FnMut(&'a CommandRef) + 'p>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct FilterEvents<'p, T> {
@@ -35,24 +47,23 @@ pub struct FilterEvents<'p, T> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    destroy: Option<Box<dyn FnMut() + 'p>>,
+    destroy: Option<DestroyCallback<'p>>,
     #[builder(setter)]
-    state_changed: Option<Box<dyn for<'a> FnMut(FilterState, FilterState, Option<&'a CStr>) + 'p>>,
+    state_changed: Option<StateChangedCallback<'p>>,
     #[builder(setter)]
-    io_changed:
-        Option<Box<dyn for<'a> FnMut(Option<&mut T>, u32, *mut ::std::os::raw::c_void, u32) + 'p>>,
+    io_changed: Option<IOChangedCallback<'p, T>>,
     #[builder(setter)]
-    param_changed: Option<Box<dyn for<'a> FnMut(Option<&mut T>, u32, &'a PodRef) + 'p>>,
+    param_changed: Option<ParamChangedCallback<'p, T>>,
     #[builder(setter)]
-    add_buffer: Option<Box<dyn for<'a> FnMut(&mut T, &'a BufferRef) + 'p>>,
+    add_buffer: Option<AddBufferCallback<'p, T>>,
     #[builder(setter)]
-    remove_buffer: Option<Box<dyn for<'a> FnMut(&mut T, &'a BufferRef) + 'p>>,
+    remove_buffer: Option<RemoveBufferCallback<'p, T>>,
     #[builder(setter)]
-    process: Option<Box<dyn for<'a> FnMut(&'a IOPositionRef) + 'p>>,
+    process: Option<ProcessCallback<'p>>,
     #[builder(setter)]
-    drained: Option<Box<dyn FnMut() + 'p>>,
+    drained: Option<DrainedCallback<'p>>,
     #[builder(setter)]
-    command: Option<Box<dyn for<'a> FnMut(&'a CommandRef) + 'p>>,
+    command: Option<CommandCallback<'p>>,
 }
 
 impl<'p, T> FilterEvents<'p, T> {

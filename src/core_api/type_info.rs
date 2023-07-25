@@ -107,7 +107,7 @@ impl Debug for TypeInfo<'_> {
 macro_rules! interface_type {
     ($interface_name:literal) => {{
         unsafe {
-            crate::core_api::type_info::TypeInfo::from_bytes_with_nul_unchecked(
+            $crate::core_api::type_info::TypeInfo::from_bytes_with_nul_unchecked(
                 concat!("PipeWire:Interface:", $interface_name, "\0").as_bytes(),
             )
         }

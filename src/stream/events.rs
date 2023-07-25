@@ -25,6 +25,18 @@ pub struct StreamEventsRef {
     raw: pw_sys::pw_stream_events,
 }
 
+pub type DestroyCallback<'p> = Box<dyn FnMut() + 'p>;
+pub type StateChangedCallback<'p> = Box<dyn for<'a> FnMut(State, State, Option<&'a CStr>) + 'p>;
+pub type ControlInfoCallback<'p> = Box<dyn for<'a> FnMut(u32, &'a ControlRef) + 'p>;
+pub type IOChangedCallback<'p> = Box<dyn for<'a> FnMut(u32, *mut ::std::os::raw::c_void, u32) + 'p>;
+pub type ParamChangedCallback<'p> = Box<dyn for<'a> FnMut(u32, &'a PodRef) + 'p>;
+pub type AddBufferCallback<'p> = Box<dyn for<'a> FnMut(&'a BufferRef) + 'p>;
+pub type RemoveBufferCallback<'p> = Box<dyn for<'a> FnMut(&'a BufferRef) + 'p>;
+pub type ProcessCallback<'p> = Box<dyn FnMut() + 'p>;
+pub type DrainedCallback<'p> = Box<dyn FnMut() + 'p>;
+pub type CommandCallback<'p> = Box<dyn for<'a> FnMut(&'a CommandRef) + 'p>;
+pub type TriggerDoneCallback<'p> = Box<dyn FnMut() + 'p>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct StreamEvents<'p> {
@@ -35,27 +47,27 @@ pub struct StreamEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    destroy: Option<Box<dyn FnMut() + 'p>>,
+    destroy: Option<DestroyCallback<'p>>,
     #[builder(setter)]
-    state_changed: Option<Box<dyn for<'a> FnMut(State, State, Option<&'a CStr>) + 'p>>,
+    state_changed: Option<StateChangedCallback<'p>>,
     #[builder(setter)]
-    control_info: Option<Box<dyn for<'a> FnMut(u32, &'a ControlRef) + 'p>>,
+    control_info: Option<ControlInfoCallback<'p>>,
     #[builder(setter)]
-    io_changed: Option<Box<dyn for<'a> FnMut(u32, *mut ::std::os::raw::c_void, u32) + 'p>>,
+    io_changed: Option<IOChangedCallback<'p>>,
     #[builder(setter)]
-    param_changed: Option<Box<dyn for<'a> FnMut(u32, &'a PodRef) + 'p>>,
+    param_changed: Option<ParamChangedCallback<'p>>,
     #[builder(setter)]
-    add_buffer: Option<Box<dyn for<'a> FnMut(&'a BufferRef) + 'p>>,
+    add_buffer: Option<AddBufferCallback<'p>>,
     #[builder(setter)]
-    remove_buffer: Option<Box<dyn for<'a> FnMut(&'a BufferRef) + 'p>>,
+    remove_buffer: Option<RemoveBufferCallback<'p>>,
     #[builder(setter)]
-    process: Option<Box<dyn FnMut() + 'p>>,
+    process: Option<ProcessCallback<'p>>,
     #[builder(setter)]
-    drained: Option<Box<dyn FnMut() + 'p>>,
+    drained: Option<DrainedCallback<'p>>,
     #[builder(setter)]
-    command: Option<Box<dyn for<'a> FnMut(&'a CommandRef) + 'p>>,
+    command: Option<CommandCallback<'p>>,
     #[builder(setter)]
-    trigger_done: Option<Box<dyn FnMut() + 'p>>,
+    trigger_done: Option<TriggerDoneCallback<'p>>,
 }
 
 impl<'p> StreamEvents<'p> {

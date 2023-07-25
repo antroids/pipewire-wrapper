@@ -24,6 +24,9 @@ pub struct PortEventsRef {
     raw: pw_sys::pw_port_events,
 }
 
+pub type InfoCallback<'p> = Box<dyn for<'a> FnMut(&'a PortInfoRef) + 'p>;
+pub type ParamCallback<'p> = Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct PortEvents<'p> {
@@ -34,9 +37,9 @@ pub struct PortEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<Box<dyn for<'a> FnMut(&'a PortInfoRef) + 'p>>,
+    info: Option<InfoCallback<'p>>,
     #[builder(setter)]
-    param: Option<Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>>,
+    param: Option<ParamCallback<'p>>,
 }
 
 impl<'p> PortEvents<'p> {

@@ -26,6 +26,10 @@ pub struct RegistryEventsRef {
     raw: pw_sys::pw_registry_events,
 }
 
+pub type GlobalCallback<'r> =
+    Box<dyn for<'a> FnMut(u32, Permissions, TypeInfo<'a>, u32, &'a DictRef) + 'r>;
+pub type GlobalRemoveCallback<'r> = Box<dyn FnMut(u32) + 'r>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct RegistryEvents<'r> {
@@ -36,9 +40,9 @@ pub struct RegistryEvents<'r> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    global: Option<Box<dyn for<'a> FnMut(u32, Permissions, TypeInfo<'a>, u32, &'a DictRef) + 'r>>,
+    global: Option<GlobalCallback<'r>>,
     #[builder(setter)]
-    global_remove: Option<Box<dyn FnMut(u32) + 'r>>,
+    global_remove: Option<GlobalRemoveCallback<'r>>,
 }
 
 impl<'r> RegistryEvents<'r> {

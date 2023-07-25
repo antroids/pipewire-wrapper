@@ -22,6 +22,12 @@ pub struct ContextEventsRef {
     raw: pw_sys::pw_context_events,
 }
 
+pub type DestroyCallback<'c> = Box<dyn FnMut() + 'c>;
+pub type FreeCallback<'c> = Box<dyn FnMut() + 'c>;
+pub type CheckAccessCallback<'c> = Box<dyn for<'a> FnMut(&'a ImplClientRef) + 'c>;
+pub type GlobalAddedCallback<'c> = Box<dyn for<'a> FnMut(&'a GlobalRef) + 'c>;
+pub type GlobalRemovedCallback<'c> = Box<dyn for<'a> FnMut(&'a GlobalRef) + 'c>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct ContextEvents<'c> {
@@ -32,15 +38,15 @@ pub struct ContextEvents<'c> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    destroy: Option<Box<dyn FnMut() + 'c>>,
+    destroy: Option<DestroyCallback<'c>>,
     #[builder(setter)]
-    free: Option<Box<dyn FnMut() + 'c>>,
+    free: Option<FreeCallback<'c>>,
     #[builder(setter)]
-    check_access: Option<Box<dyn for<'a> FnMut(&'a ImplClientRef) + 'c>>,
+    check_access: Option<CheckAccessCallback<'c>>,
     #[builder(setter)]
-    global_added: Option<Box<dyn for<'a> FnMut(&'a GlobalRef) + 'c>>,
+    global_added: Option<GlobalAddedCallback<'c>>,
     #[builder(setter)]
-    global_removed: Option<Box<dyn for<'a> FnMut(&'a GlobalRef) + 'c>>,
+    global_removed: Option<GlobalRemovedCallback<'c>>,
 }
 
 impl<'c> ContextEvents<'c> {

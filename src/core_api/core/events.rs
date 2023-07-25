@@ -22,6 +22,15 @@ pub struct CoreEventsRef {
     raw: pw_sys::pw_core_events,
 }
 
+pub type InfoCallback<'c> = Box<dyn FnMut(&'c CoreInfoRef) + 'c>;
+pub type DoneCallback<'c> = Box<dyn FnMut(u32, i32) + 'c>;
+pub type PingCallback<'c> = Box<dyn FnMut(u32, i32) + 'c>;
+pub type ErrorCallback<'c> = Box<dyn FnMut(u32, i32, i32, &CStr) + 'c>;
+pub type RemoveIdCallback<'c> = Box<dyn FnMut(u32) + 'c>;
+pub type BoundIdCallback<'c> = Box<dyn FnMut(u32, u32) + 'c>;
+pub type AddMemCallback<'c> = Box<dyn FnMut(u32, u32, RawFd, u32) + 'c>;
+pub type RemoveMemCallback<'c> = Box<dyn FnMut(u32) + 'c>;
+
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
 pub struct CoreEvents<'c> {
@@ -32,21 +41,21 @@ pub struct CoreEvents<'c> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<Box<dyn FnMut(&'c CoreInfoRef) + 'c>>,
+    info: Option<InfoCallback<'c>>,
     #[builder(setter)]
-    done: Option<Box<dyn FnMut(u32, i32) + 'c>>,
+    done: Option<DoneCallback<'c>>,
     #[builder(setter)]
-    ping: Option<Box<dyn FnMut(u32, i32) + 'c>>,
+    ping: Option<PingCallback<'c>>,
     #[builder(setter)]
-    error: Option<Box<dyn FnMut(u32, i32, i32, &CStr) + 'c>>,
+    error: Option<ErrorCallback<'c>>,
     #[builder(setter)]
-    remove_id: Option<Box<dyn FnMut(u32) + 'c>>,
+    remove_id: Option<RemoveIdCallback<'c>>,
     #[builder(setter)]
-    bound_id: Option<Box<dyn FnMut(u32, u32) + 'c>>,
+    bound_id: Option<BoundIdCallback<'c>>,
     #[builder(setter)]
-    add_mem: Option<Box<dyn FnMut(u32, u32, RawFd, u32) + 'c>>,
+    add_mem: Option<AddMemCallback<'c>>,
     #[builder(setter)]
-    remove_mem: Option<Box<dyn FnMut(u32) + 'c>>,
+    remove_mem: Option<RemoveMemCallback<'c>>,
 }
 
 impl<'c> CoreEvents<'c> {
