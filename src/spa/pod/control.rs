@@ -9,8 +9,8 @@ use crate::spa::pod::bytes::PodBytesRef;
 use crate::spa::pod::iterator::PodIterator;
 use crate::spa::pod::object::prop::ObjectPropType;
 use crate::spa::pod::object::{ObjectPropsIterator, ObjectType, PodPropRef};
-use crate::spa::pod::restricted::PodHeader;
-use crate::spa::pod::{BasicTypePod, PodError, PodRawValue, PodRef, PodResult, PodValue, SizedPod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue};
+use crate::spa::pod::{BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod};
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper)]

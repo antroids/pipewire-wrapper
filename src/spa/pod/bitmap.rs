@@ -7,10 +7,9 @@ use spa_sys::spa_pod;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::pod_buf::PodBuf;
-use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, PodRawValue, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
-    POD_ALIGN,
+    BasicTypePod, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;

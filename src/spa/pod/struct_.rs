@@ -4,10 +4,8 @@ use std::io::{Seek, Write};
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::iterator::PodIterator;
-use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
-use crate::spa::pod::{
-    BasicTypePod, PodRawValue, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue,
-};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::{BasicTypePod, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]

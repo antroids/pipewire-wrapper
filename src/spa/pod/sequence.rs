@@ -5,8 +5,8 @@ use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::control::PodControlRef;
 use crate::spa::pod::iterator::PodIterator;
-use crate::spa::pod::restricted::{PodHeader, StaticTypePod, WritePod};
-use crate::spa::pod::{BasicType, PodRawValue, PodResult, PodValue, SizedPod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod, WritePod};
+use crate::spa::pod::{BasicType, PodResult, PodValue, SizedPod};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
