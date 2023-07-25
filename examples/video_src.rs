@@ -299,7 +299,7 @@ fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
                         .choice(),
                 ),
                 &ObjectEnumFormatType::VIDEO_SIZE(
-                    &PodRangeRef::<PodRectangleRef>::from_value(&PodRangeValue::new(
+                    PodRangeRef::<PodRectangleRef>::from_value(&PodRangeValue::new(
                         RectangleRef::new(320, 240),
                         RectangleRef::new(1, 1),
                         RectangleRef::new(4096, 4096),
@@ -308,7 +308,7 @@ fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
                     .choice(),
                 ),
                 &ObjectEnumFormatType::VIDEO_FRAMERATE(
-                    &PodNoneRef::<PodFractionRef>::from_value(&FractionRef::new(25, 1))?
+                    PodNoneRef::<PodFractionRef>::from_value(&FractionRef::new(25, 1))?
                         .as_pod()
                         .choice(),
                 ),
@@ -351,7 +351,7 @@ fn stream_params(
             AllocatedPodIterator::from_values([
                 &ParamMetaType::TYPE(MetaType::HEADER.as_alloc_pod().as_pod()),
                 &ParamMetaType::SIZE(
-                    &PodNoneRef::from_primitive(size_of::<spa_sys::spa_meta_header>() as i32)?
+                    PodNoneRef::from_primitive(size_of::<spa_sys::spa_meta_header>() as i32)?
                         .as_pod()
                         .choice(),
                 ),
@@ -365,7 +365,7 @@ fn stream_params(
             AllocatedPodIterator::from_values([
                 &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.as_alloc_pod().as_pod()),
                 &ParamMetaType::SIZE(
-                    &PodRangeRef::from_primitive(PodRangeValue::new(
+                    PodRangeRef::from_primitive(PodRangeValue::new(
                         size_of::<spa_sys::spa_meta_region>() as i32 * 16,
                         size_of::<spa_sys::spa_meta_region>() as i32 * 1,
                         size_of::<spa_sys::spa_meta_region>() as i32 * 16,
@@ -383,7 +383,7 @@ fn stream_params(
             AllocatedPodIterator::from_values([
                 &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.as_alloc_pod().as_pod()),
                 &ParamMetaType::SIZE(
-                    &PodNoneRef::from_primitive(size_of::<spa_sys::spa_meta_region>() as i32)?
+                    PodNoneRef::from_primitive(size_of::<spa_sys::spa_meta_region>() as i32)?
                         .as_pod()
                         .choice(),
                 ),
@@ -397,7 +397,7 @@ fn stream_params(
             AllocatedPodIterator::from_values([
                 &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.as_alloc_pod().as_pod()),
                 &ParamMetaType::SIZE(
-                    &PodNoneRef::from_primitive(
+                    PodNoneRef::from_primitive(
                         (size_of::<spa_sys::spa_meta_cursor>() as u32
                             + size_of::<spa_sys::spa_meta_bitmap>() as u32
                             + size.width() * size.height() * BPP) as i32,

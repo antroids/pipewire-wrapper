@@ -87,7 +87,7 @@ fn add_device_added_event<'a>(
                 let device_added_queue = device_added_queue.lock().unwrap();
                 let new_device_ids: Vec<&u32> = device_added_queue
                     .iter()
-                    .filter(|device_id| !devices.contains_key(&device_id))
+                    .filter(|device_id| !devices.contains_key(device_id))
                     .collect();
                 for &id in new_device_ids {
                     let device: Device = registry.bind_proxy(id, 0).unwrap();

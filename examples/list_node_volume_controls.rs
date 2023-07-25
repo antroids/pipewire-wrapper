@@ -80,7 +80,7 @@ fn add_node_added_event<'a>(
                 let node_added_queue = node_added_queue.lock().unwrap();
                 let new_node_ids: Vec<&u32> = node_added_queue
                     .iter()
-                    .filter(|node_id| !nodes.contains_key(&node_id))
+                    .filter(|node_id| !nodes.contains_key(node_id))
                     .collect();
                 for &id in new_node_ids {
                     let node: Node = registry.bind_proxy(id, 0).unwrap();

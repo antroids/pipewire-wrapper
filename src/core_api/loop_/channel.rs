@@ -69,7 +69,7 @@ impl<'a, T> Sender<'a, T> {
         {
             loop_
                 .utils()
-                .signal_event(&event)
+                .signal_event(event)
                 .map_err(|e| SendError::CannotSignalEvent(e))?;
         }
         Ok(())

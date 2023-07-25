@@ -103,7 +103,7 @@ impl<'c> Registry<'c> {
     {
         let type_info = T::RawWrapperType::type_info();
         let ref_ = self.bind(id, type_info, version, 0)?;
-        Ok(T::from_ref(&self.ref_.core(), ref_))
+        Ok(T::from_ref(self.ref_.core(), ref_))
     }
 }
 

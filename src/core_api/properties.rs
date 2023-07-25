@@ -129,7 +129,7 @@ impl PropertiesRef {
         unsafe {
             let value = pw_sys::pw_properties_get(self.as_raw_ptr(), key.as_ptr());
             if let Some(value) = value.as_ref() {
-                Some(&CStr::from_ptr(value))
+                Some(CStr::from_ptr(value))
             } else {
                 None
             }
