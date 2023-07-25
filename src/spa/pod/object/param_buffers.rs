@@ -30,7 +30,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamBuffersType<'a>>> for ParamBuffersType<
                 ParamBuffers::STRIDE => Ok(ParamBuffersType::STRIDE(value.pod().cast()?)),
                 ParamBuffers::ALIGN => Ok(ParamBuffersType::ALIGN(value.pod().cast()?)),
                 ParamBuffers::DATATYPE => Ok(ParamBuffersType::DATATYPE(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

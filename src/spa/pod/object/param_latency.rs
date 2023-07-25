@@ -37,7 +37,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamLatencyType<'a>>> for ParamLatencyType<
                 ParamLatency::MAX_RATE => Ok(ParamLatencyType::MAX_RATE(value.pod().cast()?)),
                 ParamLatency::MIN_NS => Ok(ParamLatencyType::MIN_NS(value.pod().cast()?)),
                 ParamLatency::MAX_NS => Ok(ParamLatencyType::MAX_NS(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

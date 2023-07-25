@@ -123,7 +123,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ObjectFormatType<'a>>> for ObjectFormatType<
                 Format::VIDEO_H264_ALIGNMENT => {
                     Ok(ObjectFormatType::VIDEO_H264_ALIGNMENT(value.pod().cast()?))
                 }
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

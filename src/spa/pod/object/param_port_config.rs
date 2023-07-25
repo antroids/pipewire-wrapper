@@ -31,7 +31,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamPortConfigType<'a>>> for ParamPortConfi
                 ParamPortConfig::MONITOR => Ok(ParamPortConfigType::MONITOR(value.pod().cast()?)),
                 ParamPortConfig::CONTROL => Ok(ParamPortConfigType::CONTROL(value.pod().cast()?)),
                 ParamPortConfig::FORMAT => Ok(ParamPortConfigType::FORMAT(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

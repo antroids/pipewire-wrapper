@@ -65,7 +65,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ObjectPropInfoType<'a>>> for ObjectPropInfoT
                 PropInfo::CONTAINER => Ok(ObjectPropInfoType::CONTAINER(value.pod().cast()?)),
                 PropInfo::PARAMS => Ok(ObjectPropInfoType::PARAMS(value.pod().cast()?)),
                 PropInfo::DESCRIPTION => Ok(ObjectPropInfoType::DESCRIPTION(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

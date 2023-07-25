@@ -29,7 +29,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ProfilerType<'a>>> for ProfilerType<'a> {
                 Profiler::CLOCK => Ok(ProfilerType::CLOCK(value.pod().cast()?)),
                 Profiler::DRIVER_BLOCK => Ok(ProfilerType::DRIVER_BLOCK(value.pod().cast()?)),
                 Profiler::FOLLOWER_BLOCK => Ok(ProfilerType::FOLLOWER_BLOCK(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

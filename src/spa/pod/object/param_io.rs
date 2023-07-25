@@ -21,7 +21,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamIoType<'a>>> for ParamIoType<'a> {
             match ParamIo::from_raw(value.raw.key) {
                 ParamIo::ID => Ok(ParamIoType::ID(value.pod().cast()?)),
                 ParamIo::SIZE => Ok(ParamIoType::SIZE(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

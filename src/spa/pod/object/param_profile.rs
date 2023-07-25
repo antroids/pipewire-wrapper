@@ -35,7 +35,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamProfileType<'a>>> for ParamProfileType<
                 ParamProfile::INFO => Ok(ParamProfileType::INFO(value.pod().cast()?)),
                 ParamProfile::CLASSES => Ok(ParamProfileType::CLASSES(value.pod().cast()?)),
                 ParamProfile::SAVE => Ok(ParamProfileType::SAVE(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

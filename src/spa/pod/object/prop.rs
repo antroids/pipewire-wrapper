@@ -218,7 +218,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ObjectPropType<'a>>> for ObjectPropType<'a> 
                 Prop::GAIN => Ok(ObjectPropType::GAIN(value.pod().cast()?)),
                 Prop::SHARPNESS => Ok(ObjectPropType::SHARPNESS(value.pod().cast()?)),
                 Prop::PARAMS => Ok(ObjectPropType::PARAMS(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

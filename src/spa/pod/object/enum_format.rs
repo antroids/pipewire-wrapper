@@ -144,7 +144,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ObjectEnumFormatType<'a>>> for ObjectEnumFor
                 Format::VIDEO_H264_ALIGNMENT => Ok(ObjectEnumFormatType::VIDEO_H264_ALIGNMENT(
                     value.pod().cast()?,
                 )),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }

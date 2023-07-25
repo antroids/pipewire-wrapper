@@ -47,7 +47,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamRouteType<'a>>> for ParamRouteType<'a> 
                 ParamRoute::DEVICES => Ok(ParamRouteType::DEVICES(value.pod().cast()?)),
                 ParamRoute::PROFILE => Ok(ParamRouteType::PROFILE(value.pod().cast()?)),
                 ParamRoute::SAVE => Ok(ParamRouteType::SAVE(value.pod().cast()?)),
-                _ => return Err(PodError::UnknownPodTypeToDowncast),
+                _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }
