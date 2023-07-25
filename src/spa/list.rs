@@ -70,7 +70,7 @@ where
         let list = self.as_list_ptr();
         unsafe {
             (*list).next == (*list).prev
-                && (*list).next as *const spa_list == list as *const spa_list
+                && std::ptr::eq((*list).next, list)
         }
     }
 
