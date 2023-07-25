@@ -175,8 +175,13 @@ fn test_create_core() {
     let timer_callback = |_| {
         core.context().main_loop().quit();
     };
-    let timer = main_loop.add_timer(Box::new(timer_callback)).unwrap();
-    main_loop.update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false);
+    let timer = main_loop
+        .get_loop()
+        .add_timer(Box::new(timer_callback))
+        .unwrap();
+    main_loop
+        .get_loop()
+        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false);
 
     main_loop.run();
 }

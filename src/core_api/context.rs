@@ -232,11 +232,15 @@ fn test_context_init() {
     };
     let timer = context
         .main_loop()
+        .get_loop()
         .add_timer(Box::new(timer_callback))
         .unwrap();
-    context
-        .main_loop
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false);
+    context.main_loop.get_loop().update_timer(
+        &timer,
+        Duration::from_secs(1),
+        Duration::ZERO,
+        false,
+    );
 
     context.main_loop().run();
 }
@@ -260,11 +264,15 @@ fn test_context_events() {
     };
     let timer = context
         .main_loop()
+        .get_loop()
         .add_timer(Box::new(timer_callback))
         .unwrap();
-    context
-        .main_loop
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false);
+    context.main_loop.get_loop().update_timer(
+        &timer,
+        Duration::from_secs(1),
+        Duration::ZERO,
+        false,
+    );
 
     context.main_loop().run();
 }

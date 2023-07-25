@@ -69,8 +69,12 @@ pub fn main() {
     let quit_main_loop = Box::new(|_| {
         main_loop.quit().unwrap();
     });
-    let _sigint_handler = main_loop.add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
-    let _sigterm_handler = main_loop.add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+    let _sigint_handler = main_loop
+        .get_loop()
+        .add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
+    let _sigterm_handler = main_loop
+        .get_loop()
+        .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
     let stream = Arc::new(
         Stream::new(
@@ -81,6 +85,7 @@ pub fn main() {
         .unwrap(),
     );
     let timeout_timer = main_loop
+        .get_loop()
         .add_timer(Box::new({
             let stream = stream.clone();
             move |_| stream.trigger_process().unwrap()
@@ -241,9 +246,14 @@ fn on_state_changed(to: stream::State, state: &Arc<Mutex<State>>) {
     let state = state.lock().unwrap();
     match to {
         stream::State::ERROR | stream::State::UNCONNECTED => state.loop_.quit().unwrap(),
-        stream::State::PAUSED => state.loop_.disable_timer(&state.timeout_timer).unwrap(),
+        stream::State::PAUSED => state
+            .loop_
+            .get_loop()
+            .disable_timer(&state.timeout_timer)
+            .unwrap(),
         stream::State::STREAMING => state
             .loop_
+            .get_loop()
             .update_timer(
                 &state.timeout_timer,
                 Duration::from_nanos(1),

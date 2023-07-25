@@ -1,8 +1,14 @@
+use std::os::fd::RawFd;
+use std::time::Duration;
+
 use pipewire_proc_macro::{spa_interface, RawWrapper};
 
 use crate::spa;
 use crate::spa::loop_::utils::LoopUtilsRef;
-use crate::spa::loop_::{AsLoopRef, LoopControlRef};
+use crate::spa::loop_::{
+    AsLoopRef, EventSource, IOSource, IdleSource, LoopControlRef, SignalSource, SourceRef,
+    TimerSource,
+};
 use crate::spa::system::SystemRef;
 use crate::wrapper::*;
 
@@ -34,6 +40,92 @@ impl LoopRef {
 
     pub fn iter(&self, timeout_millis: i32) -> LoopRefIterator {
         LoopRefIterator::new(self, timeout_millis)
+    }
+}
+
+impl LoopRef {
+    pub fn add_io<'l, F>(
+        &'l self,
+        fd: RawFd,
+        mask: u32,
+        callback: Box<F>,
+    ) -> crate::Result<IOSource<'l>>
+    where
+        F: FnMut(RawFd, u32),
+        F: 'l,
+    {
+        self.utils().add_io(self, fd, mask, callback)
+    }
+
+    pub fn update_io(&self, source: &IOSource, mask: u32) -> crate::Result<()> {
+        self.utils().update_io(source, mask)
+    }
+
+    pub fn add_idle<'l, F>(
+        &'l self,
+        enabled: bool,
+        callback: Box<F>,
+    ) -> crate::Result<IdleSource<'l>>
+    where
+        F: FnMut(),
+        F: 'l,
+    {
+        self.utils().add_idle(self, enabled, callback)
+    }
+
+    pub fn enable_idle(&self, source: &IdleSource, enabled: bool) -> crate::Result<()> {
+        self.utils().enable_idle(source, enabled)
+    }
+
+    pub fn add_event<'l, F>(&'l self, callback: Box<F>) -> crate::Result<EventSource<'l>>
+    where
+        F: FnMut(u64),
+        F: 'l,
+    {
+        self.utils().add_event(self, callback)
+    }
+
+    pub fn signal_event(&self, source: &EventSource) -> crate::Result<()> {
+        self.utils().signal_event(source)
+    }
+
+    pub fn add_timer<'l, F>(&'l self, callback: Box<F>) -> crate::Result<TimerSource<'l>>
+    where
+        F: FnMut(u64),
+        F: 'l,
+    {
+        self.utils().add_timer(self, callback)
+    }
+
+    pub fn update_timer(
+        &self,
+        source: &TimerSource,
+        value: Duration,
+        interval: Duration,
+        absolute: bool,
+    ) -> crate::Result<()> {
+        self.utils().update_timer(source, value, interval, absolute)
+    }
+
+    pub fn disable_timer(&self, source: &TimerSource) -> crate::Result<()> {
+        self.utils().disable_timer(source)
+    }
+
+    pub fn add_signal<'l, F>(
+        &'l self,
+        signal_number: i32,
+        callback: Box<F>,
+    ) -> crate::Result<SignalSource<'l>>
+    where
+        F: FnMut(i32),
+        F: 'l,
+    {
+        self.utils().add_signal(self, signal_number, callback)
+    }
+
+    /// Must be called inside loop or when loop is not running
+    pub fn destroy_source(&self, source: &SourceRef) -> crate::Result<()> {
+        self.utils().destroy_source(source)
     }
 }
 

@@ -48,8 +48,12 @@ fn main() {
     let quit_main_loop = Box::new(|_| {
         main_loop.quit().unwrap();
     });
-    let _sigint_handler = main_loop.add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
-    let _sigterm_handler = main_loop.add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+    let _sigint_handler = main_loop
+        .get_loop()
+        .add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
+    let _sigterm_handler = main_loop
+        .get_loop()
+        .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
     println!("Running main loop");
     main_loop.run().unwrap();
@@ -66,7 +70,10 @@ fn add_registry_listener<'a>(
             move |id, _permissions, type_info, _version, _props| {
                 if type_info == DeviceRef::type_info() {
                     device_added_queue.lock().unwrap().push(id);
-                    main_loop.signal_event(&device_added_event).unwrap();
+                    main_loop
+                        .get_loop()
+                        .signal_event(&device_added_event)
+                        .unwrap();
                 }
             },
         ))
@@ -81,6 +88,7 @@ fn add_device_added_event<'a>(
     device_added_queue: Arc<Mutex<Vec<u32>>>,
 ) -> EventSource<'a> {
     main_loop
+        .get_loop()
         .add_event(Box::new({
             move |_count| {
                 let devices = &mut devices.lock().unwrap();

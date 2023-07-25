@@ -24,8 +24,12 @@ pub fn main() {
     let quit_main_loop = Box::new(|_| {
         main_loop.quit().unwrap();
     });
-    let _sigint_handler = main_loop.add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
-    let _sigterm_handler = main_loop.add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+    let _sigint_handler = main_loop
+        .get_loop()
+        .add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
+    let _sigterm_handler = main_loop
+        .get_loop()
+        .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
     let latency_param = PodObjectRef::from_id_and_value(
         ParamType::PROCESS_LATENCY,

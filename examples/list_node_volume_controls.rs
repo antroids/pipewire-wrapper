@@ -59,7 +59,10 @@ fn add_registry_listener<'a>(
             move |id, _permissions, type_info, _version, _props| {
                 if type_info == NodeRef::type_info() {
                     node_added_queue.lock().unwrap().push(id);
-                    main_loop.signal_event(&node_added_event).unwrap();
+                    main_loop
+                        .get_loop()
+                        .signal_event(&node_added_event)
+                        .unwrap();
                 }
             },
         ))
@@ -74,6 +77,7 @@ fn add_node_added_event<'a>(
     node_added_queue: Arc<Mutex<Vec<u32>>>,
 ) -> EventSource<'a> {
     main_loop
+        .get_loop()
         .add_event(Box::new({
             move |_count| {
                 let nodes = &mut nodes.lock().unwrap();
