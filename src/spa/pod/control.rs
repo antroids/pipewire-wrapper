@@ -74,8 +74,8 @@ impl<'a> PodValue for &'a PodControlRef {
             Type::PROPERTIES => Ok(ControlType::PROPERTIES(PodIterator::from_container(
                 control,
             ))),
-            Type::MIDI => control.value_pod().cast().map(|r| ControlType::MIDI(r)),
-            Type::OSC => control.value_pod().cast().map(|r| ControlType::OSC(r)),
+            Type::MIDI => control.value_pod().cast().map(ControlType::MIDI),
+            Type::OSC => control.value_pod().cast().map(ControlType::OSC),
             type_ => Err(PodError::UnexpectedControlType(type_.raw)),
         }
     }

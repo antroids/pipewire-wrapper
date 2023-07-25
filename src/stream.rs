@@ -73,7 +73,7 @@ impl StreamRef {
         unsafe {
             let state = State::from_raw(pw_sys::pw_stream_get_state(self.as_raw_ptr(), error_ptr));
             let error_c_str = error_ptr.as_mut().map(|ptr| CStr::from_ptr(*ptr));
-            let error = error_c_str.map(|c_str| CString::from(c_str));
+            let error = error_c_str.map(CString::from);
             (state, error)
         }
     }

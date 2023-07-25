@@ -134,13 +134,9 @@ impl NodeInfo {
             n_input_ports: raw.n_input_ports,
             n_output_ports: raw.n_output_ports,
             state: ref_.state(),
-            error: ref_.error().map(|s| CString::from(s)),
+            error: ref_.error().map(CString::from),
             props: ref_.props().into(),
-            params: ref_
-                .params()
-                .iter()
-                .map(|p| ParamInfo::from_ref(p))
-                .collect(),
+            params: ref_.params().iter().map(ParamInfo::from_ref).collect(),
         }
     }
 

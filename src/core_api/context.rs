@@ -252,7 +252,7 @@ fn test_context_events() {
         .build();
     let events = context.add_listener(events);
 
-    let core = Core::connect(&context, Properties::default(), 0).unwrap();
+    let core = Core::connect(&context, Properties::default()).unwrap();
     let registry = core.get_registry(0);
 
     let timer_callback = |_| {

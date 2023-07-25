@@ -71,7 +71,7 @@ impl FactoryInfo {
     pub fn from_ref(ref_: &FactoryInfoRef) -> Self {
         Self {
             id: ref_.id(),
-            name: ref_.name().map(|s| CString::from(s)),
+            name: ref_.name().map(CString::from),
             type_: ref_.type_().map(|t| Box::from(t.as_c_str())),
             version: ref_.version(),
             change_mask: ref_.change_mask(),

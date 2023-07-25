@@ -71,9 +71,9 @@ impl CoreInfo {
         Self {
             id: raw.id,
             cookie: raw.cookie,
-            user_name: ref_.user_name().map(|s| CString::from(s)),
-            host_name: ref_.host_name().map(|s| CString::from(s)),
-            version: ref_.version().map(|s| CString::from(s)),
+            user_name: ref_.user_name().map(CString::from),
+            host_name: ref_.host_name().map(CString::from),
+            version: ref_.version().map(CString::from),
             change_mask: ref_.change_mask(),
             props: ref_.props().into(),
         }

@@ -79,7 +79,7 @@ impl DeviceInfo {
             params: ref_
                 .params()
                 .iter()
-                .map(|p| ParamInfo::from_ref(p))
+                .map(ParamInfo::from_ref)
                 .collect(),
         }
     }
