@@ -66,17 +66,21 @@ impl PropertiesRef {
         NonNull::new(ptr as *mut PropertiesRef).unwrap()
     }
 
-    pub fn update_keys(&self, source: &DictRef, keys_to_update: &Vec<&CStr>) -> i32 {
-        let mut keys: Vec<*const c_char> =
-            keys_to_update.clone().iter().map(|k| k.as_ptr()).collect();
+    pub fn update_keys(&self, source: &DictRef, keys_to_update: &[&CStr]) -> i32 {
+        let mut keys: Vec<*const c_char> = keys_to_update
+            .to_owned()
+            .iter()
+            .map(|k| k.as_ptr())
+            .collect();
         keys.push(null() as *const c_char);
         unsafe {
             pw_sys::pw_properties_update_keys(self.as_raw_ptr(), source.as_raw_ptr(), keys.as_ptr())
         }
     }
 
-    pub fn update_ignore(&self, source: &DictRef, ignore_keys: &Vec<&CStr>) -> i32 {
-        let mut keys: Vec<*const c_char> = ignore_keys.clone().iter().map(|k| k.as_ptr()).collect();
+    pub fn update_ignore(&self, source: &DictRef, ignore_keys: &[&CStr]) -> i32 {
+        let mut keys: Vec<*const c_char> =
+            ignore_keys.to_owned().iter().map(|k| k.as_ptr()).collect();
         keys.push(null() as *const c_char);
         unsafe {
             pw_sys::pw_properties_update_ignore(
@@ -105,8 +109,9 @@ impl PropertiesRef {
         unsafe { pw_sys::pw_properties_add(self.as_raw_ptr(), other.as_raw_ptr()) }
     }
 
-    pub fn add_keys(&self, other: &DictRef, keys_to_add: &Vec<&CStr>) -> i32 {
-        let mut keys: Vec<*const c_char> = keys_to_add.clone().iter().map(|k| k.as_ptr()).collect();
+    pub fn add_keys(&self, other: &DictRef, keys_to_add: &[&CStr]) -> i32 {
+        let mut keys: Vec<*const c_char> =
+            keys_to_add.to_owned().iter().map(|k| k.as_ptr()).collect();
         keys.push(null() as *const c_char);
         unsafe {
             pw_sys::pw_properties_add_keys(self.as_raw_ptr(), other.as_raw_ptr(), keys.as_ptr())

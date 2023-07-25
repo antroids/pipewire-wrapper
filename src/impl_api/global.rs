@@ -88,9 +88,12 @@ impl GlobalRef {
         unsafe { PropertiesRef::from_raw_ptr(pw_sys::pw_global_get_properties(self.as_raw_ptr())) }
     }
 
-    pub fn update_keys(&self, source: &DictRef, keys_to_update: &Vec<&CStr>) -> i32 {
-        let mut keys: Vec<*const c_char> =
-            keys_to_update.clone().iter().map(|k| k.as_ptr()).collect();
+    pub fn update_keys(&self, source: &DictRef, keys_to_update: &[&CStr]) -> i32 {
+        let mut keys: Vec<*const c_char> = keys_to_update
+            .to_owned()
+            .iter()
+            .map(|k| k.as_ptr())
+            .collect();
         keys.push(null() as *const c_char);
         unsafe {
             pw_sys::pw_global_update_keys(self.as_raw_ptr(), source.as_raw_ptr(), keys.as_ptr())

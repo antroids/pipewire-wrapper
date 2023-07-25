@@ -91,11 +91,13 @@ pub struct Receiver<'a, T: 'a> {
     channel: Arc<Mutex<LoopChannel<'a>>>,
 }
 
+pub type ReceiverCallback<'a, T> = Box<dyn FnMut(&mpsc::Receiver<T>) + 'a>;
+
 impl<'a, T: 'a> Receiver<'a, T> {
     pub fn attach(
         self,
         loop_: &'a LoopRef,
-        mut callback: Box<dyn FnMut(&mpsc::Receiver<T>) + 'a>,
+        mut callback: ReceiverCallback<'a, T>,
     ) -> crate::Result<()> {
         let channel = self.channel.clone();
         let event = loop_.utils().add_event(
