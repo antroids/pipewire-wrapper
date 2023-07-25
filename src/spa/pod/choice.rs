@@ -170,7 +170,7 @@ where
                 type_: choice_type.raw,
                 flags,
                 child: spa_pod {
-                    size: child_size as u32,
+                    size: child_size,
                     type_: child_type.raw,
                 },
             },

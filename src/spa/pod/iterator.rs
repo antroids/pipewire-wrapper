@@ -51,8 +51,8 @@ impl<'a, E: SizedPod> PodIterator<'a, E> {
         let ptr = self.current_element_ptr;
         let size = (*ptr).pod_size();
         let next_ptr = (ptr as *const u8).add(size);
-        let aligned = next_ptr.add(next_ptr.align_offset(POD_ALIGN)).cast();
-        aligned
+
+        next_ptr.add(next_ptr.align_offset(POD_ALIGN)).cast()
     }
 
     fn max_offset_bytes(&self) -> usize {
@@ -178,6 +178,12 @@ impl<'a, E: SizedPod> PodIteratorBuilder<'a, E> {
         AllocatedPodIterator {
             data: self.buf.into_pod(),
         }
+    }
+}
+
+impl<'a, E: SizedPod> Default for PodIteratorBuilder<'a, E> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

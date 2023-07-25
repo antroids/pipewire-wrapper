@@ -66,7 +66,7 @@ where
     }
 }
 
-impl<'a, T: PodIdType> PrimitiveValue for PodIdRef<T> {}
+impl<T: PodIdType> PrimitiveValue for PodIdRef<T> {}
 
 impl<T: PodIdType> WritePod for PodIdRef<T>
 where

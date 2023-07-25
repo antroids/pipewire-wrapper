@@ -125,31 +125,31 @@ impl LoopControlRef {
 
 impl Drop for IOSource<'_> {
     fn drop(&mut self) {
-        self.loop_.loop_().remove_source(self.as_ref().into());
+        self.loop_.loop_().remove_source(self.as_ref());
     }
 }
 
 impl Drop for IdleSource<'_> {
     fn drop(&mut self) {
-        self.loop_.loop_().remove_source(self.as_ref().into());
+        self.loop_.loop_().remove_source(self.as_ref());
     }
 }
 
 impl Drop for EventSource<'_> {
     fn drop(&mut self) {
-        self.loop_.loop_().remove_source(self.as_ref().into());
+        self.loop_.loop_().remove_source(self.as_ref());
     }
 }
 
 impl Drop for TimerSource<'_> {
     fn drop(&mut self) {
-        self.loop_.loop_().remove_source(self.as_ref().into());
+        self.loop_.loop_().remove_source(self.as_ref());
     }
 }
 
 impl Drop for SignalSource<'_> {
     fn drop(&mut self) {
-        self.loop_.loop_().remove_source(self.as_ref().into());
+        self.loop_.loop_().remove_source(self.as_ref());
     }
 }
 

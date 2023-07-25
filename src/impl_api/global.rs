@@ -4,6 +4,7 @@ use std::ptr::{null, NonNull};
 use std::rc::Rc;
 
 use bitflags::Flags;
+
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::context::{Context, ContextRef};
@@ -47,11 +48,7 @@ impl Drop for Global {
     }
 }
 
-impl Global {
-    pub fn new() -> Self {
-        todo!()
-    }
-}
+// todo new
 
 impl GlobalRef {
     pub fn register(&self) -> crate::Result<()> {
