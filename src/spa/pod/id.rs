@@ -11,8 +11,8 @@ use crate::spa::pod::object::prop::Prop;
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, FromPrimitiveValue, FromValue, PodError, PodResult, PodValue, SizedPod, WritePod,
-    WriteValue, POD_ALIGN,
+    BasicTypePod, FromPrimitiveValue, FromValue, PodError, PodRawValue, PodResult, PodValue,
+    SizedPod, WritePod, WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -41,11 +41,10 @@ impl PodIdType for u32 {}
 
 impl PodIdType for Type {}
 
-impl<T: PodIdType> PodValue for PodIdRef<T>
+impl<T: PodIdType> PodRawValue for PodIdRef<T>
 where
     T: PodIdType,
 {
-    type Value = T;
     type RawValue = u32;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -55,7 +54,13 @@ where
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         unsafe { Ok((*ptr).into()) }
     }
+}
 
+impl<T: PodIdType> PodValue for PodIdRef<T>
+where
+    T: PodIdType,
+{
+    type Value = T;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }

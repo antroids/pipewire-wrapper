@@ -24,8 +24,8 @@ use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::{
     BasicType, BasicTypePod, BasicTypeValue, FromPrimitiveValue, PodBoolRef, PodDoubleRef,
-    PodError, PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef, PodRef,
-    PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
+    PodError, PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodRawValue, PodRectangleRef,
+    PodRef, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
 };
 use crate::spa::type_::{PointRef, Type};
 use crate::wrapper::RawWrapper;
@@ -50,7 +50,7 @@ enum_wrapper!(
 #[derive(Debug)]
 pub enum ChoiceStructType<T>
 where
-    T: PodValue,
+    T: PodRawValue,
 {
     NONE(T::Value) = ChoiceType::NONE.raw,
     RANGE(PodRangeValue<T::Value>) = ChoiceType::RANGE.raw,
@@ -66,7 +66,7 @@ where
 
 impl<T> ChoiceStructType<T>
 where
-    T: PodValue,
+    T: PodRawValue,
 {
     pub fn default(&self) -> &T::Value {
         match self {
@@ -121,7 +121,7 @@ impl PodChoiceBodyRef {
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
-pub struct PodChoiceRef<T: PodValue = PodRef> {
+pub struct PodChoiceRef<T: PodRawValue = PodRef> {
     #[raw]
     raw: spa_sys::spa_pod_choice,
     phantom: PhantomData<T>,
@@ -129,7 +129,7 @@ pub struct PodChoiceRef<T: PodValue = PodRef> {
 
 impl<T> PodChoiceRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
 {
     pub(crate) fn body(&self) -> &PodChoiceBodyRef {
         if !self.value_choice() {
@@ -200,19 +200,19 @@ fn parse_choice<P>(
     size: usize,
 ) -> PodResult<ChoiceStructType<P>>
 where
-    P: PodValue,
+    P: PodRawValue,
     P: StaticTypePod,
 {
     match unsafe { PodChoiceBodyRef::from_raw_ptr(ptr).type_() } {
-        ChoiceType::NONE => <PodNoneRef<P> as PodValue>::parse_raw_value(ptr, size)
+        ChoiceType::NONE => <PodNoneRef<P> as PodRawValue>::parse_raw_value(ptr, size)
             .map(|r| ChoiceStructType::NONE(r)),
-        ChoiceType::RANGE => <PodRangeRef<P> as PodValue>::parse_raw_value(ptr, size)
+        ChoiceType::RANGE => <PodRangeRef<P> as PodRawValue>::parse_raw_value(ptr, size)
             .map(|r| ChoiceStructType::RANGE(r)),
-        ChoiceType::STEP => <PodStepRef<P> as PodValue>::parse_raw_value(ptr, size)
+        ChoiceType::STEP => <PodStepRef<P> as PodRawValue>::parse_raw_value(ptr, size)
             .map(|r| ChoiceStructType::STEP(r)),
-        ChoiceType::ENUM => <PodEnumRef<P> as PodValue>::parse_raw_value(ptr, size)
+        ChoiceType::ENUM => <PodEnumRef<P> as PodRawValue>::parse_raw_value(ptr, size)
             .map(|r| ChoiceStructType::ENUM(r)),
-        ChoiceType::FLAGS => <PodFlagsRef<P> as PodValue>::parse_raw_value(ptr, size)
+        ChoiceType::FLAGS => <PodFlagsRef<P> as PodRawValue>::parse_raw_value(ptr, size)
             .map(|r| ChoiceStructType::FLAGS(r)),
         _ => Err(PodError::UnknownPodTypeToDowncast),
     }
@@ -286,7 +286,7 @@ impl PodChoiceRef<PodRef> {
 
 impl<T> Debug for PodChoiceRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -298,12 +298,11 @@ where
     }
 }
 
-impl<'a, T> PodValue for &'a PodChoiceRef<T>
+impl<'a, T> PodRawValue for &'a PodChoiceRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
 {
-    type Value = ChoiceStructType<T>;
     type RawValue = spa_sys::spa_pod_choice_body;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -313,7 +312,14 @@ where
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         parse_choice(ptr, size)
     }
+}
 
+impl<'a, T> PodValue for &'a PodChoiceRef<T>
+where
+    T: PodRawValue,
+    T: BasicTypePod,
+{
+    type Value = ChoiceStructType<T>;
     fn value(&self) -> PodResult<Self::Value> {
         let value_ptr = self.raw_value_ptr();
         let value_size = self.pod_header().size as usize;
@@ -336,7 +342,7 @@ where
 
 impl<'a, T> WritePod for &'a PodChoiceRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
     T: WriteValue,
     T: WritePod,
@@ -349,13 +355,13 @@ where
     }
 }
 
-impl<T: PodValue> PodHeader for PodChoiceRef<T> {
+impl<T: PodRawValue> PodHeader for PodChoiceRef<T> {
     fn pod_header(&self) -> &spa_pod {
         &self.raw.pod
     }
 }
 
-impl<T: PodValue> StaticTypePod for PodChoiceRef<T> {
+impl<T: PodRawValue> StaticTypePod for PodChoiceRef<T> {
     fn static_type() -> Type {
         Type::CHOICE
     }

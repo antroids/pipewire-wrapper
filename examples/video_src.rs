@@ -27,8 +27,8 @@ use pipewire_wrapper::spa::pod::object::param_port_config::Direction;
 use pipewire_wrapper::spa::pod::object::{ObjectType, PodObjectRef};
 use pipewire_wrapper::spa::pod::pod_buf::AllocatedData;
 use pipewire_wrapper::spa::pod::{
-    BasicType, FromPrimitiveValue, FromValue, PodFractionRef, PodRectangleRef, PodRef, PodValue,
-    Upcast,
+    BasicType, FromPrimitiveValue, FromValue, PodFractionRef, PodRawValue, PodRectangleRef, PodRef,
+    PodValue, Upcast,
 };
 use pipewire_wrapper::spa::type_::{FractionRef, RectangleRef};
 use pipewire_wrapper::stream::events::StreamEventsBuilder;

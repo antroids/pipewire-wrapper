@@ -13,8 +13,8 @@ use crate::spa::pod::iterator::PodValueIterator;
 use crate::spa::pod::pod_buf::PodBuf;
 use crate::spa::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, PodError, PodIntRef, PodLongRef, PodRef, PodResult, PodValue, SizedPod, Upcast,
-    WritePod, WriteValue, POD_ALIGN,
+    BasicTypePod, PodError, PodIntRef, PodLongRef, PodRawValue, PodRef, PodResult, PodValue,
+    SizedPod, Upcast, WritePod, WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -27,13 +27,13 @@ pub struct PodNoneRef<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T: PodValue> PodNoneRef<T> {
+impl<T: PodRawValue> PodNoneRef<T> {
     pub fn choice(&self) -> &PodChoiceRef<T> {
         unsafe { PodChoiceRef::from_raw_ptr(addr_of!(self.raw)) }
     }
 }
 
-impl<'a, T: PodValue> From<&'a PodNoneRef<T>> for &'a PodChoiceRef<T> {
+impl<'a, T: PodRawValue> From<&'a PodNoneRef<T>> for &'a PodChoiceRef<T> {
     fn from(value: &'a PodNoneRef<T>) -> Self {
         value.choice()
     }
@@ -41,7 +41,7 @@ impl<'a, T: PodValue> From<&'a PodNoneRef<T>> for &'a PodChoiceRef<T> {
 
 impl<T> StaticTypePod for PodNoneRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
 {
     fn static_type() -> Type {
@@ -51,7 +51,7 @@ where
 
 impl<T> PodHeader for PodNoneRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
 {
     fn pod_header(&self) -> &spa_pod {
@@ -59,12 +59,11 @@ where
     }
 }
 
-impl<T> PodValue for PodNoneRef<T>
+impl<T> PodRawValue for PodNoneRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
 {
-    type Value = T::Value;
     type RawValue = spa_sys::spa_pod_choice_body;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -99,7 +98,14 @@ where
             ))
         }
     }
+}
 
+impl<T> PodValue for PodNoneRef<T>
+where
+    T: PodRawValue,
+    T: StaticTypePod,
+{
+    type Value = T::Value;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
@@ -107,7 +113,7 @@ where
 
 impl<T> WritePod for PodNoneRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
     T: WriteValue,
     T: WritePod,
@@ -139,7 +145,7 @@ where
 
 impl<T> WriteValue for PodNoneRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
     T: WriteValue,
 {
@@ -155,7 +161,7 @@ impl<T> PrimitiveValue for PodNoneRef<T> {}
 
 impl<T> Debug for PodNoneRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

@@ -11,8 +11,8 @@ use crate::spa::pod::object::format::*;
 use crate::spa::pod::object::prop::AudioIec958Codec;
 use crate::spa::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::pod::{
-    BasicTypePod, PodError, PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef, PodResult,
-    PodValue, WriteValue,
+    BasicTypePod, PodError, PodFractionRef, PodIntRef, PodLongRef, PodRawValue, PodRectangleRef,
+    PodResult, WriteValue,
 };
 use crate::wrapper::RawWrapper;
 

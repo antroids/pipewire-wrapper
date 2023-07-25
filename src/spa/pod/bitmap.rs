@@ -9,7 +9,8 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::pod::pod_buf::PodBuf;
 use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue, POD_ALIGN,
+    BasicTypePod, PodRawValue, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
+    POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -43,8 +44,7 @@ impl PodHeader for PodBitmapRef {
     }
 }
 
-impl<'a> PodValue for &'a PodBitmapRef {
-    type Value = &'a [u8];
+impl<'a> PodRawValue for &'a PodBitmapRef {
     type RawValue = u8;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -54,7 +54,10 @@ impl<'a> PodValue for &'a PodBitmapRef {
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         unsafe { Ok(slice::from_raw_parts(ptr, size)) }
     }
+}
 
+impl<'a> PodValue for &'a PodBitmapRef {
+    type Value = &'a [u8];
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }

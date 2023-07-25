@@ -5,7 +5,7 @@ use std::ptr::addr_of;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
-use crate::spa::pod::{PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};
+use crate::spa::pod::{PodRawValue, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -51,8 +51,8 @@ impl StaticTypePod for PodPointerRef {
     }
 }
 
-impl<'a> PodValue for &'a PodPointerRef {
-    type Value = *const c_void; // Can PodRef be used here?
+impl<'a> PodRawValue for &'a PodPointerRef {
+    // Can PodRef be used here?
     type RawValue = spa_sys::spa_pod_pointer_body;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -62,7 +62,10 @@ impl<'a> PodValue for &'a PodPointerRef {
     fn parse_raw_value(ptr: *const Self::RawValue, _size: usize) -> PodResult<Self::Value> {
         unsafe { Ok((*ptr).value) }
     }
+}
 
+impl<'a> PodValue for &'a PodPointerRef {
+    type Value = *const c_void;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }

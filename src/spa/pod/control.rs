@@ -10,7 +10,7 @@ use crate::spa::pod::iterator::PodIterator;
 use crate::spa::pod::object::prop::ObjectPropType;
 use crate::spa::pod::object::{ObjectPropsIterator, ObjectType, PodPropRef};
 use crate::spa::pod::restricted::PodHeader;
-use crate::spa::pod::{BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod};
+use crate::spa::pod::{BasicTypePod, PodError, PodRawValue, PodRef, PodResult, PodValue, SizedPod};
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper)]
@@ -59,8 +59,7 @@ pub enum ControlType<'a> {
     OSC(&'a PodBytesRef) = Type::OSC.raw,
 }
 
-impl<'a> PodValue for &'a PodControlRef {
-    type Value = ControlType<'a>;
+impl<'a> PodRawValue for &'a PodControlRef {
     type RawValue = spa_sys::spa_pod_control;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -79,11 +78,14 @@ impl<'a> PodValue for &'a PodControlRef {
             type_ => Err(PodError::UnexpectedControlType(type_.raw)),
         }
     }
+}
 
+impl<'a> PodValue for &'a PodControlRef {
+    type Value = ControlType<'a>;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(
             &self.raw,
-            size_of::<Self::RawValue>() + self.raw.value.size as usize,
+            size_of::<<Self as PodRawValue>::RawValue>() + self.raw.value.size as usize,
         )
     }
 }

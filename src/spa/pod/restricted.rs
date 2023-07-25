@@ -10,7 +10,7 @@ use spa_sys::spa_pod;
 
 use crate::spa::pod::choice::enum_::PodEnumRef;
 use crate::spa::pod::choice::{ChoiceType, PodChoiceRef};
-use crate::spa::pod::{PodError, PodRef, PodResult, PodValue, POD_ALIGN};
+use crate::spa::pod::{PodError, PodRawValue, PodRef, PodResult, PodValue, POD_ALIGN};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -36,7 +36,7 @@ pub trait StaticTypePod {
     fn static_type() -> Type;
 }
 
-pub trait WritePod: PodValue + Sized {
+pub trait WritePod: PodRawValue + Sized {
     fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: std::io::Write + std::io::Seek;
@@ -124,7 +124,7 @@ pub trait WritePod: PodValue + Sized {
     }
 }
 
-pub trait WriteValue: PodValue {
+pub trait WriteValue: PodRawValue {
     fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
     where
         W: std::io::Write + std::io::Seek;

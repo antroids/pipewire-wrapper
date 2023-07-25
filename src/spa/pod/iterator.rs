@@ -9,7 +9,7 @@ use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::pod::restricted::{CloneTo, PodHeader};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::{
-    BasicTypePod, PodIntRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
+    BasicTypePod, PodIntRef, PodRawValue, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
 };
 
 pub struct PodIterator<'a, E: SizedPod> {
@@ -88,7 +88,7 @@ impl<'a, E: SizedPod + 'a> Debug for PodIterator<'_, E> {
     }
 }
 
-pub struct PodValueIterator<'a, E: PodValue> {
+pub struct PodValueIterator<'a, E: PodRawValue> {
     size: usize,
     element_size: usize,
     first_element_ptr: *const E::RawValue,
@@ -96,7 +96,7 @@ pub struct PodValueIterator<'a, E: PodValue> {
     phantom: PhantomData<&'a ()>,
 }
 
-impl<'a, E: PodValue> PodValueIterator<'a, E> {
+impl<'a, E: PodRawValue> PodValueIterator<'a, E> {
     pub fn new(first_element_ptr: *const E::RawValue, size: usize, element_size: usize) -> Self {
         Self {
             size,
@@ -121,7 +121,7 @@ impl<'a, E: PodValue> PodValueIterator<'a, E> {
     }
 }
 
-impl<'a, E: PodValue + 'a> Iterator for PodValueIterator<'a, E> {
+impl<'a, E: PodRawValue + 'a> Iterator for PodValueIterator<'a, E> {
     type Item = E::Value;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -137,7 +137,7 @@ impl<'a, E: PodValue + 'a> Iterator for PodValueIterator<'a, E> {
     }
 }
 
-impl<'a, E: PodValue + 'a> Debug for PodValueIterator<'a, E> {
+impl<'a, E: PodRawValue + 'a> Debug for PodValueIterator<'a, E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PodValueIterator").finish()
     }

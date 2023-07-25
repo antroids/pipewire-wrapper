@@ -17,7 +17,7 @@ use pipewire_wrapper::spa::param::ParamType;
 use pipewire_wrapper::spa::pod::object::param_route::ParamRouteType;
 use pipewire_wrapper::spa::pod::object::prop::{AudioChannel, ObjectPropType};
 use pipewire_wrapper::spa::pod::object::ObjectType;
-use pipewire_wrapper::spa::pod::{BasicType, PodRef, PodValue};
+use pipewire_wrapper::spa::pod::{BasicType, PodRawValue, PodRef, PodValue};
 
 #[derive(Debug, Default)]
 pub struct DeviceRouteInfo {

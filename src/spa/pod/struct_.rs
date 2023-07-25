@@ -5,7 +5,9 @@ use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::iterator::PodIterator;
 use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
-use crate::spa::pod::{BasicTypePod, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};
+use crate::spa::pod::{
+    BasicTypePod, PodRawValue, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue,
+};
 use crate::spa::type_::Type;
 
 #[derive(RawWrapper)]
@@ -27,8 +29,7 @@ impl PodHeader for PodStructRef {
     }
 }
 
-impl<'a> PodValue for &'a PodStructRef {
-    type Value = PodIterator<'a, PodRef>;
+impl<'a> PodRawValue for &'a PodStructRef {
     type RawValue = spa_sys::spa_pod;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -38,7 +39,10 @@ impl<'a> PodValue for &'a PodStructRef {
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         Ok(PodIterator::new(ptr.cast(), size))
     }
+}
 
+impl<'a> PodValue for &'a PodStructRef {
+    type Value = PodIterator<'a, PodRef>;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }

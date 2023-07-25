@@ -7,8 +7,8 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::pod::pod_buf::PodBuf;
 use crate::spa::pod::restricted::{PodHeader, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, FromValue, PodError, PodResult, PodValue, SizedPod, WritePod, WriteValue,
-    POD_ALIGN,
+    BasicTypePod, FromValue, PodError, PodRawValue, PodResult, PodValue, SizedPod, WritePod,
+    WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -42,8 +42,7 @@ impl PodStringRef {
     }
 }
 
-impl<'a> PodValue for &'a PodStringRef {
-    type Value = &'a CStr;
+impl<'a> PodRawValue for &'a PodStringRef {
     type RawValue = c_char;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -59,7 +58,10 @@ impl<'a> PodValue for &'a PodStringRef {
             }
         }
     }
+}
 
+impl<'a> PodValue for &'a PodStringRef {
+    type Value = &'a CStr;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }

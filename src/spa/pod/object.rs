@@ -35,7 +35,7 @@ use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::struct_::PodStructRef;
 use crate::spa::pod::{
     BasicType, BasicTypePod, FromValue, PodBoolRef, PodDoubleRef, PodError, PodFdRef, PodFloatRef,
-    PodIntRef, PodLongRef, PodRef, PodResult, PodValue, SizedPod, WritePod,
+    PodIntRef, PodLongRef, PodRawValue, PodRef, PodResult, PodValue, SizedPod, WritePod,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -249,8 +249,7 @@ impl PodObjectRef {
     }
 }
 
-impl<'a> PodValue for &'a PodObjectRef {
-    type Value = ObjectType<'a>;
+impl<'a> PodRawValue for &'a PodObjectRef {
     type RawValue = spa_sys::spa_pod_object_body;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -261,7 +260,10 @@ impl<'a> PodValue for &'a PodObjectRef {
         let body = unsafe { PodObjectBodyRef::from_raw_ptr(ptr) };
         PodObjectRef::parse_raw_body(body.as_raw_ptr(), size, body.type_(), body.id())
     }
+}
 
+impl<'a> PodValue for &'a PodObjectRef {
+    type Value = ObjectType<'a>;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
@@ -377,8 +379,7 @@ impl<'a, T: PodPropKeyType<'a>> PodPropRef<'a, T> {
     }
 }
 
-impl<'a, T: PodPropKeyType<'a>> PodValue for &'a PodPropRef<'a, T> {
-    type Value = T;
+impl<'a, T: PodPropKeyType<'a>> PodRawValue for &'a PodPropRef<'a, T> {
     type RawValue = spa_sys::spa_pod_prop;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -388,9 +389,12 @@ impl<'a, T: PodPropKeyType<'a>> PodValue for &'a PodPropRef<'a, T> {
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         unsafe { PodPropRef::from_raw_ptr(ptr).try_into() }
     }
+}
 
+impl<'a, T: PodPropKeyType<'a>> PodValue for &'a PodPropRef<'a, T> {
+    type Value = T;
     fn value(&self) -> PodResult<Self::Value> {
-        let size = size_of::<Self::RawValue>() + self.raw.value.size as usize;
+        let size = size_of::<<Self as PodRawValue>::RawValue>() + self.raw.value.size as usize;
         Self::parse_raw_value(self.raw_value_ptr(), size)
     }
 }

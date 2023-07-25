@@ -66,13 +66,8 @@ macro_rules! primitive_type_pod_impl {
     ($pod_ref_type:ty, $pod_type:expr, $value_raw_type:ty, $value_type:ty, $value_ident:ident, $convert_value_expr:expr) => {
         impl restricted::PrimitiveValue for $pod_ref_type {}
 
-        impl PodValue for $pod_ref_type {
-            type Value = $value_type;
+        impl PodRawValue for $pod_ref_type {
             type RawValue = $value_raw_type;
-
-            fn raw_value_ptr(&self) -> *const Self::RawValue {
-                &self.raw.value
-            }
 
             fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
                 if size < size_of::<$value_raw_type>() {
@@ -82,6 +77,14 @@ macro_rules! primitive_type_pod_impl {
                     Ok($convert_value_expr)
                 }
             }
+
+            fn raw_value_ptr(&self) -> *const Self::RawValue {
+                &self.raw.value
+            }
+        }
+
+        impl PodValue for $pod_ref_type {
+            type Value = $value_type;
 
             fn value(&self) -> PodResult<Self::Value> {
                 Self::parse_raw_value(&self.raw_value(), self.raw.pod.size as usize)
@@ -231,14 +234,16 @@ type PodResult<T> = Result<T, PodError>;
 
 const POD_ALIGN: usize = 8;
 
-pub trait PodValue {
-    type Value: Debug;
+pub trait PodRawValue: PodValue {
     type RawValue;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue;
 
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value>;
+}
 
+pub trait PodValue {
+    type Value: Debug;
     fn value(&self) -> PodResult<Self::Value>;
 }
 
@@ -280,12 +285,11 @@ where
     }
 }
 
-impl<'a, T> PodValue for &'a T
+impl<'a, T> PodRawValue for &'a T
 where
-    T: PodValue,
+    T: PodRawValue,
     T: PrimitiveValue,
 {
-    type Value = T::Value;
     type RawValue = T::RawValue;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -295,7 +299,14 @@ where
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         T::parse_raw_value(ptr, size)
     }
+}
 
+impl<'a, T> PodValue for &'a T
+where
+    T: PodRawValue,
+    T: PrimitiveValue,
+{
+    type Value = T::Value;
     fn value(&self) -> PodResult<Self::Value> {
         (*self).value()
     }
@@ -420,8 +431,7 @@ impl PodHeader for PodRef {
     }
 }
 
-impl PodValue for PodRef {
-    type Value = ();
+impl PodRawValue for PodRef {
     type RawValue = spa_sys::spa_pod;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -431,14 +441,16 @@ impl PodValue for PodRef {
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         Ok(())
     }
+}
 
+impl PodValue for PodRef {
+    type Value = ();
     fn value(&self) -> PodResult<Self::Value> {
         Ok(())
     }
 }
 
-impl<'a> PodValue for &'a PodRef {
-    type Value = BasicTypeValue<'a>;
+impl<'a> PodRawValue for &'a PodRef {
     type RawValue = spa_sys::spa_pod;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -469,7 +481,10 @@ impl<'a> PodValue for &'a PodRef {
             _ => return Err(PodError::UnknownPodTypeToDowncast),
         })
     }
+}
 
+impl<'a> PodValue for &'a PodRef {
+    type Value = BasicTypeValue<'a>;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.as_raw_ptr(), self.size() as usize)
     }

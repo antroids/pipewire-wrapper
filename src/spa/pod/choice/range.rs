@@ -13,7 +13,8 @@ use crate::spa::pod::iterator::PodValueIterator;
 use crate::spa::pod::pod_buf::AllocatedData;
 use crate::spa::pod::restricted::{PodHeader, PrimitiveValue, StaticTypePod};
 use crate::spa::pod::{
-    BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
+    BasicTypePod, PodError, PodRawValue, PodRef, PodResult, PodValue, SizedPod, Upcast, WritePod,
+    WriteValue,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -42,7 +43,7 @@ impl<T> PodRangeValue<T> {
     pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<PodRangeRef<P>>>
     where
         PodRangeRef<P>: WritePod,
-        PodRangeRef<P>: PodValue<Value = Self>,
+        PodRangeRef<P>: PodRawValue<Value = Self>,
         PodRangeRef<P>: PrimitiveValue,
     {
         AllocatedData::from_value(self)
@@ -51,7 +52,7 @@ impl<T> PodRangeValue<T> {
 
 impl<T> PodRangeValue<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
     T: WriteValue,
     T: WritePod,
@@ -76,13 +77,13 @@ pub struct PodRangeRef<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T: PodValue> PodRangeRef<T> {
+impl<T: PodRawValue> PodRangeRef<T> {
     pub fn choice(&self) -> &PodChoiceRef<T> {
         unsafe { PodChoiceRef::from_raw_ptr(addr_of!(self.raw)) }
     }
 }
 
-impl<'a, T: PodValue> From<&'a PodRangeRef<T>> for &'a PodChoiceRef<T> {
+impl<'a, T: PodRawValue> From<&'a PodRangeRef<T>> for &'a PodChoiceRef<T> {
     fn from(value: &'a PodRangeRef<T>) -> Self {
         value.choice()
     }
@@ -90,7 +91,7 @@ impl<'a, T: PodValue> From<&'a PodRangeRef<T>> for &'a PodChoiceRef<T> {
 
 impl<T> StaticTypePod for PodRangeRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
 {
     fn static_type() -> Type {
@@ -100,7 +101,7 @@ where
 
 impl<T> PodHeader for PodRangeRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
 {
     fn pod_header(&self) -> &spa_pod {
@@ -108,12 +109,11 @@ where
     }
 }
 
-impl<T> PodValue for PodRangeRef<T>
+impl<T> PodRawValue for PodRangeRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
 {
-    type Value = PodRangeValue<T::Value>;
     type RawValue = spa_sys::spa_pod_choice_body;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -152,7 +152,14 @@ where
             ))
         }
     }
+}
 
+impl<T> PodValue for PodRangeRef<T>
+where
+    T: PodRawValue,
+    T: StaticTypePod,
+{
+    type Value = PodRangeValue<T::Value>;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
@@ -160,7 +167,7 @@ where
 
 impl<T> WritePod for PodRangeRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
     T: WriteValue,
     T: WritePod,
@@ -193,7 +200,7 @@ where
 
 impl<T> WriteValue for PodRangeRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
     T: WriteValue,
 {
@@ -216,7 +223,7 @@ impl<T> PrimitiveValue for PodRangeRef<T> {}
 
 impl<T> Debug for PodRangeRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: StaticTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

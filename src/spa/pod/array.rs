@@ -20,8 +20,8 @@ use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::struct_::PodStructRef;
 use crate::spa::pod::{
     BasicType, BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFdRef,
-    PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodPointerRef, PodRectangleRef, PodRef,
-    PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
+    PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodPointerRef, PodRawValue,
+    PodRectangleRef, PodRef, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -45,7 +45,7 @@ impl PodArrayBodyRef {
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
-pub struct PodArrayRef<T: PodValue = PodRef> {
+pub struct PodArrayRef<T: PodRawValue = PodRef> {
     #[raw]
     raw: spa_sys::spa_pod_array,
     phantom: PhantomData<T>,
@@ -53,7 +53,7 @@ pub struct PodArrayRef<T: PodValue = PodRef> {
 
 impl<T> PodHeader for PodArrayRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
 {
     fn pod_header(&self) -> &spa_pod {
@@ -63,7 +63,7 @@ where
 
 impl<T> StaticTypePod for PodArrayRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
 {
     fn static_type() -> Type {
@@ -71,12 +71,11 @@ where
     }
 }
 
-impl<'a, T> PodValue for &'a PodArrayRef<T>
+impl<'a, T> PodRawValue for &'a PodArrayRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
 {
-    type Value = PodValueIterator<'a, T>;
     type RawValue = spa_sys::spa_pod_array_body;
 
     fn raw_value_ptr(&self) -> *const Self::RawValue {
@@ -93,7 +92,14 @@ where
             body.child().size() as usize,
         ))
     }
+}
 
+impl<'a, T> PodValue for &'a PodArrayRef<T>
+where
+    T: PodRawValue,
+    T: BasicTypePod,
+{
+    type Value = PodValueIterator<'a, T>;
     fn value(&self) -> PodResult<Self::Value> {
         Self::parse_raw_value(self.raw_value_ptr(), self.pod_header().size as usize)
     }
@@ -101,7 +107,7 @@ where
 
 impl<'a, T> WritePod for &'a PodArrayRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
 {
     fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
@@ -114,7 +120,7 @@ where
 
 impl<T> Debug for PodArrayRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -129,7 +135,7 @@ where
 
 impl<T> PodArrayRef<T>
 where
-    T: PodValue,
+    T: PodRawValue,
     T: BasicTypePod,
 {
     fn body(&self) -> &PodArrayBodyRef {
