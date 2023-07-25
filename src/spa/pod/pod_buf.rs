@@ -225,7 +225,7 @@ fn test_buf_from_value() {
     assert_eq!(allocated_pod.as_pod().pod_size(), 12);
     assert_eq!(allocated_pod.as_pod().pod_header().size, 4);
     assert_eq!(allocated_pod.as_pod().pod_header().type_, Type::BOOL.raw);
-    assert_eq!(allocated_pod.as_pod().value().unwrap(), true);
+    assert!(allocated_pod.as_pod().value().unwrap());
     assert_eq!(allocated_pod.as_pod().raw_value(), 1);
 
     let allocated_pod = PodBuf::<PodLongRef>::from_primitive_value(123456789)

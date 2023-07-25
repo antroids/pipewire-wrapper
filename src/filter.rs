@@ -40,9 +40,7 @@ impl<T> Eq for FilterPortId<T> {}
 
 impl<T> Clone for FilterPortId<T> {
     fn clone(&self) -> Self {
-        Self {
-            ptr: self.ptr.clone(),
-        }
+        Self { ptr: self.ptr }
     }
 }
 
@@ -332,7 +330,7 @@ impl<'a, T> Filter<'a, T> {
     }
 
     pub fn contains_port(&self, port_id: &FilterPortId<T>) -> bool {
-        self.ports.contains_key(&port_id)
+        self.ports.contains_key(port_id)
     }
 
     fn try_port_as_ptr(&self, port_id: Option<&FilterPortId<T>>) -> crate::Result<*mut *mut T> {
@@ -408,11 +406,11 @@ impl<'a, T> Filter<'a, T> {
     }
 
     pub fn get_port(&self, port_id: &FilterPortId<T>) -> Option<&Pin<Box<T>>> {
-        self.ports.get(&port_id)
+        self.ports.get(port_id)
     }
 
     pub fn get_port_mut(&mut self, port_id: &FilterPortId<T>) -> Option<&mut Pin<Box<T>>> {
-        self.ports.get_mut(&port_id)
+        self.ports.get_mut(port_id)
     }
 }
 

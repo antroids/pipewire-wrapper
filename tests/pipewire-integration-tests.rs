@@ -99,7 +99,7 @@ fn test_sources() {
 
     main_loop.run().unwrap();
 
-    assert_eq!(event_signal.load(Ordering::Relaxed), true)
+    assert!(event_signal.load(Ordering::Relaxed))
 }
 
 #[test]

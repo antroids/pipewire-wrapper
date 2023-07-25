@@ -48,7 +48,7 @@ struct State<'a> {
 
 impl State<'_> {
     pub fn stride(&self) -> Option<u32> {
-        self.size.map(|size| (size.width() * BPP) + 3 & !3)
+        self.size.map(|size| ((size.width() * BPP) + 3) & !3)
     }
 }
 
@@ -155,8 +155,7 @@ fn on_process(state: &Arc<Mutex<State>>, stream: &Arc<Stream>) {
             .datas_mut()
             .first()
             .map(|first| first.data())
-            .map(|first_data| unsafe { first_data.as_mut().map(|_| first_data as *mut u8) })
-            .flatten();
+            .and_then(|first_data| unsafe { first_data.as_mut().map(|_| first_data as *mut u8) });
         if let Some(data_ptr) = data_ptr {
             let mut state = state.lock().unwrap();
             if let Some(size) = state.size {
@@ -367,7 +366,7 @@ fn stream_params(
                 &ParamMetaType::SIZE(
                     PodRangeRef::from_primitive(PodRangeValue::new(
                         size_of::<spa_sys::spa_meta_region>() as i32 * 16,
-                        size_of::<spa_sys::spa_meta_region>() as i32 * 1,
+                        size_of::<spa_sys::spa_meta_region>() as i32,
                         size_of::<spa_sys::spa_meta_region>() as i32 * 16,
                     ))?
                     .as_pod()
