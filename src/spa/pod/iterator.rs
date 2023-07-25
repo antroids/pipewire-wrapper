@@ -32,7 +32,7 @@ impl<'a, E: SizedPod> PodIterator<'a, E> {
             size,
             first_element_ptr,
             current_element_ptr: first_element_ptr,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 
@@ -103,7 +103,7 @@ impl<'a, E: PodValue> PodValueIterator<'a, E> {
             element_size,
             first_element_ptr,
             current_element_ptr: first_element_ptr,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 

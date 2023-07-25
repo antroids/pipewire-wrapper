@@ -143,6 +143,7 @@ where
     {
         let target_type = T::static_type();
         let pod_type = self.pod_type();
+        #[allow(clippy::if_same_then_else)]
         if target_type == PodRef::static_type() || target_type == pod_type {
             unsafe { Ok(self.cast_unchecked()) }
         } else if target_type == Type::CHOICE

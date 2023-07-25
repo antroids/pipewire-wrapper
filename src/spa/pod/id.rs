@@ -89,7 +89,7 @@ where
         W: Write + Seek,
     {
         let raw_value: u32 = value.clone().into();
-        Ok(Self::write_value(buffer, &raw_value)?)
+        Self::write_value(buffer, &raw_value)
     }
 }
 

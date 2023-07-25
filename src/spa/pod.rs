@@ -111,7 +111,7 @@ macro_rules! primitive_type_pod_impl {
                 W: Write + Seek,
             {
                 let value: $value_raw_type = (*value).into();
-                Ok(Self::write_value(buffer, &value)?)
+                Self::write_value(buffer, &value)
             }
         }
 

@@ -55,7 +55,7 @@ impl<'a, T> PodBuf<'a, T> {
     pub fn into_pod(self) -> AllocatedData<T> {
         AllocatedData {
             data: self.data,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 
@@ -63,7 +63,7 @@ impl<'a, T> PodBuf<'a, T> {
         Self {
             data: vec![ZEROED_ALIGNED_DATA],
             pos: 0,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 
@@ -144,7 +144,7 @@ impl<T> Clone for AllocatedData<T> {
     fn clone(&self) -> Self {
         Self {
             data: self.data.clone(),
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 }

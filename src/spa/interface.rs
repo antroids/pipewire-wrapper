@@ -149,7 +149,7 @@ impl Hook {
         let mut hook = Box::new(Self {
             ref_: NonNull::dangling(),
             hook: spa_hook,
-            pinned: PhantomPinned::default(),
+            pinned: PhantomPinned,
         });
         unsafe {
             hook.ref_ = NonNull::new(addr_of_mut!(hook.hook) as *mut HookRef).unwrap();
