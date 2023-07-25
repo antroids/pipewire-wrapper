@@ -40,6 +40,7 @@ impl MetaRef {
         self.raw.data
     }
 
+    #[allow(clippy::mut_from_ref)]
     unsafe fn data_slice<T>(&self) -> &mut [T]
     where
         T: RawWrapper,

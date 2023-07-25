@@ -177,17 +177,17 @@ impl ProxyRef {
         let proxy_type = self.get_type();
         let target_type = T::type_info();
         if proxy_type == target_type {
-            unsafe { Ok(self.as_object_unchecked_mut()) }
+            unsafe { Ok(self.as_object_unchecked()) }
         } else {
             Err(Error::TypeMismatch)
         }
     }
 
-    pub(crate) unsafe fn as_object_unchecked_mut<T>(&self) -> &'_ mut T
+    pub(crate) unsafe fn as_object_unchecked<T>(&self) -> &'_ T
     where
         T: Proxied,
     {
-        T::mut_from_raw_ptr(self.as_raw_ptr() as *mut _)
+        T::from_raw_ptr(self.as_raw_ptr().cast())
     }
 }
 
