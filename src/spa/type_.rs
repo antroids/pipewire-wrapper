@@ -9,9 +9,9 @@ use std::time::Duration;
 use bitflags::bitflags;
 use spa_sys::spa_pod;
 
-use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::enum_wrapper;
 use crate::spa::pod::*;
 use crate::wrapper::RawWrapper;
 

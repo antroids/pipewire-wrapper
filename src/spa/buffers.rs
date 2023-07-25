@@ -1,8 +1,8 @@
 use std::slice;
 
-use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::enum_wrapper;
 use crate::spa::buffers::data::DataRef;
 use crate::spa::buffers::meta::MetaRef;
 

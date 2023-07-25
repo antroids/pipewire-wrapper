@@ -7,11 +7,11 @@ use derive_builder::Builder;
 use pw_sys::{pw_port_events, pw_port_info};
 use spa_sys::spa_pod;
 
-use pipewire_macro_impl::events_builder_build;
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::port::info::PortInfoRef;
 use crate::core_api::port::PortRef;
+use crate::events_builder_build;
 use crate::spa::interface::Hook;
 use crate::spa::param::{ParamInfoRef, ParamType};
 use crate::spa::pod::PodRef;

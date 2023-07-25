@@ -5,7 +5,6 @@ use std::ptr::{null_mut, NonNull};
 use bitflags::{bitflags, Flags};
 use spa_sys::spa_pod;
 
-use pipewire_macro_impl::{enum_wrapper, spa_interface_call};
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::CoreRef;
@@ -20,6 +19,7 @@ use crate::stream::control::ControlRef;
 use crate::stream::events::StreamEvents;
 use crate::stream::time::TimeRef;
 use crate::wrapper::{RawWrapper, Wrapper};
+use crate::{enum_wrapper, spa_interface_call};
 use crate::{i32_as_result, i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
 
 pub mod buffer;

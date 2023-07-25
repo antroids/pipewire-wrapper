@@ -2,9 +2,9 @@ use std::os::fd::RawFd;
 
 use bitflags::bitflags;
 
-use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::enum_wrapper;
 use crate::spa::buffers::chunk::ChunkRef;
 use crate::wrapper::RawWrapper;
 

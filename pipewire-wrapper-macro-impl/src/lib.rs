@@ -1,6 +1,5 @@
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
-use syn;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::{
@@ -8,13 +7,11 @@ use syn::{
     Lit, LitStr, Meta, MetaNameValue, PathArguments, Token, Type, TypePath,
 };
 
-pub mod macro_rules;
+const ATTR_RAW: &str = "raw";
+const ATTR_RAW_WRAPPER: &str = "raw_wrapper";
 
-const ATTR_RAW: &'static str = "raw";
-const ATTR_RAW_WRAPPER: &'static str = "raw_wrapper";
-
-const ARG_METHODS: &'static str = "methods";
-const ARG_INTERFACE: &'static str = "interface";
+const ARG_METHODS: &str = "methods";
+const ARG_INTERFACE: &str = "interface";
 
 struct WrappedRawStructInfo {
     struct_ident: Ident,
@@ -109,7 +106,7 @@ fn get_field_type(field: &Field) -> &Type {
         let last_segment = type_path.path.segments.last().unwrap();
         if let PathArguments::AngleBracketed(generic_arg) = &last_segment.arguments {
             if let Some(GenericArgument::Type(generic_type)) = generic_arg.args.first() {
-                return &generic_type;
+                return generic_type;
             }
         }
     }

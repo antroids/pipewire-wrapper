@@ -8,13 +8,13 @@ use derive_builder::Builder;
 use pw_sys::pw_registry_events;
 use spa_sys::spa_dict;
 
-use pipewire_macro_impl::events_builder_build;
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::Core;
 use crate::core_api::permissions::Permissions;
 use crate::core_api::registry::RegistryRef;
 use crate::core_api::type_info::TypeInfo;
+use crate::events_builder_build;
 use crate::spa::dict::DictRef;
 use crate::spa::interface::Hook;
 use crate::wrapper::RawWrapper;

@@ -3,7 +3,6 @@ use std::ptr::{null_mut, NonNull};
 use std::rc::Rc;
 use std::time::Duration;
 
-use pipewire_macro_impl::spa_interface_call;
 use pipewire_proc_macro::{spa_interface, RawWrapper};
 
 use crate::error::Error;
@@ -12,6 +11,7 @@ use crate::spa::loop_::{
     AsLoopRef, EventSource, IOSource, IdleSource, SignalSource, SourceRef, TimerSource,
 };
 use crate::spa::type_::TimespecRef;
+use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, SpaInterface, Wrapper};
 
 #[derive(RawWrapper, Debug)]

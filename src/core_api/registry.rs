@@ -7,7 +7,6 @@ use std::sync::Arc;
 
 use pw_sys::pw_proxy;
 
-use pipewire_macro_impl::spa_interface_call;
 use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper, Wrapper};
 
 use crate::core_api::core::Core;
@@ -19,6 +18,7 @@ use crate::core_api::registry::events::RegistryEvents;
 use crate::core_api::registry::restricted::RegistryBind;
 use crate::core_api::type_info::TypeInfo;
 use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
+use crate::spa_interface_call;
 use crate::wrapper::*;
 use crate::{i32_as_void_result, raw_wrapper};
 

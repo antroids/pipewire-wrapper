@@ -8,7 +8,6 @@ use derive_builder::Builder;
 use pw_sys::{pw_node_events, pw_node_info};
 use spa_sys::spa_pod;
 
-use pipewire_macro_impl::{events_builder_build, events_channel_builder};
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_;
@@ -20,6 +19,7 @@ use crate::spa::param::{ParamInfoRef, ParamType};
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::pod::PodRef;
 use crate::wrapper::RawWrapper;
+use crate::{events_builder_build, events_channel_builder};
 
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]

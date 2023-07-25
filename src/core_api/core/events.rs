@@ -7,11 +7,11 @@ use std::ptr::NonNull;
 use derive_builder::Builder;
 use pw_sys::{pw_core_events, pw_core_info};
 
-use pipewire_macro_impl::events_builder_build;
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::info::CoreInfoRef;
 use crate::core_api::core::CoreRef;
+use crate::events_builder_build;
 use crate::spa::interface::{Hook, HookRef};
 use crate::wrapper::RawWrapper;
 

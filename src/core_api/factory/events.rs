@@ -5,11 +5,11 @@ use std::ptr::NonNull;
 use derive_builder::Builder;
 use pw_sys::{pw_factory_events, pw_factory_info};
 
-use pipewire_macro_impl::events_builder_build;
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::factory::info::FactoryInfoRef;
 use crate::core_api::factory::FactoryRef;
+use crate::events_builder_build;
 use crate::spa::interface::Hook;
 use crate::wrapper::RawWrapper;
 

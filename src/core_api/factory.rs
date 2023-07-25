@@ -1,6 +1,5 @@
 use std::pin::Pin;
 
-use pipewire_macro_impl::spa_interface_call;
 use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper};
 
 use crate::core_api::core::Core;
@@ -8,6 +7,7 @@ use crate::core_api::factory::events::FactoryEvents;
 use crate::core_api::proxy::{Proxy, ProxyRef};
 use crate::core_api::registry::restricted::RegistryBind;
 use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
+use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, Wrapper};
 
 pub mod events;

@@ -4,7 +4,6 @@ use std::ptr::NonNull;
 use std::rc::Rc;
 use std::time::Duration;
 
-use pipewire_macro_impl::spa_interface_call;
 use pipewire_proc_macro::{interface, spa_interface, RawWrapper, Wrapper};
 
 use crate::core_api::context::Context;
@@ -14,6 +13,7 @@ use crate::core_api::registry::events::RegistryEventsBuilder;
 use crate::core_api::registry::{Registry, RegistryRef};
 use crate::core_api::type_info::TypeInfo;
 use crate::listeners::{AddListener, OwnListeners};
+use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
 

@@ -51,24 +51,21 @@ macro_rules! enum_wrapper {
 #[macro_export]
 macro_rules! spa_interface_call {
     ($self:ident, $method:ident:$version:expr, $($arg:expr),*) => {{
-        pipewire_macro_impl::spa_interface_call_impl!($self, $method:$version, $($arg),*)
+        spa_interface_call!(@implementation $self, $method:$version, $($arg),*)
     }};
 
     ($self:ident, $method:ident, $($arg:expr),*) => {{
-        pipewire_macro_impl::spa_interface_call_impl!($self, $method:0u32, $($arg),*)
+        spa_interface_call!(@implementation $self, $method:0u32, $($arg),*)
     }};
 
     ($self:ident, $method:ident) => {{
         spa_interface_call!($self, $method,)
     }};
-}
 
-#[macro_export]
-macro_rules! spa_interface_call_impl {
-    ($self:ident, $method:ident:$version:expr, $($arg:expr),*) => {{
+    (@implementation $self:ident, $method:ident:$version:expr, $($arg:expr),*) => {{
         use pipewire_proc_macro::spa_interface;
-        use crate::error::Error;
-        use crate::wrapper::SpaInterface;
+        use $crate::error::Error;
+        use $crate::wrapper::SpaInterface;
 
         let funcs: *const <Self as SpaInterface>::Methods = $self.spa_interface().cb().funcs();
 
@@ -107,13 +104,13 @@ macro_rules! events_builder_build {
          }
     };
     (@function_body $self:ident, $events_struct:ident, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {{
-            let hook = crate::spa::interface::Hook::new();
+            let hook = $crate::spa::interface::Hook::new();
             let raw = $events_raw {
                 version: 0,
                 $($callback_field: None,
                 )*
             };
-            let raw = <$events_struct as crate::wrapper::Wrapper>::RawWrapperType::from_raw(raw);
+            let raw = <$events_struct as $crate::wrapper::Wrapper>::RawWrapperType::from_raw(raw);
             let mut pinned_raw = Box::into_pin(Box::new(raw));
 
             let mut events = Box::into_pin(Box::new($events_struct {
@@ -131,13 +128,13 @@ macro_rules! events_builder_build {
             events
     }};
     (@function_body_generic $self:ident, $events_struct:ident<$generic_type:ident>, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {{
-            let hook = crate::spa::interface::Hook::new();
+            let hook = $crate::spa::interface::Hook::new();
             let raw = $events_raw {
                 version: 0,
                 $($callback_field: None,
                 )*
             };
-            let raw = <$events_struct<$generic_type> as crate::wrapper::Wrapper>::RawWrapperType::from_raw(raw);
+            let raw = <$events_struct<$generic_type> as $crate::wrapper::Wrapper>::RawWrapperType::from_raw(raw);
             let mut pinned_raw = Box::into_pin(Box::new(raw));
 
             let mut events = Box::into_pin(Box::new($events_struct {

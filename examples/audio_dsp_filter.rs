@@ -15,9 +15,7 @@ use pipewire_wrapper::spa::pod::{FromPrimitiveValue, PodLongRef, Upcast};
 
 type AudioDataType = f32;
 
-struct CustomPort {
-    port_id: u32,
-}
+struct CustomPort {}
 
 pub fn main() {
     let core = Arc::new(Core::default());
@@ -53,7 +51,7 @@ pub fn main() {
     .unwrap();
     let input_port = filter
         .add_port(
-            CustomPort { port_id: 1 },
+            CustomPort {},
             Direction::INPUT,
             PortFlags::MAP_BUFFERS,
             properties_new!(
@@ -64,7 +62,7 @@ pub fn main() {
         .unwrap();
     let output_port = filter
         .add_port(
-            CustomPort { port_id: 2 },
+            CustomPort {},
             Direction::OUTPUT,
             PortFlags::MAP_BUFFERS,
             properties_new!(

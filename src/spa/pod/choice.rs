@@ -7,9 +7,9 @@ use std::ptr::addr_of;
 
 use spa_sys::spa_pod;
 
-use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::enum_wrapper;
 use crate::spa::pod::choice::enum_::{PodEnumRef, PodEnumValue};
 use crate::spa::pod::choice::flags::{PodFlagsRef, PodFlagsValue};
 use crate::spa::pod::choice::none::PodNoneRef;

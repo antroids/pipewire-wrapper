@@ -6,10 +6,10 @@ use std::rc::Rc;
 use derive_builder::Builder;
 use pw_sys::{pw_context_events, pw_global, pw_impl_client};
 
-use pipewire_macro_impl::events_builder_build;
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::context::{Context, ContextRef};
+use crate::events_builder_build;
 use crate::impl_api::global::GlobalRef;
 use crate::impl_api::impl_client::ImplClientRef;
 use crate::spa::interface::Hook;

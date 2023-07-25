@@ -1,7 +1,6 @@
 use std::io::{Seek, Write};
 
-use pipewire_macro_impl::enum_wrapper;
-
+use crate::enum_wrapper;
 use crate::spa::pod::choice::PodChoiceRef;
 use crate::spa::pod::id::PodIdRef;
 use crate::spa::pod::object::prop::Prop;

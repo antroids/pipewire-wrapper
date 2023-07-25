@@ -1,7 +1,6 @@
 use std::io::{Seek, Write};
 
-use pipewire_macro_impl::enum_wrapper;
-
+use crate::enum_wrapper;
 use crate::spa::pod::array::PodArrayRef;
 use crate::spa::pod::id::{PodIdRef, PodIdType};
 use crate::spa::pod::object::param_port_config::Direction;

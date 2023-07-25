@@ -8,11 +8,11 @@ use std::slice;
 
 use bitflags::{bitflags, Flags};
 
-use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::{Core, CoreRef};
 use crate::core_api::properties::{Properties, PropertiesRef};
+use crate::enum_wrapper;
 use crate::filter::events::FilterEvents;
 use crate::listeners::{AddListener, Listeners, OwnListeners};
 use crate::spa::dict::DictRef;

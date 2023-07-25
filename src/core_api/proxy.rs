@@ -7,7 +7,6 @@ use std::sync::Arc;
 
 use spa_sys::SPA_TYPE_INFO_Data;
 
-use pipewire_macro_impl::spa_interface_call;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::core_api::core::Core;
@@ -18,6 +17,7 @@ use crate::i32_as_void_result;
 use crate::impl_api::protocol::ProtocolRef;
 use crate::listeners::AddListener;
 use crate::spa::SPA_ID_INVALID;
+use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, Wrapper};
 
 pub mod events;

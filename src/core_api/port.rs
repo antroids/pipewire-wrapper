@@ -2,7 +2,6 @@ use std::pin::Pin;
 use std::ptr::{null_mut, NonNull};
 use std::sync::Arc;
 
-use pipewire_macro_impl::{enum_wrapper, spa_interface_call};
 use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper, Wrapper};
 
 use crate::core_api::core::Core;
@@ -17,6 +16,7 @@ use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
 use crate::spa::param::ParamType;
 use crate::spa::pod::PodRef;
 use crate::wrapper::{RawWrapper, Wrapper};
+use crate::{enum_wrapper, spa_interface_call};
 
 pub mod events;
 pub mod info;

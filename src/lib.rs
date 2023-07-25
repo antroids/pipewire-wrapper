@@ -18,6 +18,7 @@ pub mod error;
 pub mod filter;
 pub mod impl_api;
 pub mod listeners;
+pub mod macro_rules;
 pub mod spa;
 pub mod stream;
 pub mod wrapper;

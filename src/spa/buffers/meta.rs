@@ -4,9 +4,9 @@ use std::slice;
 
 use bitflags::bitflags;
 
-use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::enum_wrapper;
 use crate::spa::pod::object::format::VideoFormat;
 use crate::spa::pod::sequence::PodSequenceRef;
 use crate::spa::type_::{PointRef, RectangleRef, RegionRef};

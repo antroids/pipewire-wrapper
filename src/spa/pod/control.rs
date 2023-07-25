@@ -2,9 +2,9 @@ use std::fmt::{Debug, Formatter};
 use std::mem::size_of;
 use std::ptr::addr_of;
 
-use pipewire_macro_impl::enum_wrapper;
 use pipewire_proc_macro::RawWrapper;
 
+use crate::enum_wrapper;
 use crate::spa::pod::bytes::PodBytesRef;
 use crate::spa::pod::iterator::PodIterator;
 use crate::spa::pod::object::prop::ObjectPropType;
