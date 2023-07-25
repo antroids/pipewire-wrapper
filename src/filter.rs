@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::pin::Pin;
@@ -24,7 +25,42 @@ use crate::{i32_as_result, i32_as_void_result, new_instance_raw_wrapper};
 
 pub mod events;
 
-pub type FilterPortId<T> = NonNull<*mut T>;
+#[derive(Debug)]
+pub struct FilterPortId<T> {
+    ptr: NonNull<*mut T>,
+}
+
+impl<T> PartialEq for FilterPortId<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.ptr.eq(&other.ptr)
+    }
+}
+
+impl<T> Eq for FilterPortId<T> {}
+
+impl<T> Clone for FilterPortId<T> {
+    fn clone(&self) -> Self {
+        Self {
+            ptr: self.ptr.clone(),
+        }
+    }
+}
+
+impl<T> Hash for FilterPortId<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.ptr.hash(state)
+    }
+}
+
+impl<T> FilterPortId<T> {
+    fn new(ptr: NonNull<*mut T>) -> Self {
+        Self { ptr }
+    }
+
+    fn as_ptr(&self) -> *mut *mut T {
+        self.ptr.as_ptr()
+    }
+}
 
 /// Wrapper for the external [pw_sys::pw_filter] value.
 /// The filter object provides a convenient way to implement processing filters.
@@ -275,17 +311,18 @@ impl<'a, T> Filter<'a, T> {
             result.map(|mut ptr| {
                 let box_ptr = (&mut *port_data) as *mut T; // Is this safe to take the reference before pin?
                 ptr.write(box_ptr);
-                let key = NonNull::new_unchecked(ptr);
-                self.ports.insert(key, Pin::new_unchecked(port_data));
+                let key = FilterPortId::new(NonNull::new_unchecked(ptr));
+                self.ports
+                    .insert(key.clone(), Pin::new_unchecked(port_data));
                 key
             })
         }
     }
 
-    pub fn remove_port(&mut self, port_id: FilterPortId<T>) -> crate::Result<Pin<Box<T>>> {
+    pub fn remove_port(&mut self, port_id: &FilterPortId<T>) -> crate::Result<Pin<Box<T>>> {
         unsafe {
             self.as_ref().remove_port(port_id.as_ptr()).and_then(|_| {
-                if let Some(port_data) = self.ports.remove(&port_id) {
+                if let Some(port_data) = self.ports.remove(port_id) {
                     Ok(port_data)
                 } else {
                     Err(crate::Error::ErrorMessage("Cannot find port in filter"))
@@ -294,11 +331,11 @@ impl<'a, T> Filter<'a, T> {
         }
     }
 
-    pub fn contains_port(&self, port_id: FilterPortId<T>) -> bool {
+    pub fn contains_port(&self, port_id: &FilterPortId<T>) -> bool {
         self.ports.contains_key(&port_id)
     }
 
-    fn try_port_as_ptr(&self, port_id: Option<FilterPortId<T>>) -> crate::Result<*mut *mut T> {
+    fn try_port_as_ptr(&self, port_id: Option<&FilterPortId<T>>) -> crate::Result<*mut *mut T> {
         Ok(if let Some(port_id) = port_id {
             if self.contains_port(port_id) {
                 port_id.as_ptr()
@@ -312,14 +349,14 @@ impl<'a, T> Filter<'a, T> {
 
     pub fn get_properties(
         &self,
-        port_id: Option<FilterPortId<T>>,
+        port_id: Option<&FilterPortId<T>>,
     ) -> crate::Result<&PropertiesRef> {
         unsafe { Ok(self.as_ref().get_properties(self.try_port_as_ptr(port_id)?)) }
     }
 
     pub fn update_properties(
         &self,
-        port_id: Option<FilterPortId<T>>,
+        port_id: Option<&FilterPortId<T>>,
         properties: &DictRef,
     ) -> crate::Result<i32> {
         unsafe {
@@ -331,7 +368,7 @@ impl<'a, T> Filter<'a, T> {
 
     pub fn update_params(
         &self,
-        port_id: Option<FilterPortId<T>>,
+        port_id: Option<&FilterPortId<T>>,
         params: &[&PodRef],
     ) -> crate::Result<()> {
         unsafe {
@@ -340,7 +377,7 @@ impl<'a, T> Filter<'a, T> {
         }
     }
 
-    pub fn dequeue_buffer(&self, port_id: FilterPortId<T>) -> Option<&mut BufferRef> {
+    pub fn dequeue_buffer(&self, port_id: &FilterPortId<T>) -> Option<&mut BufferRef> {
         if self.contains_port(port_id) {
             unsafe { self.as_ref().dequeue_buffer(port_id.as_ptr()) }
         } else {
@@ -350,7 +387,7 @@ impl<'a, T> Filter<'a, T> {
 
     pub unsafe fn queue_buffer(
         &self,
-        port_id: FilterPortId<T>,
+        port_id: &FilterPortId<T>,
         buffer: &BufferRef,
     ) -> crate::Result<()> {
         unsafe {
@@ -361,7 +398,7 @@ impl<'a, T> Filter<'a, T> {
 
     pub fn get_dsp_buffer<S: Sized>(
         &self,
-        port_id: FilterPortId<T>,
+        port_id: &FilterPortId<T>,
         n_samples: u32,
     ) -> crate::Result<&mut [S]> {
         unsafe {
@@ -370,11 +407,11 @@ impl<'a, T> Filter<'a, T> {
         }
     }
 
-    pub fn get_port(&self, port_id: FilterPortId<T>) -> Option<&Pin<Box<T>>> {
+    pub fn get_port(&self, port_id: &FilterPortId<T>) -> Option<&Pin<Box<T>>> {
         self.ports.get(&port_id)
     }
 
-    pub fn get_port_mut(&mut self, port_id: FilterPortId<T>) -> Option<&mut Pin<Box<T>>> {
+    pub fn get_port_mut(&mut self, port_id: &FilterPortId<T>) -> Option<&mut Pin<Box<T>>> {
         self.ports.get_mut(&port_id)
     }
 }

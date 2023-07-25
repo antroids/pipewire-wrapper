@@ -77,8 +77,8 @@ pub fn main() {
             let filter = filter.clone();
             move |pos| {
                 let n_samples = pos.clock().duration() as u32;
-                let input_buf = filter.get_dsp_buffer::<AudioDataType>(input_port, n_samples);
-                let output_buf = filter.get_dsp_buffer::<AudioDataType>(output_port, n_samples);
+                let input_buf = filter.get_dsp_buffer::<AudioDataType>(&input_port, n_samples);
+                let output_buf = filter.get_dsp_buffer::<AudioDataType>(&output_port, n_samples);
                 if let (Ok(input_buf), Ok(output_buf)) = (input_buf, output_buf) {
                     output_buf.copy_from_slice(input_buf);
                 }
