@@ -78,7 +78,7 @@ macro_rules! spa_interface_call {
                     Err(Error::MethodNotFound(String::from(stringify!($method))))
                 }
             } else {
-                Err(Error::MethodCallOnNull())
+                Err(Error::MethodCallOnNull)
             }
         } else {
             Err(Error::VersionMismatch($version, $self.spa_interface().version()))

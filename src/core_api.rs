@@ -46,6 +46,15 @@ impl PipeWire {
     /// # Arguments
     ///
     /// * `args` - arguments
+    ///
+    /// Returns PipeWire struct
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pipewire_wrapper::core_api::PipeWire;
+    /// let pipe_wire = PipeWire::init(&Vec::default());
+    /// ```
     pub fn init(args: &Vec<&CStr>) -> PipeWire {
         unsafe {
             INIT.call_once_force(|_state| {

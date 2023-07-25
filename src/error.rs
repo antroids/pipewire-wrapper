@@ -2,16 +2,27 @@ use std::fmt::{Debug, Display, Formatter, Pointer};
 
 use crate::spa::pod::PodError;
 
+/// Error types
 pub enum Error {
+    /// Linux error code
     ErrorCode(u32),
+    /// Error message
     ErrorMessage(&'static str),
-    MethodCallOnNull(),
+    /// Trying to call interface method on null
+    MethodCallOnNull,
+    /// Method not found in the interface
     MethodNotFound(String),
+    /// Interface has unexpected version
     VersionMismatch(u32, u32),
+    /// Unexpected type
     TypeMismatch,
+    /// Invalid time format
     WrongTimeFormat,
+    /// Got the null from constructor method
     CannotCreateInstance,
+    /// Unexpected null pointer
     NullPointer,
+    /// Pod parse/write error
     PodParseError(PodError),
 }
 
@@ -26,7 +37,7 @@ impl Display for Error {
         match self {
             Error::ErrorCode(code) => write!(f, "ErrorCode({})", code),
             Error::ErrorMessage(message) => write!(f, "ErrorMessage({})", message),
-            Error::MethodCallOnNull() => write!(f, "MethodCallOnNull"),
+            Error::MethodCallOnNull => write!(f, "MethodCallOnNull"),
             Error::MethodNotFound(method) => {
                 write!(f, "MethodNotFound: method {} not found", method)
             }
