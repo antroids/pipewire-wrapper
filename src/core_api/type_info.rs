@@ -2,38 +2,61 @@ use std::error::Error;
 use std::ffi::{c_char, CStr, CString};
 use std::fmt::{Debug, Formatter};
 
+/// Type info for global object.
+/// Can be defined as const or convert from [CStr] or [[u8]].
+///
+/// # Examples
+///
+/// Create const with macros:
+/// ```
+/// use pipewire_wrapper::core_api::type_info::TypeInfo;
+/// use pipewire_wrapper::interface_type;
+/// const TEST_INTERFACE: TypeInfo = interface_type!("test_int");
+/// ```
 #[derive(Copy, Clone)]
 pub struct TypeInfo<'a> {
     type_: &'a CStr,
 }
 
 impl<'a> TypeInfo<'a> {
+    /// Use the giver [CStr] as type.
     pub const fn from_c_str(type_: &'a CStr) -> Self {
         Self { type_ }
     }
 
+    /// Get the underlying [CStr]
     pub const fn as_c_str(&self) -> &CStr {
         self.type_
     }
 
+    /// Convert the bytes slice to the [TypeInfo].
+    ///
+    /// # Safety
+    ///
+    /// Byte slice must be nul-terminated, and must not have zero bytes.
+    /// See [CStr::from_bytes_with_nul_unchecked]
     pub const unsafe fn from_bytes_with_nul_unchecked(type_bytes: &'a [u8]) -> Self {
         let type_ = CStr::from_bytes_with_nul_unchecked(type_bytes);
         Self { type_ }
     }
 
+    /// Short type as nul-terminated bytes slice.
     pub fn short_type_bytes(&self) -> &'a [u8] {
         let prefix_len = self.type_kind().map_or(0, |tk| tk.prefix().len());
         &self.type_.to_bytes_with_nul()[prefix_len..]
     }
 
+    /// Full type as nul-terminated bytes slice.
     pub fn full_type_bytes(&self) -> &'a [u8] {
         self.type_.to_bytes_with_nul()
     }
 
+    /// Pointer to underlying string
     pub fn as_ptr(&self) -> *const c_char {
         self.type_.as_ptr()
     }
 
+    /// Parse [TypeKind] from the [TypeInfo]
     pub fn type_kind(&self) -> crate::Result<TypeKind> {
         let type_bytes = self.type_.to_bytes_with_nul();
         let type_kind = if Self::starts_with(type_bytes, TypeKind::Interface.prefix()) {
@@ -68,6 +91,7 @@ impl<'a> From<&'a CStr> for TypeInfo<'a> {
     }
 }
 
+/// Kind of [TypeInfo]
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum TypeKind {
     Object,
@@ -75,6 +99,7 @@ pub enum TypeKind {
 }
 
 impl TypeKind {
+    /// Constant prefix for the [TypeKind]
     const fn prefix(&self) -> &'static [u8] {
         match self {
             TypeKind::Object => pw_sys::PW_TYPE_INFO_OBJECT_BASE,
@@ -83,6 +108,7 @@ impl TypeKind {
     }
 }
 
+/// Has associated [TypeInfo]
 pub trait WithTypeInfo {
     fn type_info(&self) -> &TypeInfo;
 }
@@ -103,6 +129,7 @@ impl Debug for TypeInfo<'_> {
     }
 }
 
+/// Create const [TypeInfo] with the [TypeKind::Interface] and given short name
 #[macro_export]
 macro_rules! interface_type {
     ($interface_name:literal) => {{
