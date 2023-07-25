@@ -19,7 +19,7 @@ impl BufferRef {
         unsafe { buffers::BufferRef::mut_from_raw_ptr(self.raw.buffer) }
     }
 
-    pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
+    unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         (self.raw.user_data as *mut T).as_mut()
     }
 

@@ -73,18 +73,9 @@ impl Context {
     ///
     /// * `main_loop` - main loop
     /// * `properties` - extra properties for the context
-    /// * `user_data_size` - extra user data size
-    pub fn new(
-        main_loop: std::sync::Arc<MainLoop>,
-        properties: Properties,
-        user_data_size: usize,
-    ) -> crate::Result<Self> {
+    pub fn new(main_loop: std::sync::Arc<MainLoop>, properties: Properties) -> crate::Result<Self> {
         let ptr = unsafe {
-            pw_sys::pw_context_new(
-                main_loop.get_loop().as_raw_ptr(),
-                properties.into_raw(),
-                user_data_size,
-            )
+            pw_sys::pw_context_new(main_loop.get_loop().as_raw_ptr(), properties.into_raw(), 0)
         };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
@@ -103,7 +94,6 @@ impl Default for Context {
         Self::new(
             std::sync::Arc::new(MainLoop::default()),
             Properties::default(),
-            0,
         )
         .unwrap()
     }
@@ -111,7 +101,7 @@ impl Default for Context {
 
 impl ContextRef {
     /// Extra User data assigned to the context
-    pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
+    unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         let ptr = pw_sys::pw_context_get_user_data(self.as_raw_ptr()) as *mut T;
         ptr.as_mut()
     }
@@ -263,7 +253,7 @@ fn test_context_events() {
     let events = context.add_listener(events);
 
     let core = Core::connect(&context, Properties::default(), 0).unwrap();
-    let registry = core.get_registry(0, 0);
+    let registry = core.get_registry(0);
 
     let timer_callback = |_| {
         context.main_loop.quit();

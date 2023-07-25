@@ -32,7 +32,7 @@ fn main() {
     let devices: Arc<Mutex<HashMap<u32, Device>>> = Arc::new(Mutex::default());
     let device_added_queue = Arc::new(Mutex::new(Vec::<u32>::new()));
     let main_loop = core.context().main_loop();
-    let registry = core.get_registry(0, 0).unwrap();
+    let registry = core.get_registry(0).unwrap();
     let device_added_event = add_device_added_event(
         main_loop,
         devices.clone(),
@@ -90,7 +90,7 @@ fn add_device_added_event<'a>(
                     .filter(|device_id| !devices.contains_key(&device_id))
                     .collect();
                 for &id in new_device_ids {
-                    let device: Device = registry.bind_proxy(id, 0, 0).unwrap();
+                    let device: Device = registry.bind_proxy(id, 0).unwrap();
                     let listener = DeviceEventsBuilder::default()
                         .param(Box::new(device_param_callback))
                         .build();

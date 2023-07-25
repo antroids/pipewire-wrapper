@@ -96,13 +96,13 @@ impl<'a> OwnListeners<'a> for Registry<'a> {
 }
 
 impl<'c> Registry<'c> {
-    pub fn bind_proxy<T>(&self, id: u32, version: u32, user_data_size: usize) -> crate::Result<T>
+    pub fn bind_proxy<T>(&self, id: u32, version: u32) -> crate::Result<T>
     where
         T: RegistryBind<'c>,
         <T as Wrapper>::RawWrapperType: Proxied,
     {
         let type_info = T::RawWrapperType::type_info();
-        let ref_ = self.bind(id, type_info, version, user_data_size)?;
+        let ref_ = self.bind(id, type_info, version, 0)?;
         Ok(T::from_ref(&self.ref_.core(), ref_))
     }
 }

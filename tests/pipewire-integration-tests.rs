@@ -131,7 +131,7 @@ fn test_iterate_main_loop() {
 #[test]
 fn test_port_params() {
     let core = Arc::new(Core::default());
-    let registry = core.get_registry(0, 0).unwrap();
+    let registry = core.get_registry(0).unwrap();
     let main_loop = core.context().main_loop();
     let ports: Mutex<Vec<Port>> = Mutex::default();
 
@@ -142,7 +142,7 @@ fn test_port_params() {
                 let registry = registry.clone();
                 move |id, _permissions, type_info, _version, _props| {
                     if type_info == PortRef::type_info() {
-                        let port = registry.bind_proxy(id, 0, 0).unwrap();
+                        let port = registry.bind_proxy(id, 0).unwrap();
                         port_sender.send(port).unwrap();
                     }
                 }
@@ -204,7 +204,7 @@ fn test_node_params() {
 
     {
         let nodes: Mutex<Vec<Node>> = Mutex::default();
-        let registry = core.get_registry(0, 0).unwrap();
+        let registry = core.get_registry(0).unwrap();
         let _registry_listener = registry.add_listener(
             RegistryEventsBuilder::default()
                 .global(Box::new({
@@ -230,7 +230,7 @@ fn test_node_params() {
         let main_loop_idle_callback = || {
             if let Some(node_id) = node_ids_queue.lock().unwrap().pop() {
                 println!("Node {}", node_id);
-                if let Ok(node) = registry.bind_proxy::<Node>(node_id, 0, 0) {
+                if let Ok(node) = registry.bind_proxy::<Node>(node_id, 0) {
                     let node_param_callback = |seq, id, index, next, param: &PodRef| {
                         if let Ok(basic_pod) = param.downcast() {
                             println!(
@@ -269,7 +269,7 @@ fn test_node_events_via_channel() {
     let core = Arc::new(Core::default());
     let main_loop = core.context().main_loop();
     let nodes = Arc::new(Mutex::new(Vec::<Node>::new()));
-    let registry = core.get_registry(0, 0).unwrap();
+    let registry = core.get_registry(0).unwrap();
     let quit_main_loop = Box::new(|_| {
         main_loop.quit().unwrap();
     });
@@ -283,7 +283,7 @@ fn test_node_events_via_channel() {
             let registry = registry.clone();
             move |id, _permission, type_, _flags, _props| {
                 if type_ == NodeRef::type_info() {
-                    let node = registry.bind_proxy(id, 0, 0).unwrap();
+                    let node = registry.bind_proxy(id, 0).unwrap();
                     node_sender.send(node).unwrap();
                 }
             }

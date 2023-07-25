@@ -41,14 +41,13 @@ impl ImplClient {
         core: &std::sync::Arc<ImplCore>,
         protocol: &std::sync::Arc<Protocol>,
         properties: Properties,
-        user_data_size: usize,
     ) -> crate::Result<Self> {
         let ptr = unsafe {
             pw_sys::pw_context_create_client(
                 core.as_raw_ptr(),
                 protocol.as_raw_ptr(),
                 properties.into_raw(),
-                user_data_size,
+                0,
             )
         };
         Ok(Self {
@@ -90,7 +89,7 @@ impl ImplClientRef {
         i32_as_result(result, ())
     }
 
-    pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
+    unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         let ptr = pw_sys::pw_impl_client_get_user_data(self.as_raw_ptr()) as *mut T;
         ptr.as_mut()
     }

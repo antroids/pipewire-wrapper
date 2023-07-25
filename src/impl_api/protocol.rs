@@ -32,13 +32,8 @@ impl Drop for Protocol {
 }
 
 impl Protocol {
-    pub fn new(
-        context: &std::sync::Arc<Context>,
-        name: &CStr,
-        user_data_size: usize,
-    ) -> crate::Result<Self> {
-        let ptr =
-            unsafe { pw_sys::pw_protocol_new(context.as_raw_ptr(), name.as_ptr(), user_data_size) };
+    pub fn new(context: &std::sync::Arc<Context>, name: &CStr) -> crate::Result<Self> {
+        let ptr = unsafe { pw_sys::pw_protocol_new(context.as_raw_ptr(), name.as_ptr(), 0) };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
             context: context.clone(),
@@ -55,7 +50,7 @@ impl ProtocolRef {
         unsafe { ContextRef::from_raw_ptr(pw_sys::pw_protocol_get_context(self.as_raw_ptr())) }
     }
 
-    pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
+    unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         let ptr = pw_sys::pw_protocol_get_user_data(self.as_raw_ptr()) as *mut T;
         ptr.as_mut()
     }

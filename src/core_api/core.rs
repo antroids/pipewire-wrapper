@@ -49,15 +49,12 @@ impl Core {
     ///
     /// * `context` - [Context]
     /// * `properties` - properties for the [Core]
-    /// * `user_data_size` - extra user data size
     pub fn connect(
         context: &std::sync::Arc<Context>,
         properties: Properties,
-        user_data_size: usize,
     ) -> crate::Result<Self> {
-        let ptr = unsafe {
-            pw_sys::pw_context_connect(context.as_raw_ptr(), properties.into_raw(), user_data_size)
-        };
+        let ptr =
+            unsafe { pw_sys::pw_context_connect(context.as_raw_ptr(), properties.into_raw(), 0) };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
             context: context.clone(),
@@ -75,11 +72,10 @@ impl Core {
     /// # Arguments
     ///
     /// * `version` - registry version
-    /// * `user_data_size` - extra user data size
-    pub fn get_registry(&self, version: u32, user_data_size: usize) -> crate::Result<Registry> {
+    pub fn get_registry(&self, version: u32) -> crate::Result<Registry> {
         use crate::core_api::proxy::Proxied;
         use crate::core_api::registry::restricted::RegistryBind;
-        let ref_: &RegistryRef = self.as_ref().get_registry(version, user_data_size)?;
+        let ref_: &RegistryRef = self.as_ref().get_registry(version, 0)?;
         Ok(Registry::from_ref(self, ref_.as_proxy()))
     }
 }
@@ -89,7 +85,6 @@ impl Default for Core {
         Core::connect(
             &std::sync::Arc::new(Context::default()),
             Properties::default(),
-            0,
         )
         .unwrap()
     }
@@ -162,7 +157,7 @@ fn test_create_core() {
     let core = Core::default();
     let context = core.context();
     let main_loop = context.main_loop();
-    let registry = core.get_registry(0, 0).unwrap();
+    let registry = core.get_registry(0).unwrap();
 
     let registry_events = registry.add_listener(
         RegistryEventsBuilder::default()

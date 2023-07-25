@@ -30,7 +30,7 @@ fn main() {
     let nodes: Arc<Mutex<HashMap<u32, Node>>> = Arc::new(Mutex::default());
     let node_added_queue = Arc::new(Mutex::new(Vec::<u32>::new()));
     let main_loop = core.context().main_loop();
-    let registry = core.get_registry(0, 0).unwrap();
+    let registry = core.get_registry(0).unwrap();
     let node_added_event = add_node_added_event(
         main_loop,
         nodes.clone(),
@@ -83,7 +83,7 @@ fn add_node_added_event<'a>(
                     .filter(|node_id| !nodes.contains_key(&node_id))
                     .collect();
                 for &id in new_node_ids {
-                    let node: Node = registry.bind_proxy(id, 0, 0).unwrap();
+                    let node: Node = registry.bind_proxy(id, 0).unwrap();
                     let listener = NodeEventsBuilder::default()
                         .param(Box::new(node_param_callback))
                         .build();

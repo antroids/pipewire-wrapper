@@ -33,17 +33,9 @@ impl Drop for ImplCore {
 }
 
 impl ImplCore {
-    pub fn new(
-        context: &std::sync::Arc<Context>,
-        properties: Properties,
-        user_data_size: usize,
-    ) -> crate::Result<Self> {
+    pub fn new(context: &std::sync::Arc<Context>, properties: Properties) -> crate::Result<Self> {
         let ptr = unsafe {
-            pw_sys::pw_context_create_core(
-                context.as_raw_ptr(),
-                properties.into_raw(),
-                user_data_size,
-            )
+            pw_sys::pw_context_create_core(context.as_raw_ptr(), properties.into_raw(), 0)
         };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
@@ -83,7 +75,7 @@ impl ImplCoreRef {
         i32_as_result(result, ())
     }
 
-    pub unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
+    unsafe fn get_user_data<T>(&self) -> Option<&mut T> {
         let ptr = pw_sys::pw_impl_core_get_user_data(self.as_raw_ptr()) as *mut T;
         ptr.as_mut()
     }
