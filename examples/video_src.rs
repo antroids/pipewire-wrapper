@@ -26,7 +26,6 @@ use pipewire_wrapper::spa::pod::object::param_meta::{MetaType, ParamMetaType};
 use pipewire_wrapper::spa::pod::object::param_port_config::Direction;
 use pipewire_wrapper::spa::pod::object::{ObjectType, PodObjectRef};
 use pipewire_wrapper::spa::pod::pod_buf::AllocatedData;
-use pipewire_wrapper::spa::pod::restricted::PodRawValue;
 use pipewire_wrapper::spa::pod::{
     BasicType, FromPrimitiveValue, FromValue, PodFractionRef, PodRectangleRef, PodRef, PodValue,
     Upcast,

@@ -51,7 +51,7 @@ impl<'a> PodRawValue for &'a PodStringRef {
 
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
         unsafe {
-            if *(ptr as *const u8).offset((size - 1) as isize) != 0 {
+            if *(ptr as *const u8).add((size - 1)) != 0 {
                 Err(PodError::StringIsNotNullTerminated)
             } else {
                 Ok(CStr::from_ptr(ptr))

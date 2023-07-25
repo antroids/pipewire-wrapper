@@ -115,7 +115,7 @@ impl PodChoiceBodyRef {
     }
 
     pub(crate) unsafe fn content_ptr(&self) -> *const u8 {
-        (self.as_raw_ptr() as *const u8).offset(size_of::<PodChoiceBodyRef>() as isize)
+        (self.as_raw_ptr() as *const u8).add(size_of::<PodChoiceBodyRef>())
     }
 }
 

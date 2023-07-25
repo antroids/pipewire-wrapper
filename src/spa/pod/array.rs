@@ -35,7 +35,7 @@ pub struct PodArrayBodyRef {
 
 impl PodArrayBodyRef {
     unsafe fn content_ptr(&self) -> *const u8 {
-        (self.as_raw_ptr() as *const u8).offset(size_of::<PodArrayBodyRef>() as isize)
+        (self.as_raw_ptr() as *const u8).add(size_of::<PodArrayBodyRef>())
     }
 
     fn child(&self) -> &PodRef {

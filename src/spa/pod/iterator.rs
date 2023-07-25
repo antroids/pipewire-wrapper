@@ -50,10 +50,8 @@ impl<'a, E: SizedPod> PodIterator<'a, E> {
     unsafe fn next_element_ptr(&self) -> *const E {
         let ptr = self.current_element_ptr;
         let size = (*ptr).pod_size();
-        let next_ptr = (ptr as *const u8).offset(size as isize);
-        let aligned = next_ptr
-            .offset(next_ptr.align_offset(POD_ALIGN) as isize)
-            .cast();
+        let next_ptr = (ptr as *const u8).add(size);
+        let aligned = next_ptr.add(next_ptr.align_offset(POD_ALIGN)).cast();
         aligned
     }
 
@@ -117,7 +115,7 @@ impl<'a, E: PodRawValue> PodValueIterator<'a, E> {
     unsafe fn next_element_ptr(&self) -> *const E::RawValue {
         let ptr = self.current_element_ptr;
         let size = self.element_size;
-        (ptr as *const u8).offset(size as isize).cast()
+        (ptr as *const u8).add(size).cast()
     }
 }
 
