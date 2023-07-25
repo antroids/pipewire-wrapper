@@ -452,6 +452,67 @@ impl<'a> WritePod for &'a PodRef {
     }
 }
 
+impl<'a, T> PodRawValue for &'a T
+where
+    T: PodRawValue,
+    T: PrimitiveValue,
+{
+    type RawValue = T::RawValue;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        (*self).raw_value_ptr()
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        T::parse_raw_value(ptr, size)
+    }
+}
+
+impl PodRawValue for PodRef {
+    type RawValue = spa_sys::spa_pod;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value> {
+        Ok(())
+    }
+}
+
+impl<'a> PodRawValue for &'a PodRef {
+    type RawValue = spa_sys::spa_pod;
+
+    fn raw_value_ptr(&self) -> *const Self::RawValue {
+        &self.raw
+    }
+
+    fn parse_raw_value(ptr: *const Self::RawValue, _size: usize) -> PodResult<Self::Value> {
+        Ok(match unsafe { PodRef::from_raw_ptr(ptr).downcast()? } {
+            BasicType::NONE => BasicTypeValue::NONE,
+            BasicType::BOOL(pod) => BasicTypeValue::BOOL(pod.value()?),
+            BasicType::ID(pod) => BasicTypeValue::ID(pod.value()?),
+            BasicType::INT(pod) => BasicTypeValue::INT(pod.value()?),
+            BasicType::LONG(pod) => BasicTypeValue::LONG(pod.value()?),
+            BasicType::FLOAT(pod) => BasicTypeValue::FLOAT(pod.value()?),
+            BasicType::DOUBLE(pod) => BasicTypeValue::DOUBLE(pod.value()?),
+            BasicType::STRING(pod) => BasicTypeValue::STRING(pod.value()?),
+            BasicType::BYTES(pod) => BasicTypeValue::BYTES(pod.value()?),
+            BasicType::RECTANGLE(pod) => BasicTypeValue::RECTANGLE(pod.value()?),
+            BasicType::FRACTION(pod) => BasicTypeValue::FRACTION(pod.value()?),
+            BasicType::BITMAP(pod) => BasicTypeValue::BITMAP(pod.value()?),
+            BasicType::ARRAY(pod) => BasicTypeValue::ARRAY(pod.value()?),
+            BasicType::STRUCT(pod) => BasicTypeValue::STRUCT(pod.value()?),
+            BasicType::OBJECT(pod) => BasicTypeValue::OBJECT(pod.value()?),
+            BasicType::SEQUENCE(pod) => BasicTypeValue::SEQUENCE(pod.value()?),
+            BasicType::POINTER(pod) => BasicTypeValue::POINTER(pod.value()?),
+            BasicType::FD(pod) => BasicTypeValue::FD(pod.value()?),
+            BasicType::CHOICE(pod) => BasicTypeValue::CHOICE(pod.choice_value()?),
+            _ => return Err(PodError::UnknownPodTypeToDowncast),
+        })
+    }
+}
+
 impl StaticTypePod for PodRef {
     fn static_type() -> Type {
         Type::POD
