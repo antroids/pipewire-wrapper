@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::mem;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};

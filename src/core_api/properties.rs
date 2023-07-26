@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::ffi::{CStr, CString, NulError};
 use std::fmt::{Debug, Display, Formatter};
 use std::os::raw::c_char;
@@ -252,9 +255,9 @@ impl Properties {
     }
 
     /// Create [Properties] instance from reference
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// [PropertiesRef] must has lifetime more than created [Properties]
     pub unsafe fn from_ref(ref_: NonNull<PropertiesRef>) -> Self {
         Self { ref_ }

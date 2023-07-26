@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::mem::size_of;
 use std::ptr::{addr_of, addr_of_mut};
 use std::slice;

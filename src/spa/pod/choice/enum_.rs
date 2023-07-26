@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::fmt::{Debug, Formatter};
 use std::io::{Seek, SeekFrom, Write};
 use std::marker::PhantomData;

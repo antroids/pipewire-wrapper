@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};

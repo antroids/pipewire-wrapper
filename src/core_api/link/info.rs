@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::{ffi::CStr, fmt::Debug};
 
 use bitflags::bitflags;

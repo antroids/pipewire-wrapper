@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::fmt::{Debug, Formatter};
 use std::pin::Pin;
 use std::ptr::NonNull;

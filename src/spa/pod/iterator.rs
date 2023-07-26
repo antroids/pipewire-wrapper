@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use core::slice;
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};

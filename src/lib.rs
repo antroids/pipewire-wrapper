@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 #![allow(unused)]
 
 extern crate core;

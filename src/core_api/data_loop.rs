@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::ptr::NonNull;
 use std::rc::Rc;
 use std::time::Duration;

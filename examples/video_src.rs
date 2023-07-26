@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 extern crate pipewire_wrapper;
 
 use std::ffi::CString;

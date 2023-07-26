@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::time::Duration;
 
 use pipewire_proc_macro::RawWrapper;

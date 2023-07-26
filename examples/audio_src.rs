@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::ffi::CString;
 use std::mem::size_of;
 use std::ops::Add;

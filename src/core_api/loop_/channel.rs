@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::collections::VecDeque;
 use std::fmt::{Debug, Formatter};
 use std::ops::DerefMut;

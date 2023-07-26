@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::os::fd::RawFd;
 
 use bitflags::bitflags;

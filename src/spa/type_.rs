@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::any::TypeId;
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};

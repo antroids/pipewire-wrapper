@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::mem::ManuallyDrop;
 use std::ops::{Deref, DerefMut};
 

@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use pipewire_proc_macro::RawWrapper;
 
 #[derive(RawWrapper, Debug)]

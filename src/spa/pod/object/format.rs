@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::io::{Seek, Write};
 
 use crate::enum_wrapper;

@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 pub mod global;
 pub mod impl_client;
 pub mod impl_core;

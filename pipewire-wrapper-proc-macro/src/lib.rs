@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use proc_macro::TokenStream;
 
 #[proc_macro_derive(RawWrapper, attributes(raw))]

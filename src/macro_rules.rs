@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 #[macro_export]
 macro_rules! enum_wrapper {
     (@add_enum_variant $name: ident, $enum_variant: ident : $enum_value: expr, $($tts:tt)*) => {

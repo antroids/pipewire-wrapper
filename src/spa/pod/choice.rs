@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::any::TypeId;
 use std::fmt::{Debug, Formatter};
 use std::io::{Seek, Write};

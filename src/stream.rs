@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::ffi::{CStr, CString};
 use std::pin::Pin;
 use std::ptr::{null_mut, NonNull};

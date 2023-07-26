@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use bitflags::bitflags;
 
 use pipewire_proc_macro::RawWrapper;

@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::ffi::{c_char, CStr};
 use std::fmt::{Debug, Formatter};
 use std::io::{Cursor, Seek, SeekFrom, Write};

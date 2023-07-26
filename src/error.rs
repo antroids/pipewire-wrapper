@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::fmt::{Debug, Display, Formatter, Pointer};
 
 use crate::spa::pod::PodError;

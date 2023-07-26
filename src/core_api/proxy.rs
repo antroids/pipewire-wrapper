@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::ffi::CStr;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;

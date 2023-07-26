@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::fmt::{Debug, Formatter};
 use std::mem::size_of;
 use std::ptr::addr_of;

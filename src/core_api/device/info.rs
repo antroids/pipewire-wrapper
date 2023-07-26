@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::fmt::{Debug, Formatter};
@@ -76,11 +79,7 @@ impl DeviceInfo {
             id: ref_.id(),
             change_mask: ref_.change_mask(),
             props: ref_.props().into(),
-            params: ref_
-                .params()
-                .iter()
-                .map(ParamInfo::from_ref)
-                .collect(),
+            params: ref_.params().iter().map(ParamInfo::from_ref).collect(),
         }
     }
 

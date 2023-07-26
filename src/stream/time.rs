@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::fmt::{Debug, Formatter};
 
 use pipewire_proc_macro::RawWrapper;

@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::pin::Pin;
 use std::ptr::{null_mut, NonNull};
 use std::sync::Arc;

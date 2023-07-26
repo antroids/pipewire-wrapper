@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::marker::PhantomData;
 use std::ptr::{addr_of, null, null_mut};
 

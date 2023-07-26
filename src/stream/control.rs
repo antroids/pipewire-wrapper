@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use core::slice;
 
 use pipewire_proc_macro::RawWrapper;

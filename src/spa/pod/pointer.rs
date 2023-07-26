@@ -1,3 +1,6 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
 use std::ffi::c_void;
 use std::io::{Seek, Write};
 use std::ptr::addr_of;
