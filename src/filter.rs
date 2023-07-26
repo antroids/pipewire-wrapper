@@ -25,6 +25,7 @@ use crate::{i32_as_result, i32_as_void_result, new_instance_raw_wrapper};
 
 pub mod events;
 
+/// Identifier for the port in the filter.
 #[derive(Debug)]
 pub struct FilterPortId<T> {
     ptr: NonNull<*mut T>,
@@ -74,10 +75,16 @@ bitflags! {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     #[repr(transparent)]
     pub struct FilterFlags: u32 {
+        /// no flags
         const NONE = pw_sys::pw_filter_flags_PW_FILTER_FLAG_NONE;
+        /// start the filter inactive, pw_filter_set_active() needs to be called explicitly
         const INACTIVE = pw_sys::pw_filter_flags_PW_FILTER_FLAG_INACTIVE;
+        /// be a driver
         const DRIVER = pw_sys::pw_filter_flags_PW_FILTER_FLAG_DRIVER;
+        /// call process from the realtime thread
         const RT_PROCESS = pw_sys::pw_filter_flags_PW_FILTER_FLAG_RT_PROCESS;
+        /// don't call the default latency algorithm but emit the param_changed event
+        /// for the ports when Latency params are received.
         const CUSTOM_LATENCY = pw_sys::pw_filter_flags_PW_FILTER_FLAG_CUSTOM_LATENCY;
     }
 }
@@ -86,8 +93,12 @@ bitflags! {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     #[repr(transparent)]
     pub struct PortFlags: u32 {
+        /// no flags
         const NONE = pw_sys::pw_filter_port_flags_PW_FILTER_PORT_FLAG_NONE;
+        /// the application will allocate buffer memory. In the add_buffer event, the data
+        /// of the buffer should be set
         const ALLOC_BUFFERS = pw_sys::pw_filter_port_flags_PW_FILTER_PORT_FLAG_ALLOC_BUFFERS;
+        /// map the buffers except DmaBuf
         const MAP_BUFFERS = pw_sys::pw_filter_port_flags_PW_FILTER_PORT_FLAG_MAP_BUFFERS;
     }
 }
@@ -103,6 +114,7 @@ enum_wrapper!(
 );
 
 impl FilterState {
+    /// Convert a filter state to a readable string
     pub fn state_as_string(&self) -> &CStr {
         unsafe { CStr::from_ptr(pw_sys::pw_filter_state_as_string(self.raw)) }
     }
@@ -140,6 +152,7 @@ impl<T> FilterRef<T> {
         unsafe { CoreRef::from_raw_ptr(pw_sys::pw_filter_get_core(self.as_raw_ptr())) }
     }
 
+    /// Connect a filter for processing.
     pub fn connect(&self, flags: FilterFlags, params: &[&PodRef]) -> crate::Result<()> {
         let result = unsafe {
             pw_sys::pw_filter_connect(
@@ -156,11 +169,26 @@ impl<T> FilterRef<T> {
         unsafe { pw_sys::pw_filter_get_node_id(self.as_raw_ptr()) }
     }
 
+    /// Disconnect the filter and stop processing.
     pub fn disconnect(&self) -> crate::Result<()> {
         let result = unsafe { pw_sys::pw_filter_disconnect(self.as_raw_ptr()) };
         i32_as_void_result(result)
     }
 
+    /// Add port to the filter.
+    ///
+    /// # Arguments
+    ///
+    /// * `direction` - port direction
+    /// * `flags` - port flags
+    /// * `props` - port properties
+    /// * `params` - port parameters
+    ///
+    /// Returns a mut pointer to user data.
+    ///
+    /// # Safety
+    ///
+    /// Result is the pointer to the port structure and it should not be modified.
     pub unsafe fn add_port(
         &self,
         direction: Direction,
@@ -190,10 +218,20 @@ impl<T> FilterRef<T> {
         }
     }
 
+    /// Remove the port.
+    ///
+    /// # Safety
+    ///
+    /// `port` is a pointer to the port structure and it should not be modified.
     pub unsafe fn remove_port(&self, port: *mut *mut T) -> crate::Result<()> {
         i32_as_void_result(pw_sys::pw_filter_remove_port(port.cast()))
     }
 
+    /// Get port properties or global properties when `port` is `null`
+    ///
+    /// # Safety
+    ///
+    /// `port` is a pointer to the port structure and it should not be modified.
     pub unsafe fn get_properties(&self, port: *mut *mut T) -> &PropertiesRef {
         PropertiesRef::from_raw_ptr(pw_sys::pw_filter_get_properties(
             self.as_raw_ptr(),
@@ -201,6 +239,11 @@ impl<T> FilterRef<T> {
         ))
     }
 
+    /// Update port properties or global properties when `port` is `null`.
+    ///
+    /// # Safety
+    ///
+    /// `port` is a pointer to the port structure and it should not be modified.
     pub unsafe fn update_properties(&self, port: *mut *mut T, properties: &DictRef) -> i32 {
         pw_sys::pw_filter_update_properties(self.as_raw_ptr(), port.cast(), properties.as_raw_ptr())
     }
@@ -209,6 +252,11 @@ impl<T> FilterRef<T> {
         unsafe { pw_sys::pw_filter_set_error(self.as_raw_ptr(), res, error.as_ptr()) };
     }
 
+    /// Update port parameters or global parameters when `port` is `null`.
+    ///
+    /// # Safety
+    ///
+    /// `port` is a pointer to the port structure and it should not be modified.
     pub unsafe fn update_params(&self, port: *mut *mut T, params: &[&PodRef]) -> crate::Result<()> {
         let params_ptr = params as *const [&PodRef] as *mut *const spa_sys::spa_pod;
         let result = pw_sys::pw_filter_update_params(
@@ -220,17 +268,32 @@ impl<T> FilterRef<T> {
         i32_as_void_result(result)
     }
 
+    /// Get a buffer that can be filled for output ports or consumed for input ports.
+    ///
+    /// # Safety
+    ///
+    /// `port` is a pointer to the port structure and it should not be modified.
     pub unsafe fn dequeue_buffer(&self, port: *mut *mut T) -> Option<&mut BufferRef> {
         pw_sys::pw_filter_dequeue_buffer(port.cast())
             .as_mut()
             .map(|ptr| BufferRef::mut_from_raw_ptr(ptr))
     }
 
+    /// Submit a buffer for playback or recycle a buffer for capture.
+    ///
+    /// # Safety
+    ///
+    /// `port` is a pointer to the port structure and it should not be modified.
     pub unsafe fn queue_buffer(&self, port: *mut *mut T, buffer: &BufferRef) -> crate::Result<()> {
         let result = pw_sys::pw_filter_queue_buffer(port.cast(), buffer.as_raw_ptr());
         i32_as_void_result(result)
     }
 
+    /// Get a data pointer to the buffer data.
+    ///
+    /// # Safety
+    ///
+    /// `port` is a pointer to the port structure and it should not be modified.
     pub unsafe fn get_dsp_buffer<S: Sized>(
         &self,
         port: *mut *mut T,
@@ -244,11 +307,14 @@ impl<T> FilterRef<T> {
         }
     }
 
+    /// Activate or deactivate the filter
     pub fn set_active(&self, active: bool) -> crate::Result<()> {
         let result = unsafe { pw_sys::pw_filter_set_active(self.as_raw_ptr(), active) };
         i32_as_void_result(result)
     }
 
+    /// Flush a filter.
+    /// When drain is true, the drained callback will be called when all data is played or recorded
     pub fn flush(&self, drain: bool) -> crate::Result<()> {
         let result = unsafe { pw_sys::pw_filter_flush(self.as_raw_ptr(), drain) };
         i32_as_void_result(result)
@@ -283,6 +349,7 @@ pub struct Filter<'a, T> {
 }
 
 impl<'a, T> Filter<'a, T> {
+    /// Create an unconnected filter
     pub fn new(core: &'a Core, name: &'a CStr, properties: Properties) -> crate::Result<Self> {
         let result = unsafe {
             pw_sys::pw_filter_new(core.as_raw_ptr(), name.as_ptr(), properties.into_raw())
@@ -383,11 +450,7 @@ impl<'a, T> Filter<'a, T> {
         }
     }
 
-    pub unsafe fn queue_buffer(
-        &self,
-        port_id: &FilterPortId<T>,
-        buffer: &BufferRef,
-    ) -> crate::Result<()> {
+    pub fn queue_buffer(&self, port_id: &FilterPortId<T>, buffer: &BufferRef) -> crate::Result<()> {
         unsafe {
             self.as_ref()
                 .queue_buffer(self.try_port_as_ptr(Some(port_id))?, buffer)

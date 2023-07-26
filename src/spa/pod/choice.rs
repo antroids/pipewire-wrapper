@@ -388,17 +388,17 @@ fn test_enum_choice() {
         assert_eq!(val.default(), &5);
         assert_eq!(val.alternatives(), &vec![1, 2, 3]);
     } else {
-        assert!(false)
+        panic!()
     }
     if let BasicType::CHOICE(choice) = enum_choice_pod.upcast().downcast().unwrap() {
         if let ChoiceValueType::INT(ChoiceStructType::ENUM(val)) = choice.choice_value().unwrap() {
             assert_eq!(val.default(), &5);
             assert_eq!(val.alternatives(), &vec![1, 2, 3]);
         } else {
-            assert!(false)
+            panic!()
         }
     } else {
-        assert!(false)
+        panic!()
     }
 }
 
@@ -416,17 +416,17 @@ fn test_flags_choice() {
         assert_eq!(val.default(), &5);
         assert_eq!(val.alternatives(), &vec![1, 2, 3]);
     } else {
-        assert!(false)
+        panic!()
     }
     if let BasicType::CHOICE(choice) = flags_choice_pod.upcast().downcast().unwrap() {
         if let ChoiceValueType::INT(ChoiceStructType::FLAGS(val)) = choice.choice_value().unwrap() {
             assert_eq!(val.default(), &5);
             assert_eq!(val.alternatives(), &vec![1, 2, 3]);
         } else {
-            assert!(false)
+            panic!()
         }
     } else {
-        assert!(false)
+        panic!()
     }
 }
 
@@ -445,7 +445,7 @@ fn test_range_choice() {
         assert_eq!(val.min(), &1);
         assert_eq!(val.max(), &10);
     } else {
-        assert!(false)
+        panic!()
     }
     if let BasicType::CHOICE(choice) = range_choice_pod.upcast().downcast().unwrap() {
         if let ChoiceValueType::INT(ChoiceStructType::RANGE(val)) = choice.choice_value().unwrap() {
@@ -453,10 +453,10 @@ fn test_range_choice() {
             assert_eq!(val.min(), &1);
             assert_eq!(val.max(), &10);
         } else {
-            assert!(false)
+            panic!()
         }
     } else {
-        assert!(false)
+        panic!()
     }
 }
 
@@ -476,7 +476,7 @@ fn test_step_choice() {
         assert_eq!(val.max(), &10);
         assert_eq!(val.step(), &2);
     } else {
-        assert!(false)
+        panic!()
     }
     if let BasicType::CHOICE(choice) = step_choice_pod.upcast().downcast().unwrap() {
         if let ChoiceValueType::INT(ChoiceStructType::STEP(val)) = choice.choice_value().unwrap() {
@@ -485,10 +485,10 @@ fn test_step_choice() {
             assert_eq!(val.max(), &10);
             assert_eq!(val.step(), &2);
         } else {
-            assert!(false)
+            panic!()
         }
     } else {
-        assert!(false)
+        panic!()
     }
 }
 
@@ -503,16 +503,16 @@ fn test_none_choice() {
     if let ChoiceStructType::NONE(val) = none_choice_pod.choice().value().unwrap() {
         assert_eq!(val, 123);
     } else {
-        assert!(false)
+        panic!()
     }
     if let BasicType::CHOICE(choice) = none_choice_pod.upcast().downcast().unwrap() {
         if let ChoiceValueType::INT(ChoiceStructType::NONE(val)) = choice.choice_value().unwrap() {
             assert_eq!(val, 123);
         } else {
-            assert!(false)
+            panic!()
         }
     } else {
-        assert!(false)
+        panic!()
     }
 }
 
@@ -527,11 +527,11 @@ fn test_value_choice() {
     if let ChoiceStructType::VALUE(val) = choice.value().unwrap() {
         assert_eq!(val, AudioFormat::F32);
     } else {
-        assert!(false)
+        panic!()
     }
     if let BasicType::ID(val) = choice.upcast().downcast().unwrap() {
         assert_eq!(val.value().unwrap(), AudioFormat::F32.raw);
     } else {
-        assert!(false)
+        panic!()
     }
 }

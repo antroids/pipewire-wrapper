@@ -14,16 +14,41 @@ pub struct ListRef {
     raw: spa_sys::spa_list,
 }
 
+/// Linked list element.
+/// Usually, data structures should have [spa_sys::spa_list] pointer at the first place.
+/// So, the pointer to the list element can be casted to the structure itself.
+/// In general, this struct should not be used outside the library.
+///
+/// # Example
+/// ```
+/// struct TestElement {
+///    link: spa_list,
+///    payload: u32,
+/// }
+/// ```
 pub trait ListElement {
+    /// Raw pointer to the list element
     fn as_list_ptr(&self) -> *mut spa_list;
+
+    /// Cast the list element pointer to Self
     fn from_list_ptr(ptr: *mut spa_list) -> *mut Self;
 
+    /// Init the list element as detached.
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn init_detached(&mut self) {
         let list = self.as_list_ptr();
         (*list).prev = list;
         (*list).next = list;
     }
 
+    /// Remove the element from the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn remove(&mut self) {
         let list = self.as_list_ptr();
 
@@ -42,15 +67,21 @@ impl ListElement for ListRef {
     }
 }
 
+/// Linked list with [ListElement]
+/// In general, this struct should not be used outside the library.
 pub trait List
 where
     Self: Sized,
 {
     type Elem: ListElement;
 
+    /// Raw pointer to the list itself
     fn as_list_ptr(&self) -> *mut spa_list;
+
+    /// Cast the list pointer to Self
     fn from_list_ptr(ptr: *mut spa_list) -> *mut Self;
 
+    /// Init the list structure as empty list
     fn init(&mut self) {
         unsafe {
             let list = self.as_list_ptr();
@@ -59,6 +90,7 @@ where
         }
     }
 
+    /// Check if this list was initialized
     fn initialized(&self) -> bool {
         unsafe {
             let list = self.as_list_ptr();
@@ -68,12 +100,14 @@ where
 
     fn empty(&self) -> bool {
         let list = self.as_list_ptr();
-        unsafe {
-            (*list).next == (*list).prev
-                && std::ptr::eq((*list).next, list)
-        }
+        unsafe { (*list).next == (*list).prev && std::ptr::eq((*list).next, list) }
     }
 
+    /// Insert [ListElement] to the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn insert(&mut self, elem: &mut Self::Elem) {
         let list = self.as_list_ptr();
         let elem = elem.as_list_ptr();
@@ -83,6 +117,11 @@ where
         (*(*elem).next).prev = elem;
     }
 
+    /// Join two lists
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn insert_list(&mut self, other: &mut Self) {
         if !other.empty() {
             let list = self.as_list_ptr();
@@ -94,6 +133,11 @@ where
         }
     }
 
+    /// Get the next element from the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn next(&self, current: &Self::Elem) -> Option<&mut Self::Elem> {
         let link = (*current.as_list_ptr()).next;
         if link == self.as_list_ptr() {
@@ -103,6 +147,11 @@ where
         }
     }
 
+    /// Get the previous element from the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn prev(&self, current: &Self::Elem) -> Option<&mut Self::Elem> {
         let link = (*current.as_list_ptr()).prev;
         if link == self.as_list_ptr() {
@@ -112,6 +161,11 @@ where
         }
     }
 
+    /// Get the first element from the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn first(&self) -> Option<&mut Self::Elem> {
         let list = self.as_list_ptr();
         let first = (*list).next;
@@ -122,6 +176,11 @@ where
         }
     }
 
+    /// Get the last element from the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn last(&self) -> Option<&mut Self::Elem> {
         let list = self.as_list_ptr();
         let last = (*list).prev;
@@ -132,6 +191,11 @@ where
         }
     }
 
+    /// Append element to the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn append(&mut self, elem: &mut Self::Elem) {
         let list = (*self.as_list_ptr()).prev;
         let elem = elem.as_list_ptr();
@@ -141,16 +205,31 @@ where
         (*(*elem).next).prev = elem;
     }
 
+    /// Prepend element to the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn prepend(&mut self, elem: &mut Self::Elem) {
         self.insert(elem)
     }
 
+    /// Clean the list
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn clean(&mut self) {
         while let Some(first) = self.first() {
             first.remove()
         }
     }
 
+    /// Get the list iterator
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn iter(&self) -> ListIterator<Self> {
         ListIterator {
             list: self,
@@ -158,6 +237,11 @@ where
         }
     }
 
+    /// Get the list mut iterator
+    ///
+    /// # Safety
+    ///
+    /// [Self::as_list_ptr] must provide valid non-null pointer, that will not be changed in future.
     unsafe fn iter_mut(&self) -> ListMutIterator<Self> {
         ListMutIterator {
             list: self,

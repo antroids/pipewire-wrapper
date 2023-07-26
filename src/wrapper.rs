@@ -58,6 +58,10 @@ where
     /// # Arguments
     ///
     /// * `raw` - raw pointer
+    ///
+    /// # Safety
+    ///
+    /// `raw` must be valid pointer to the structure
     unsafe fn from_raw_ptr<'a>(raw: *const Self::CType) -> &'a Self {
         Self::mut_from_raw_ptr(raw as *mut Self::CType)
     }
@@ -69,6 +73,9 @@ where
     /// # Arguments
     ///
     /// * `raw` - raw pointer
+    /// # Safety
+    ///
+    /// `raw` must be valid pointer to the structure
     unsafe fn mut_from_raw_ptr<'a>(raw: *mut Self::CType) -> &'a mut Self;
 
     /// Raw mutable pointer to Self

@@ -12,6 +12,9 @@ use crate::spa::pod::sequence::PodSequenceRef;
 use crate::spa::type_::{PointRef, RectangleRef, RegionRef};
 use crate::wrapper::RawWrapper;
 
+/// A metadata element.
+///
+/// This structure is available on the buffer structure and contains the type of the metadata and a pointer/size to the actual metadata itself.
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct MetaRef {
@@ -94,6 +97,7 @@ enum_wrapper!(
     _LAST: spa_sys::_SPA_META_LAST,
 );
 
+/// Describes essential buffer header metadata such as flags and timestamps.
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct MetaHeaderRef {
@@ -105,11 +109,17 @@ bitflags! {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     #[repr(transparent)]
     pub struct HeaderFlags: u32 {
+        /// data is not continuous with previous buffer
         const DISCONT = spa_sys::SPA_META_HEADER_FLAG_DISCONT;
+        /// data might be corrupted
         const CORRUPTED = spa_sys::SPA_META_HEADER_FLAG_CORRUPTED;
+        /// media specific marker
         const MARKER = spa_sys::SPA_META_HEADER_FLAG_MARKER;
+        /// data contains a codec specific header
         const HEADER = spa_sys::SPA_META_HEADER_FLAG_HEADER;
+        /// data contains media neutral data
         const GAP = spa_sys::SPA_META_HEADER_FLAG_GAP;
+        /// cannot be decoded independently
         const DELTA_UNIT = spa_sys::SPA_META_HEADER_FLAG_DELTA_UNIT;
     }
 }
@@ -156,6 +166,7 @@ impl MetaHeaderRef {
     }
 }
 
+/// metadata structure for Region or an array of these for RegionArray
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct MetaRegionRef {
@@ -173,6 +184,9 @@ impl MetaRegionRef {
     }
 }
 
+/// Bitmap information.
+/// This metadata contains a bitmap image in the given format and size.
+/// It is typically used for cursor images or other small images that are better transferred inline.
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct MetaBitmapRef {
@@ -181,6 +195,7 @@ pub struct MetaBitmapRef {
 }
 
 impl MetaBitmapRef {
+    /// bitmap video format, 0 is and invalid format should be handled as if there is no new bitmap information.
     pub fn format(&self) -> VideoFormat {
         VideoFormat::from_raw(self.raw.format)
     }
@@ -189,6 +204,7 @@ impl MetaBitmapRef {
         self.raw.format = format.into()
     }
 
+    /// width and height of bitmap
     pub fn size(&self) -> &RectangleRef {
         unsafe { RectangleRef::from_raw_ptr(addr_of!(self.raw.size)) }
     }
@@ -197,6 +213,7 @@ impl MetaBitmapRef {
         unsafe { RectangleRef::mut_from_raw_ptr(addr_of_mut!(self.raw.size)) }
     }
 
+    /// stride of bitmap data
     pub fn stride(&self) -> i32 {
         self.raw.stride
     }
@@ -205,6 +222,8 @@ impl MetaBitmapRef {
         self.raw.stride = stride
     }
 
+    /// offset of bitmap data in this structure.
+    /// An offset of 0 means no image data (invisible), an offset >= sizeof(struct spa_meta_bitmap) contains valid bitmap info.
     pub fn offset(&self) -> u32 {
         self.raw.offset
     }
@@ -213,6 +232,12 @@ impl MetaBitmapRef {
         self.raw.offset = offset
     }
 
+    /// Bitmap data with elements of type [T].
+    /// Returns [Some(&mut [T])] or [None], when bitmap data is missing.
+    ///
+    /// # Safety
+    ///
+    /// There are no guarantees that bitmap has type [T].
     pub unsafe fn bitmap<T: Sized>(&self) -> Option<&mut [T]> {
         if self.raw.offset >= size_of::<MetaBitmapRef>() as u32 {
             let bitmap_ptr = (self.as_raw_ptr() as *mut u8).offset(self.raw.offset as isize);
@@ -224,6 +249,8 @@ impl MetaBitmapRef {
     }
 }
 
+/// Cursor information.
+// Metadata to describe the position and appearance of a pointing device.
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct MetaCursorRef {
@@ -232,6 +259,8 @@ pub struct MetaCursorRef {
 }
 
 impl MetaCursorRef {
+    /// cursor id.
+    /// an id of 0 is an invalid id and means that there is no new cursor data
     pub fn id(&self) -> u32 {
         self.raw.id
     }
@@ -248,6 +277,7 @@ impl MetaCursorRef {
         self.raw.flags = flags
     }
 
+    /// position on screen
     pub fn position(&self) -> &PointRef {
         unsafe { PointRef::from_raw_ptr(addr_of!(self.raw.position)) }
     }
@@ -256,6 +286,7 @@ impl MetaCursorRef {
         unsafe { PointRef::mut_from_raw_ptr(addr_of_mut!(self.raw.position)) }
     }
 
+    /// offsets for hotspot in bitmap, this field has no meaning when there is no valid bitmap (see below)
     pub fn hotspot(&self) -> &PointRef {
         unsafe { PointRef::from_raw_ptr(addr_of!(self.raw.hotspot)) }
     }
@@ -264,6 +295,9 @@ impl MetaCursorRef {
         unsafe { PointRef::mut_from_raw_ptr(addr_of_mut!(self.raw.hotspot)) }
     }
 
+    /// offset of bitmap meta in this structure.
+    /// When the offset is 0, there is no new bitmap information. When the offset is >= sizeof(struct spa_meta_cursor)
+    /// there is a struct spa_meta_bitmap at the offset.
     pub fn bitmap_offset(&self) -> u32 {
         self.raw.bitmap_offset
     }
@@ -272,6 +306,12 @@ impl MetaCursorRef {
         self.raw.bitmap_offset = bitmap_offset
     }
 
+    /// Cursor bitmap data with elements of type [T].
+    /// Returns [Some(&mut [T])] or [None], when bitmap data is missing.
+    ///
+    /// # Safety
+    ///
+    /// There are no guarantees that bitmap has type [T].
     pub unsafe fn bitmap(&self) -> Option<&mut MetaBitmapRef> {
         unsafe {
             if self.raw.bitmap_offset >= size_of::<MetaCursorRef>() as u32 {
@@ -285,6 +325,7 @@ impl MetaCursorRef {
     }
 }
 
+/// a timed set of events associated with the buffer
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct MetaControlRef {
@@ -298,6 +339,7 @@ impl MetaControlRef {
     }
 }
 
+/// a busy counter for the buffer
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct MetaBusyRef {

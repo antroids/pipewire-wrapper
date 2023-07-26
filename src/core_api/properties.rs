@@ -251,6 +251,11 @@ impl Properties {
         Ok(unsafe { Self::from_ref(ref_) })
     }
 
+    /// Create [Properties] instance from reference
+    /// 
+    /// # Safety
+    /// 
+    /// [PropertiesRef] must has lifetime more than created [Properties]
     pub unsafe fn from_ref(ref_: NonNull<PropertiesRef>) -> Self {
         Self { ref_ }
     }

@@ -474,15 +474,15 @@ fn from_value() {
         if let ObjectFormatType::MEDIA_TYPE(v) = props.next().unwrap().value().unwrap() {
             assert_eq!(v.value().unwrap(), MediaType::AUDIO);
         } else {
-            assert!(false)
+            panic!()
         }
         if let ObjectFormatType::MEDIA_SUBTYPE(v) = props.next().unwrap().value().unwrap() {
             assert_eq!(v.value().unwrap(), MediaSubType::DSP);
         } else {
-            assert!(false)
+            panic!()
         }
         assert!(props.next().is_none())
     } else {
-        assert!(false)
+        panic!()
     }
 }
