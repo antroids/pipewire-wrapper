@@ -120,6 +120,14 @@ impl<'a, E: PodRawValue> PodValueIterator<'a, E> {
         let size = self.element_size;
         (ptr as *const u8).add(size).cast()
     }
+
+    pub fn element_size(&self) -> usize {
+        self.element_size
+    }
+
+    pub(crate) unsafe fn as_bytes(&self) -> &[u8] {
+        slice::from_raw_parts(self.first_element_ptr as *const u8, self.size)
+    }
 }
 
 impl<'a, E: PodRawValue + 'a> Iterator for PodValueIterator<'a, E> {
@@ -165,6 +173,26 @@ where
         values: impl IntoIterator<Item = &'a <&'a E as PodValue>::Value>,
     ) -> PodResult<Self> {
         Ok(PodIteratorBuilder::from_values(values)?.into_pod_iter())
+    }
+}
+
+pub struct AllocatedPodValueIterator<E: PodRawValue> {
+    data: Vec<E::RawValue>,
+}
+
+impl<E: PodRawValue> AllocatedPodValueIterator<E> {
+    pub fn new(data: Vec<E::RawValue>) -> Self {
+        Self { data }
+    }
+
+    pub fn iter(&self) -> PodValueIterator<E> {
+        let data_slice = self.data.as_slice();
+        let element_size = size_of::<E::RawValue>();
+        PodValueIterator::new(
+            data_slice.as_ptr(),
+            std::mem::size_of_val(data_slice),
+            element_size,
+        )
     }
 }
 

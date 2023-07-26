@@ -29,6 +29,10 @@ use crate::spa::pod::{
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
+use super::iterator::AllocatedPodValueIterator;
+use super::restricted::{write_align_padding, write_header};
+use super::FromValue;
+
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]
 pub struct PodArrayBodyRef {
@@ -117,7 +121,30 @@ where
     where
         W: Write + Seek,
     {
-        todo!()
+        let iterator_content = unsafe { value.as_bytes() };
+        write_header(
+            buffer,
+            (iterator_content.len() + size_of::<spa_sys::spa_pod_array_body>()) as u32,
+            PodArrayRef::<T>::static_type(),
+        )?;
+        write_header(buffer, value.element_size() as u32, T::static_type())?;
+        buffer.write_all(iterator_content)?;
+        write_align_padding(buffer)
+    }
+}
+
+impl<'a, T> WriteValue for &'a PodArrayRef<T>
+where
+    T: PodRawValue,
+    T: BasicTypePod,
+{
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
+    where
+        W: std::io::Write + std::io::Seek,
+    {
+        let iterator_content = unsafe { value.as_bytes() };
+        buffer.write_all(iterator_content)?;
+        Ok(())
     }
 }
 
@@ -153,4 +180,18 @@ where
         ((self.body_size() - size_of::<PodArrayBodyRef>()) / self.raw.body.child.size as usize)
             as u32
     }
+}
+
+#[test]
+fn test_array() {
+    let allocated_iter = AllocatedPodValueIterator::<PodIntRef>::new(vec![1, 2, 3]);
+    let allocated_array = PodArrayRef::from_value(&allocated_iter.iter()).unwrap();
+    let array = allocated_array.as_pod();
+
+    let mut array_value = array.value().unwrap();
+    assert_eq!(array_value.next(), Some(1i32));
+    assert_eq!(array_value.next(), Some(2i32));
+    assert_eq!(array_value.next(), Some(3i32));
+
+    assert_eq!(array.elements(), 3);
 }

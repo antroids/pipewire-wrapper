@@ -11,7 +11,7 @@ use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
 use crate::spa::pod::{BasicTypePod, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};
 use crate::spa::type_::Type;
 
-use super::restricted::{write_align_padding, write_header};
+use super::restricted::{write_align_padding, write_count_size, write_header};
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
