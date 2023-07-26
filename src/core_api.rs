@@ -22,6 +22,7 @@ pub mod core;
 pub mod data_loop;
 pub mod device;
 pub mod factory;
+pub mod link;
 pub mod loop_;
 pub mod main_loop;
 pub mod node;
