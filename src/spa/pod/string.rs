@@ -16,6 +16,8 @@ use crate::spa::pod::{
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
+use super::restricted::{write_align_padding, write_header};
+
 #[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodStringRef {
@@ -71,29 +73,29 @@ impl<'a> PodValue for &'a PodStringRef {
 }
 
 impl<'a> WritePod for &'a PodStringRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
         let string_bytes = value.to_bytes_with_nul();
-        let header_size = Self::write_header(
+        write_header(
             buffer,
             string_bytes.len() as u32,
             PodStringRef::static_type(),
         )?;
         buffer.write_all(string_bytes)?;
-        Ok(header_size + string_bytes.len() + Self::write_align_padding(buffer)?)
+        write_align_padding(buffer)
     }
 }
 
 impl<'a> WriteValue for &'a PodStringRef {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
         let string_bytes = value.to_bytes_with_nul();
         buffer.write_all(string_bytes)?;
-        Ok(string_bytes.len())
+        Ok(())
     }
 }
 

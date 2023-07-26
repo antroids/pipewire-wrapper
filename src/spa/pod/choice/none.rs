@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  */
 use std::fmt::{Debug, Formatter};
-use std::io::{Seek, Write};
+use std::io::{Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -14,7 +14,9 @@ use pipewire_proc_macro::RawWrapper;
 use crate::spa::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::pod::iterator::PodValueIterator;
 use crate::spa::pod::pod_buf::PodBuf;
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, PrimitiveValue, StaticTypePod};
+use crate::spa::pod::restricted::{
+    write_count_size, write_header, PodHeader, PodRawValue, PrimitiveValue, StaticTypePod,
+};
 use crate::spa::pod::{
     BasicTypePod, PodError, PodIntRef, PodLongRef, PodRef, PodResult, PodValue, SizedPod, Upcast,
     WritePod, WriteValue, POD_ALIGN,
@@ -121,28 +123,30 @@ where
     T: WriteValue,
     T: WritePod,
 {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
-        Ok(Self::write_end_than_start(
+        let value_offset = size_of::<spa_sys::spa_pod_choice>() as i64;
+        let start_pos = buffer.stream_position()?;
+        buffer.seek(SeekFrom::Current(value_offset))?;
+        let value_size = write_count_size(buffer, |buffer| Self::write_raw_value(buffer, value))?;
+        let end_pos = buffer.stream_position()?;
+        buffer.seek(SeekFrom::Start(start_pos))?;
+        write_header(
             buffer,
-            size_of::<spa_sys::spa_pod_choice>(),
-            |buffer, value_size| {
-                Ok(Self::write_header(
-                    buffer,
-                    (value_size + size_of::<spa_sys::spa_pod_choice_body>()) as u32,
-                    Type::CHOICE,
-                )? + PodChoiceRef::<T>::write_raw_body(
-                    buffer,
-                    ChoiceType::NONE,
-                    0,
-                    value_size as u32,
-                    T::static_type(),
-                )?)
-            },
-            |buffer| Self::write_raw_value(buffer, value),
-        )? + Self::write_align_padding(buffer)?)
+            (value_size + size_of::<spa_sys::spa_pod_choice_body>()) as u32,
+            Type::CHOICE,
+        )?;
+        PodChoiceRef::<T>::write_raw_body(
+            buffer,
+            ChoiceType::NONE,
+            0,
+            value_size as u32,
+            T::static_type(),
+        )?;
+        buffer.seek(SeekFrom::Start(end_pos))?;
+        Ok(())
     }
 }
 
@@ -152,7 +156,7 @@ where
     T: StaticTypePod,
     T: WriteValue,
 {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {

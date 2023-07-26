@@ -20,6 +20,8 @@ use crate::spa::pod::{
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
+use super::restricted::{write_align_padding, write_header, write_value};
+
 #[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodIdRef<T: PodIdType = u32> {
@@ -75,16 +77,18 @@ impl<T: PodIdType> WritePod for PodIdRef<T>
 where
     T: PodIdType,
 {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
-        Ok(Self::write_header(
+        write_header(
             buffer,
             size_of::<u32>() as u32,
             <PodIdRef<T>>::static_type(),
-        )? + Self::write_raw_value(buffer, value)?
-            + Self::write_align_padding(buffer)?)
+        )?;
+        Self::write_raw_value(buffer, value)?;
+        write_align_padding(buffer)?;
+        Ok(())
     }
 }
 
@@ -92,12 +96,12 @@ impl<T: PodIdType> WriteValue for PodIdRef<T>
 where
     T: PodIdType,
 {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
         let raw_value: u32 = value.clone().into();
-        Self::write_value(buffer, &raw_value)
+        write_value(buffer, &raw_value)
     }
 }
 

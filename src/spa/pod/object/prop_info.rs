@@ -27,7 +27,7 @@ pub enum ObjectPropInfoType<'a> {
 }
 
 impl<'a> PodPropKeyType<'a> for ObjectPropInfoType<'a> {
-    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<()>
     where
         W: Write + Seek,
     {

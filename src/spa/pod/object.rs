@@ -43,6 +43,8 @@ use crate::spa::pod::{
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
+use super::restricted::{write_align_padding, write_header, write_value};
+
 pub mod enum_format;
 pub mod format;
 pub mod param_buffers;
@@ -273,7 +275,7 @@ impl<'a> PodValue for &'a PodObjectRef {
 }
 
 impl<'a> WritePod for &'a PodObjectRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
@@ -304,11 +306,12 @@ impl<'a> WritePod for &'a PodObjectRef {
                 }
             }
         };
-        let size = Self::write_header(
+        write_header(
             buffer,
             (size_of::<spa_sys::spa_pod_object_body>() + content.len()) as u32,
             Type::OBJECT,
-        )? + Self::write_value(
+        )?;
+        write_value(
             buffer,
             &spa_sys::spa_pod_object_body {
                 type_: type_.raw,
@@ -316,7 +319,7 @@ impl<'a> WritePod for &'a PodObjectRef {
             },
         )?;
         buffer.write_all(content)?;
-        Ok(size + Self::write_align_padding(buffer)?)
+        write_align_padding(buffer)
     }
 }
 
@@ -326,11 +329,11 @@ where
     Self: TryFrom<&'a PodPropRef<'a, Self>, Error = PodError>,
     Self: Debug,
 {
-    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<()>
     where
         W: Write + Seek;
 
-    fn write_pod_prop<W, T>(buffer: &mut W, key: u32, flags: u32, pod: &T) -> PodResult<usize>
+    fn write_pod_prop<W, T>(buffer: &mut W, key: u32, flags: u32, pod: &T) -> PodResult<()>
     where
         W: Write + Seek,
         T: WritePod,
@@ -338,7 +341,7 @@ where
     {
         buffer.write_all(&key.to_ne_bytes())?;
         buffer.write_all(&flags.to_ne_bytes())?;
-        Ok(size_of::<u32>() * 2 + pod.clone_to(buffer)?)
+        pod.clone_to(buffer)
     }
 }
 
@@ -403,7 +406,7 @@ impl<'a, T: PodPropKeyType<'a>> PodValue for &'a PodPropRef<'a, T> {
 }
 
 impl<'a, T: PodPropKeyType<'a>> WritePod for &'a PodPropRef<'a, T> {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {

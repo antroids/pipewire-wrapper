@@ -17,6 +17,8 @@ use crate::spa::pod::{
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
+use super::restricted::{write_align_padding, write_header};
+
 #[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodBitmapRef {
@@ -66,25 +68,24 @@ impl<'a> PodValue for &'a PodBitmapRef {
 }
 
 impl<'a> WritePod for &'a PodBitmapRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
-        Ok(
-            Self::write_header(buffer, value.len() as u32, PodBitmapRef::static_type())?
-                + Self::write_raw_value(buffer, value)?
-                + Self::write_align_padding(buffer)?,
-        )
+        write_header(buffer, value.len() as u32, PodBitmapRef::static_type())?;
+        Self::write_raw_value(buffer, value)?;
+        write_align_padding(buffer)?;
+        Ok(())
     }
 }
 
 impl<'a> WriteValue for &'a PodBitmapRef {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
         buffer.write_all(value)?;
-        Ok(value.len())
+        Ok(())
     }
 }
 

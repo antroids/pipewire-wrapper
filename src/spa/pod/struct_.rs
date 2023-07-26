@@ -11,6 +11,8 @@ use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
 use crate::spa::pod::{BasicTypePod, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};
 use crate::spa::type_::Type;
 
+use super::restricted::{write_align_padding, write_header};
+
 #[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodStructRef {
@@ -50,29 +52,29 @@ impl<'a> PodValue for &'a PodStructRef {
 }
 
 impl<'a> WritePod for &'a PodStructRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
         let iterator_content = unsafe { value.as_bytes() };
-        let header_size = Self::write_header(
+        write_header(
             buffer,
             iterator_content.len() as u32,
             PodStructRef::static_type(),
         )?;
         buffer.write_all(iterator_content)?;
-        Ok(header_size + iterator_content.len() + Self::write_align_padding(buffer)?)
+        write_align_padding(buffer)
     }
 }
 
 impl<'a> WriteValue for &'a PodStructRef {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
         let iterator_content = unsafe { value.as_bytes() };
         buffer.write_all(iterator_content)?;
-        Ok(iterator_content.len())
+        Ok(())
     }
 }
 

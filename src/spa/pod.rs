@@ -35,6 +35,8 @@ use crate::spa::pod::restricted::{
 use crate::spa::type_::{FractionRef, RectangleRef, Type};
 use crate::wrapper::RawWrapper;
 
+use self::restricted::write_header;
+
 pub mod array;
 pub mod bitmap;
 pub mod bytes;
@@ -96,16 +98,18 @@ macro_rules! primitive_type_pod_impl {
         }
 
         impl WritePod for $pod_ref_type {
-            fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+            fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
             where
                 W: Write + Seek,
             {
-                Ok(Self::write_header(
+                restricted::write_header(
                     buffer,
                     size_of::<$value_raw_type>() as u32,
                     <$pod_ref_type>::static_type(),
-                )? + Self::write_raw_value(buffer, value)?
-                    + Self::write_align_padding(buffer)?)
+                )?;
+                Self::write_raw_value(buffer, value)?;
+                restricted::write_align_padding(buffer)?;
+                Ok(())
             }
         }
 
@@ -113,12 +117,13 @@ macro_rules! primitive_type_pod_impl {
             fn write_raw_value<W>(
                 buffer: &mut W,
                 value: &<Self as PodValue>::Value,
-            ) -> PodResult<usize>
+            ) -> PodResult<()>
             where
                 W: Write + Seek,
             {
                 let value: $value_raw_type = (*value).into();
-                Self::write_value(buffer, &value)
+                restricted::write_value(buffer, &value)?;
+                Ok(())
             }
         }
 
@@ -297,7 +302,7 @@ where
     T: WritePod,
     T: PrimitiveValue,
 {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
@@ -310,7 +315,7 @@ where
     T: WriteValue,
     T: PrimitiveValue,
 {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
@@ -325,7 +330,7 @@ impl<T: PodHeader> SizedPod for T {
 }
 
 impl<T: PodHeader> CloneTo for &T {
-    fn clone_to(&self, buffer: &mut impl Write) -> PodResult<usize> {
+    fn clone_to(&self, buffer: &mut impl Write) -> PodResult<()> {
         let size = self.pod_size();
         let slice = unsafe { slice::from_raw_parts(*self as *const T as *const u8, size) };
         buffer.write_all(slice)?;
@@ -334,10 +339,8 @@ impl<T: PodHeader> CloneTo for &T {
             let padding_len = POD_ALIGN - rem;
             let padding = vec![0u8; padding_len];
             buffer.write_all(padding.as_slice())?;
-            Ok(padding_len)
-        } else {
-            Ok(0)
         }
+        Ok(())
     }
 }
 
@@ -426,12 +429,12 @@ impl<'a> PodValue for &'a PodRef {
 }
 
 impl<'a> WritePod for &'a PodRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
         match value {
-            BasicTypeValue::NONE => Self::write_header(buffer, 0, Type::NONE),
+            BasicTypeValue::NONE => write_header(buffer, 0, Type::NONE),
             BasicTypeValue::BOOL(v) => PodBoolRef::write_pod(buffer, v),
             BasicTypeValue::ID(v) => PodIdRef::write_pod(buffer, v),
             BasicTypeValue::INT(v) => PodIntRef::write_pod(buffer, v),

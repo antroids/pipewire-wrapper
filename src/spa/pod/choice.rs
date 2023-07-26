@@ -3,7 +3,7 @@
  */
 use std::any::TypeId;
 use std::fmt::{Debug, Formatter};
-use std::io::{Seek, Write};
+use std::io::{Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -32,6 +32,8 @@ use crate::spa::pod::{
 };
 use crate::spa::type_::{PointRef, Type};
 use crate::wrapper::RawWrapper;
+
+use super::restricted::write_value;
 
 pub mod enum_;
 pub mod flags;
@@ -160,14 +162,14 @@ where
         flags: u32,
         child_size: u32,
         child_type: Type,
-    ) -> PodResult<usize>
+    ) -> PodResult<()>
     where
         W: Write + Seek,
         T: BasicTypePod,
         T: WriteValue,
         T: WritePod,
     {
-        <&Self>::write_value(
+        write_value(
             buffer,
             &spa_sys::spa_pod_choice_body {
                 type_: choice_type.raw,
@@ -180,7 +182,7 @@ where
         )
     }
 
-    fn write_pod<W>(buffer: &mut W, value: &ChoiceStructType<T>) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &ChoiceStructType<T>) -> PodResult<()>
     where
         W: Write + Seek,
         T: WriteValue,
@@ -270,7 +272,7 @@ impl PodChoiceRef<PodRef> {
         }
     }
 
-    pub fn write_choice_value<W>(buffer: &mut W, value: &ChoiceValueType) -> PodResult<usize>
+    pub fn write_choice_value<W>(buffer: &mut W, value: &ChoiceValueType) -> PodResult<()>
     where
         W: Write + Seek,
     {
@@ -350,7 +352,7 @@ where
     T: WriteValue,
     T: WritePod,
 {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {

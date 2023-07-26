@@ -45,7 +45,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamProfileType<'a>>> for ParamProfileType<
 }
 
 impl<'a> PodPropKeyType<'a> for ParamProfileType<'a> {
-    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<()>
     where
         W: Write + Seek,
     {

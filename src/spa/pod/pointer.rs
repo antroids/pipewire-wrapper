@@ -75,7 +75,7 @@ impl<'a> PodValue for &'a PodPointerRef {
 }
 
 impl<'a> WritePod for &'a PodPointerRef {
-    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_pod<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {
@@ -84,7 +84,7 @@ impl<'a> WritePod for &'a PodPointerRef {
 }
 
 impl<'a> WriteValue for &'a PodPointerRef {
-    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<usize>
+    fn write_raw_value<W>(buffer: &mut W, value: &<Self as PodValue>::Value) -> PodResult<()>
     where
         W: Write + Seek,
     {

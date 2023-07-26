@@ -1,6 +1,3 @@
-/*
- * SPDX-License-Identifier: MIT
- */
 use std::io::{Seek, Write};
 
 use crate::enum_wrapper;
@@ -40,7 +37,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamBuffersType<'a>>> for ParamBuffersType<
 }
 
 impl<'a> PodPropKeyType<'a> for ParamBuffersType<'a> {
-    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<()>
     where
         W: Write + Seek,
     {

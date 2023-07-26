@@ -43,7 +43,7 @@ impl<'a> TryFrom<&'a PodPropRef<'a, ParamProcessLatencyType<'a>>> for ParamProce
 }
 
 impl<'a> PodPropKeyType<'a> for ParamProcessLatencyType<'a> {
-    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<usize>
+    fn write_prop<W>(&self, buffer: &mut W) -> PodResult<()>
     where
         W: Write + Seek,
     {
