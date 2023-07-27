@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Link](https://docs.pipewire.org/group__pw__link.html) bindings.
+//!
 use std::pin::Pin;
 
 use crate::wrapper::RawWrapper;

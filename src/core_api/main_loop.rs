@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Main Loop](https://docs.pipewire.org/group__pw__main__loop.html) bindings.
+//!
 use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};
 use std::mem::MaybeUninit;

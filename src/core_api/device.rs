@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Device](https://docs.pipewire.org/group__pw__device.html) bindings.
+//!
 use std::pin::Pin;
 use std::ptr::null_mut;
 

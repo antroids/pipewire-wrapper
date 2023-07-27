@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Node](https://docs.pipewire.org/group__pw__node.html) bindings.
+//!
 use std::ops::Deref;
 use std::pin::Pin;
 use std::ptr::{null_mut, NonNull};

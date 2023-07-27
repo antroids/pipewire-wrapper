@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! Common [Error] types used across the library.
+//!
 use std::fmt::{Debug, Display, Formatter, Pointer};
 
 use crate::spa::pod::PodError;

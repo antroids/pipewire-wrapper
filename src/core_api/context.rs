@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Context](https://docs.pipewire.org/group__pw__context.html) bindings.
+//!
 use std::ffi::CStr;
 use std::pin::Pin;
 use std::ptr::NonNull;
@@ -15,11 +18,11 @@ use pipewire_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::context::events::{ContextEvents, ContextEventsBuilder};
 use crate::core_api::core::Core;
-use crate::core_api::data_loop::DataLoopRef;
 use crate::core_api::factory::FactoryRef;
 use crate::core_api::loop_::LoopRef;
 use crate::core_api::main_loop::{MainLoop, MainLoopRef};
 use crate::core_api::properties::{Properties, PropertiesRef};
+use crate::impl_api::data_loop::DataLoopRef;
 use crate::impl_api::global::GlobalRef;
 use crate::impl_api::work_queue::WorkQueueRef;
 use crate::listeners::AddListener;

@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Loop](https://docs.pipewire.org/group__pw__loop.html) bindings.
+//!
 use std::os::fd::RawFd;
 use std::time::Duration;
 

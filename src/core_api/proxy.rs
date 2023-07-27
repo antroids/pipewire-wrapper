@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Proxy](https://docs.pipewire.org/group__pw__proxy.html) bindings.
+//!
 use std::ffi::CStr;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;

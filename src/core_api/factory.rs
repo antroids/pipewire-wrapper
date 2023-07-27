@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Factory](https://docs.pipewire.org/group__pw__factory.html) bindings.
+//!
 use std::pin::Pin;
 
 use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper};

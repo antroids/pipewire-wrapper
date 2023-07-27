@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Properties](https://docs.pipewire.org/group__pw__properties.html) bindings.
+//!
 use std::ffi::{CStr, CString, NulError};
 use std::fmt::{Debug, Display, Formatter};
 use std::os::raw::c_char;

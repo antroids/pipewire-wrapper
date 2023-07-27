@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Core](https://docs.pipewire.org/group__pw__core.html) bindings.
+//!
 use std::ffi::CStr;
 use std::pin::Pin;
 use std::ptr::NonNull;

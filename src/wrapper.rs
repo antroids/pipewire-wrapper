@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! Wrappers for the external types
+//!
 use std::mem::ManuallyDrop;
 use std::ops::{Deref, DerefMut};
 
@@ -88,7 +91,7 @@ where
 }
 
 /// Provides support for [spa_sys::spa_interface] methods.
-/// [spa_interface_call](pipewire_macro_impl::spa_interface_call) can used to call the methods
+/// [spa_interface_call](crate::spa_interface_call) can used to call the methods
 pub trait SpaInterface: RawWrapper {
     /// [spa_sys::spa_interface] methods structure
     type Methods;

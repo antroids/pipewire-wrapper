@@ -1,6 +1,34 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! Macro rules
+//!
+
+/// Wrap the given `key: value` pairs to struct with constants.
+///
+/// The following traits will be implemented automatically:
+///
+/// * [crate::RawWrapper]
+/// * [std::fmt::Debug]
+///
+/// # Examples
+/// ```
+/// enum_wrapper!(
+///    PositionState,
+///    spa_sys::spa_io_position_state,
+///    STOPPED: spa_sys::SPA_IO_POSITION_STATE_STOPPED,
+///    STARTING: spa_sys::SPA_IO_POSITION_STATE_STARTING,
+///    RUNNING: spa_sys::SPA_IO_POSITION_STATE_RUNNING,
+/// );
+/// ```
+///
+/// # Arguments
+///
+/// * `name` - struct name
+/// * `repr_type` - enum discriminator type
+/// * `enum_variant:enum_value` - enum variant name and discriminator value
+/// * `...`
 #[macro_export]
 macro_rules! enum_wrapper {
     (@add_enum_variant $name: ident, $enum_variant: ident : $enum_value: expr, $($tts:tt)*) => {
@@ -51,6 +79,31 @@ macro_rules! enum_wrapper {
     };
 }
 
+/// Call the method on [SPA Interface](https://docs.pipewire.org/group__spa__interfaces.html).
+///
+/// [SpaInterface](crate::wrapper::SpaInterface) must be implemented for `Self`.
+///
+/// # Examples
+///
+/// ```
+/// pub fn hello(&self, version: u32) -> crate::Result<()> {
+///     let result = spa_interface_call!(self, hello, version)?;
+///     i32_as_void_result(result)
+/// }
+/// ```
+///
+/// ```
+/// pub fn sync(&self, id: u32, seq: i32) -> crate::Result<()> {
+///      let result = spa_interface_call!(self, sync, id, seq)?;
+///     i32_as_void_result(result)
+/// }
+/// ```
+///
+/// # Arguments
+///
+/// * `self` - self reference to instance with SPA Interface
+/// * `method:version` or `method' - method name with optional version
+/// * `...` - comma-separated arguments
 #[macro_export]
 macro_rules! spa_interface_call {
     ($self:ident, $method:ident:$version:expr, $($arg:expr),*) => {{
@@ -89,6 +142,7 @@ macro_rules! spa_interface_call {
     }};
 }
 
+/// Implement `build` method for Events struct builder.
 #[macro_export]
 macro_rules! events_builder_build {
     ($events_struct:ident<$lifetime:lifetime, $generic_type:ident>, $events_raw:ident, $($callback_field:ident => $callback:ident,)*) => {
@@ -156,6 +210,7 @@ macro_rules! events_builder_build {
     }};
 }
 
+/// Implement `build` method for Events struct channel builder.
 #[macro_export]
 macro_rules! events_channel_builder {
     ($struct_name:ident, $($callback_field:ident => $callback:ident,)*) => {

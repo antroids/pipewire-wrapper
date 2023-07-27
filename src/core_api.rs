@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! Bindings for PipeWire [Core API](https://docs.pipewire.org/group__api__pw__core.html)
+//!
 use std::ffi::{CStr, CString};
 use std::ops::{AddAssign, SubAssign};
 use std::pin::Pin;
@@ -24,7 +27,6 @@ use crate::{error, i32_as_void_result, spa, SPA_ID_INVALID};
 pub mod client;
 pub mod context;
 pub mod core;
-pub mod data_loop;
 pub mod device;
 pub mod factory;
 pub mod link;

@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Data Loop](https://docs.pipewire.org/group__pw__data__loop.html) bindings.
+//!
 use std::ptr::NonNull;
 use std::rc::Rc;
 use std::time::Duration;

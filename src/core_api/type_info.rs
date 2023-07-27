@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! [Type info](https://docs.pipewire.org/group__pw__type.html) implementation
+//!
 use std::error::Error;
 use std::ffi::{c_char, CStr, CString};
 use std::fmt::{Debug, Formatter};

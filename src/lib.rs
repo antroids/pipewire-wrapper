@@ -1,6 +1,30 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! # Overview
+//!
+//! The crate structure is close to the PipeWire API structure,
+//! so [PipeWire Documentation](https://docs.pipewire.org/index.html)
+//! can be used to clarify some aspects of the bindings.
+//!
+//! # Examples
+//!
+//! ```
+//! let main_loop = MainLoop::default();
+//!
+//! let callback = |_expirations| {
+//!     main_loop.quit().unwrap();
+//! };
+//! let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
+//! main_loop
+//!     .get_loop()
+//!     .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+//!     .unwrap();
+//! main_loop.run().unwrap();
+//! ```
+//!
+//! More examples can be found in `examples` folder.
 #![allow(unused)]
 
 extern crate core;
@@ -70,7 +94,9 @@ fn raw_wrapper<'a, T: RawWrapper>(ptr: *mut T::CType) -> crate::Result<&'a T> {
     }
 }
 
+#[cfg(test)]
 enum_wrapper!(TestEnum, u32, VAL1: 12u32, VAL2: 13u32);
+#[cfg(test)]
 enum_wrapper!(TestEnum2, u32, VAL11: 11u32, VAL22: 22u32,);
 #[test]
 fn test_enum_wrapper() {

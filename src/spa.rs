@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Simple Plugin API](https://docs.pipewire.org/group__api__spa.html) bindings.
+//!
 use std::time::Duration;
 
 use pipewire_proc_macro::RawWrapper;

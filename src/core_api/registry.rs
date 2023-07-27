@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Registry](https://docs.pipewire.org/group__pw__registry.html) bindings.
+//!
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::ptr::NonNull;
@@ -146,7 +149,8 @@ impl<'a> OwnListeners<'a> for Registry<'a> {
 }
 
 impl<'c> Registry<'c> {
-    /// See [RegistryRef::bind].
+    /// Bind to the global object with id and use the client proxy.
+    /// After this call, methods can be send to the remote global object and events can be received.
     ///
     /// # Arguments
     ///

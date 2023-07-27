@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Port](https://docs.pipewire.org/group__pw__port.html) bindings.
+//!
 use std::pin::Pin;
 use std::ptr::{null_mut, NonNull};
 use std::sync::Arc;

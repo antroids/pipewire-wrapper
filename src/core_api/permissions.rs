@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Permissions](https://docs.pipewire.org/group__pw__permission.html) implementation.
+//!
 use std::fmt::{Debug, Display, Formatter, Write};
 
 use bitflags::{bitflags, Flags};

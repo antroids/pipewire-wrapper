@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! Listeners storage
+//!
 use std::mem;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};

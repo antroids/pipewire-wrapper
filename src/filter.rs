@@ -1,6 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+
+//! PipeWire [Filter](https://docs.pipewire.org/group__pw__filter.html) bindings
+//!
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::hash::{Hash, Hasher};

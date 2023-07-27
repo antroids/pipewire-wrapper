@@ -235,12 +235,12 @@ impl MetaBitmapRef {
         self.raw.offset = offset
     }
 
-    /// Bitmap data with elements of type [T].
-    /// Returns [Some(&mut [T])] or [None], when bitmap data is missing.
+    /// Bitmap data with elements of type `T`.
+    /// Returns [Some(&mut T)] or [None], when bitmap data is missing.
     ///
     /// # Safety
     ///
-    /// There are no guarantees that bitmap has type [T].
+    /// There are no guarantees that bitmap has type `T`.
     pub unsafe fn bitmap<T: Sized>(&self) -> Option<&mut [T]> {
         if self.raw.offset >= size_of::<MetaBitmapRef>() as u32 {
             let bitmap_ptr = (self.as_raw_ptr() as *mut u8).offset(self.raw.offset as isize);
@@ -309,12 +309,12 @@ impl MetaCursorRef {
         self.raw.bitmap_offset = bitmap_offset
     }
 
-    /// Cursor bitmap data with elements of type [T].
-    /// Returns [Some(&mut [T])] or [None], when bitmap data is missing.
+    /// Cursor bitmap data with elements of type `T`.
+    /// Returns [Some(&mut T)] or [None], when bitmap data is missing.
     ///
     /// # Safety
     ///
-    /// There are no guarantees that bitmap has type [T].
+    /// There are no guarantees that bitmap has type `T`.
     pub unsafe fn bitmap(&self) -> Option<&mut MetaBitmapRef> {
         unsafe {
             if self.raw.bitmap_offset >= size_of::<MetaCursorRef>() as u32 {
