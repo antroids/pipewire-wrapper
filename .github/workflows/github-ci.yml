@@ -16,9 +16,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
       - name: Install PipeWire
-        run: sudo apt-get install -y pipewire libpipewire-0.3-dev libspa-0.2-dev
+        run: sudo apt-get install -y pipewire libpipewire-0.3-dev libspa-0.2-dev pipewire-media-session- wireplumber
       - name: Run PipeWire
-        run: sudo pipewire&
+        run: systemctl --user --now enable wireplumber.service
       - name: Cache LLVM and Clang
         id: cache-llvm
         uses: actions/cache@v3
