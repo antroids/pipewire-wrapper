@@ -1,5 +1,5 @@
 [package]
-name = "pipewire-macro-impl"
+name = "pipewire-wrapper-macro-impl"
 version = "0.1.0"
 edition = "2021"
 authors = ["Anton Kharuzhyi <publicantroids@gmail.com>"]
