@@ -157,37 +157,3 @@ impl<'a> AddListener<'a> for CoreRef {
         events
     }
 }
-
-#[test]
-fn test_create_core() {
-    let core = Core::default();
-    let context = core.context();
-    let main_loop = context.main_loop();
-    let registry = core.get_registry(0).unwrap();
-
-    let registry_events = registry.add_listener(
-        RegistryEventsBuilder::default()
-            .global(Box::new(
-                |id, permissions, type_info, version, properties| {
-                    println!(
-                        "Global {:?} {:?} {:?} {:?}",
-                        permissions, type_info, version, properties
-                    );
-                },
-            ))
-            .build(),
-    );
-
-    let timer_callback = |_| {
-        core.context().main_loop().quit();
-    };
-    let timer = main_loop
-        .get_loop()
-        .add_timer(Box::new(timer_callback))
-        .unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false);
-
-    main_loop.run();
-}

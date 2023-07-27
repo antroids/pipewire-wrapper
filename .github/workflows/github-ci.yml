@@ -17,6 +17,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Install PipeWire
         run: sudo apt-get install -y pipewire libpipewire-0.3-dev libspa-0.2-dev
+      - name: Run PipeWire
+        run: sudo pipewire&
       - name: Cache LLVM and Clang
         id: cache-llvm
         uses: actions/cache@v3
