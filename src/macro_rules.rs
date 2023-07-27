@@ -58,7 +58,7 @@ macro_rules! enum_wrapper {
     (@add_debug_variant $self:ident, $f:ident, $(,)*) => {};
 
     ($name: ident, $repr_type: ty, $($tts:tt)+) => {
-        #[derive(pipewire_proc_macro::RawWrapper, PartialEq, Eq, Clone, Copy)]
+        #[derive(pipewire_wrapper_proc_macro::RawWrapper, PartialEq, Eq, Clone, Copy)]
         #[repr(transparent)]
         pub struct $name {
             #[raw]
@@ -119,7 +119,7 @@ macro_rules! spa_interface_call {
     }};
 
     (@implementation $self:ident, $method:ident:$version:expr, $($arg:expr),*) => {{
-        use pipewire_proc_macro::spa_interface;
+        use pipewire_wrapper_proc_macro::spa_interface;
         use $crate::error::Error;
         use $crate::wrapper::SpaInterface;
 

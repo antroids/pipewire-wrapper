@@ -11,7 +11,7 @@ use derive_builder::Builder;
 use pw_sys::pw_registry_events;
 use spa_sys::spa_dict;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::Core;
 use crate::core_api::permissions::Permissions;

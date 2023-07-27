@@ -5,7 +5,7 @@ use std::ffi::CStr;
 use std::ptr::NonNull;
 use std::rc::Rc;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::context::{Context, ContextRef};
 use crate::new_instance_raw_wrapper;

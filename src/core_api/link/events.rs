@@ -10,7 +10,7 @@ use derive_builder::Builder;
 use pw_sys::{pw_link_events, pw_link_info};
 use spa_sys::spa_pod;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::link::info::LinkInfoRef;
 use crate::core_api::link::LinkRef;

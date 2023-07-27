@@ -6,7 +6,7 @@ use std::ptr::{null_mut, NonNull};
 use std::rc::Rc;
 use std::time::Duration;
 
-use pipewire_proc_macro::{spa_interface, RawWrapper};
+use pipewire_wrapper_proc_macro::{spa_interface, RawWrapper};
 
 use crate::error::Error;
 use crate::i32_as_void_result;

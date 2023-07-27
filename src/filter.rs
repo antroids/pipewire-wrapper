@@ -15,7 +15,7 @@ use std::slice;
 
 use bitflags::{bitflags, Flags};
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::{Core, CoreRef};
 use crate::core_api::properties::{Properties, PropertiesRef};

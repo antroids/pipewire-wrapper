@@ -4,7 +4,7 @@
 use std::{ffi::CStr, fmt::Debug};
 
 use bitflags::bitflags;
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::{
     enum_wrapper,

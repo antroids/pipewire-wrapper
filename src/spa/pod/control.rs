@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 use std::mem::size_of;
 use std::ptr::addr_of;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::enum_wrapper;
 use crate::spa::pod::bytes::PodBytesRef;

@@ -17,7 +17,7 @@ use std::time::Duration;
 
 use pw_sys::pw_main_loop_events;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_::{LoopRef, LoopRefIterator};
 use crate::core_api::properties::Properties;

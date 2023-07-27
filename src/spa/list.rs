@@ -6,7 +6,7 @@ use std::ptr::{addr_of, null, null_mut};
 
 use spa_sys::spa_list;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::wrapper::RawWrapper;
 

@@ -8,7 +8,7 @@ use std::ptr::NonNull;
 use derive_builder::Builder;
 use pw_sys::{pw_factory_events, pw_factory_info};
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::factory::info::FactoryInfoRef;
 use crate::core_api::factory::FactoryRef;

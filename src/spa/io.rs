@@ -7,7 +7,7 @@ use std::slice;
 
 use bitflags::{bitflags, Flags};
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::type_::{FractionRef, PositionState, RectangleRef};
 use crate::wrapper::RawWrapper;

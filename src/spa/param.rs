@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 
 use bitflags::bitflags;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::enum_wrapper;
 use crate::wrapper::RawWrapper;

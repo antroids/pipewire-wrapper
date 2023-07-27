@@ -4,7 +4,7 @@
 use std::fmt::{Debug, Formatter};
 use std::io::{Seek, Write};
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::pod::iterator::PodIterator;
 use crate::spa::pod::restricted::{PodHeader, PodRawValue};

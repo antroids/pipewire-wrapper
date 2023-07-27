@@ -7,7 +7,7 @@
 use std::pin::Pin;
 
 use crate::wrapper::RawWrapper;
-use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper};
+use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper};
 
 use crate::{
     listeners::{AddListener, Listeners, OwnListeners},

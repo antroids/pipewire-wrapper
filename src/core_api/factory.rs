@@ -6,7 +6,7 @@
 //!
 use std::pin::Pin;
 
-use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper};
+use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper};
 
 use crate::core_api::core::Core;
 use crate::core_api::factory::events::FactoryEvents;

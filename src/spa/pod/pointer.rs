@@ -5,7 +5,7 @@ use std::ffi::c_void;
 use std::io::{Seek, Write};
 use std::ptr::addr_of;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::pod::restricted::{PodHeader, PodRawValue};
 use crate::spa::pod::{PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};

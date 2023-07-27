@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use pipewire_proc_macro::{spa_interface, RawWrapper};
+use pipewire_wrapper_proc_macro::{spa_interface, RawWrapper};
 
 use crate::wrapper::*;
 

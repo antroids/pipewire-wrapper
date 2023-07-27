@@ -33,8 +33,8 @@ use std::fmt::Debug;
 use std::os::fd::RawFd;
 use std::ptr::NonNull;
 
-pub use pipewire_macro_impl::*;
-pub use pipewire_proc_macro::*;
+pub use pipewire_wrapper_macro_impl::*;
+pub use pipewire_wrapper_proc_macro::*;
 
 use crate::error::Error;
 use crate::error::Error::ErrorCode;

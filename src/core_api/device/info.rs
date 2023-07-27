@@ -8,7 +8,7 @@ use std::slice;
 
 use bitflags::{bitflags, Flags};
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::dict::DictRef;
 use crate::spa::param::{ParamInfo, ParamInfoRef};

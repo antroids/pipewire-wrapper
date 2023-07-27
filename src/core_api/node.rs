@@ -9,7 +9,7 @@ use std::pin::Pin;
 use std::ptr::{null_mut, NonNull};
 use std::sync::{Arc, Mutex};
 
-use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper, Wrapper};
 
 use crate::core_api::core::Core;
 use crate::core_api::node::events::NodeEvents;

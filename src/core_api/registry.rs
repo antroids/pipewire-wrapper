@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use pw_sys::pw_proxy;
 
-use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper, Wrapper};
 
 use crate::core_api::core::Core;
 use crate::core_api::factory::events::FactoryEvents;

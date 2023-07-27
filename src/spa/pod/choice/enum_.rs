@@ -9,7 +9,7 @@ use std::ptr::addr_of;
 
 use spa_sys::spa_pod;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::pod::iterator::PodValueIterator;

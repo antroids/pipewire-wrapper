@@ -8,7 +8,7 @@ use std::ptr::NonNull;
 use std::rc::Rc;
 use std::time::Duration;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_::LoopRef;
 use crate::core_api::properties::Properties;

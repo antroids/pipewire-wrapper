@@ -3,7 +3,7 @@
  */
 use core::slice;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 #[derive(RawWrapper, Debug)]
 #[repr(transparent)]

@@ -10,7 +10,7 @@ use std::ptr::addr_of;
 use bitflags::{bitflags, Flags};
 use spa_sys::spa_pod_object_body;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 use prop::ObjectPropType;
 use prop_info::ObjectPropInfoType;
 

@@ -10,7 +10,7 @@ use derive_builder::Builder;
 use pw_sys::{pw_buffer, pw_stream_control, pw_stream_events, pw_stream_state};
 use spa_sys::{spa_command, spa_pod};
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::events_builder_build;
 use crate::spa::interface::Hook;

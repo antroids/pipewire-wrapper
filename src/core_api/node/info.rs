@@ -10,7 +10,7 @@ use std::slice::from_raw_parts;
 
 use bitflags::bitflags;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::node::Node;
 use crate::enum_wrapper;

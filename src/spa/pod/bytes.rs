@@ -7,7 +7,7 @@ use std::slice;
 
 use spa_sys::spa_pod;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::pod::pod_buf::PodBuf;
 use crate::spa::pod::restricted::{PodHeader, PodRawValue};

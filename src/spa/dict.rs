@@ -12,7 +12,7 @@ use std::slice::Iter;
 use bitflags::bitflags;
 use spa_sys::{spa_dict, spa_dict_item};
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::wrapper::{RawWrapper, Wrapper};
 

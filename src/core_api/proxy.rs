@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use spa_sys::SPA_TYPE_INFO_Data;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::core_api::core::Core;
 use crate::core_api::proxy::events::ProxyEvents;

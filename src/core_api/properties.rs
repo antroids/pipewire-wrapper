@@ -13,7 +13,7 @@ use std::slice;
 use bitflags::bitflags;
 use pw_sys::FILE;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::spa::dict;
 use crate::spa::dict::{DictItemRef, DictRef, DictRefIterator};

@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use spa_sys::{spa_interface, spa_source, spa_source_io_func_t};
 
-use pipewire_proc_macro::{spa_interface, RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{spa_interface, RawWrapper, Wrapper};
 
 use crate::core_api::main_loop::MainLoop;
 use crate::error::Error;

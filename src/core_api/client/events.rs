@@ -9,7 +9,7 @@ use std::ptr::NonNull;
 use derive_builder::Builder;
 use pw_sys::{pw_client_events, pw_client_info};
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::client::info::ClientInfoRef;
 use crate::core_api::client::ClientRef;

@@ -9,7 +9,7 @@ use std::slice::from_raw_parts;
 
 use bitflags::bitflags;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::dict::DictRef;
 use crate::spa::param::{ParamInfo, ParamInfoRef};

@@ -10,7 +10,7 @@ use derive_builder::Builder;
 use pw_sys::{pw_device_events, pw_device_info};
 use spa_sys::spa_pod;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::device::info::DeviceInfoRef;
 use crate::core_api::device::DeviceRef;

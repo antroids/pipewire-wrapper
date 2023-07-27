@@ -8,7 +8,7 @@ use std::mem::size_of;
 
 use spa_sys::spa_pod;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::pod::object::prop::Prop;
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};

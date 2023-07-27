@@ -10,5 +10,5 @@ description = "Attribute and prop macroses declarations for pipewire-wrapper cra
 proc-macro = true
 
 [dependencies]
-pipewire-macro-impl = { version = "0", path = "../pipewire-wrapper-macro-impl" }
+pipewire-wrapper-macro-impl = { version = "0", path = "../pipewire-wrapper-macro-impl" }
 proc-macro-error = "1.0.4"

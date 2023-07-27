@@ -7,7 +7,7 @@
 use std::pin::Pin;
 use std::ptr::null_mut;
 
-use pipewire_proc_macro::{interface, proxy_wrapper, RawWrapper};
+use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper};
 
 use crate::core_api::core::Core;
 use crate::core_api::device::events::DeviceEvents;

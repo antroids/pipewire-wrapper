@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use bitflags::Flags;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::context::{Context, ContextRef};
 use crate::core_api::permissions::Permissions;

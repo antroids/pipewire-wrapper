@@ -3,7 +3,7 @@
  */
 use std::fmt::{Debug, Formatter};
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::type_::FractionRef;
 use crate::wrapper::RawWrapper;

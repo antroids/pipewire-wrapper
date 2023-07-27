@@ -10,7 +10,7 @@ use std::ptr::NonNull;
 use std::rc::Rc;
 use std::time::Duration;
 
-use pipewire_proc_macro::{interface, spa_interface, RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{interface, spa_interface, RawWrapper, Wrapper};
 
 use crate::core_api::context::Context;
 use crate::core_api::core::events::CoreEvents;

@@ -7,7 +7,7 @@ use std::slice;
 
 use bitflags::bitflags;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::enum_wrapper;
 use crate::spa::pod::object::format::VideoFormat;

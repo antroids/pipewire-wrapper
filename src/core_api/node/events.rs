@@ -11,7 +11,7 @@ use derive_builder::Builder;
 use pw_sys::{pw_node_events, pw_node_info};
 use spa_sys::spa_pod;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_;
 use crate::core_api::loop_::channel::{Receiver, Sender};

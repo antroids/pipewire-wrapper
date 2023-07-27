@@ -9,7 +9,7 @@ use std::ptr::NonNull;
 use derive_builder::Builder;
 use pw_sys::pw_proxy_events;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::proxy::ProxyRef;
 use crate::events_builder_build;

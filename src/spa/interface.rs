@@ -8,7 +8,7 @@ use std::ptr::{addr_of, addr_of_mut, null_mut, NonNull};
 
 use spa_sys::{spa_callbacks, spa_hook, spa_list};
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::spa::list::{List, ListElement, ListRef};
 use crate::wrapper::RawWrapper;

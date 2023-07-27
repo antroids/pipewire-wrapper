@@ -18,7 +18,7 @@ use bitmap::PodBitmapRef;
 use bytes::PodBytesRef;
 use choice::PodChoiceRef;
 use id::PodIdRef;
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 use restricted::PodRawValue;
 use sequence::PodSequenceRef;
 use string::PodStringRef;

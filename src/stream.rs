@@ -11,7 +11,7 @@ use std::ptr::{null_mut, NonNull};
 use bitflags::{bitflags, Flags};
 use spa_sys::spa_pod;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::core::CoreRef;
 use crate::core_api::properties::{Properties, PropertiesRef};

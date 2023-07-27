@@ -9,7 +9,7 @@ use std::rc::Rc;
 use derive_builder::Builder;
 use pw_sys::{pw_context_events, pw_global, pw_impl_client};
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::context::{Context, ContextRef};
 use crate::events_builder_build;

@@ -254,23 +254,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 
 [[package]]
-name = "pipewire-macro-impl"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.27",
-]
-
-[[package]]
-name = "pipewire-proc-macro"
-version = "0.1.0"
-dependencies = [
- "pipewire-macro-impl",
- "proc-macro-error",
-]
-
-[[package]]
 name = "pipewire-sys"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -289,10 +272,27 @@ dependencies = [
  "derive_builder",
  "libspa-sys",
  "paste",
- "pipewire-macro-impl",
- "pipewire-proc-macro",
  "pipewire-sys",
+ "pipewire-wrapper-macro-impl",
+ "pipewire-wrapper-proc-macro",
  "signal-hook",
+]
+
+[[package]]
+name = "pipewire-wrapper-macro-impl"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.27",
+]
+
+[[package]]
+name = "pipewire-wrapper-proc-macro"
+version = "0.1.0"
+dependencies = [
+ "pipewire-wrapper-macro-impl",
+ "proc-macro-error",
 ]
 
 [[package]]

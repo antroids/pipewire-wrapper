@@ -7,7 +7,7 @@ use std::ptr::NonNull;
 
 use bitflags::bitflags;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::type_info::TypeInfo;
 use crate::spa::dict::DictRef;

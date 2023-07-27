@@ -14,7 +14,7 @@ use std::time::Duration;
 use pw_sys::pw_global;
 use spa_sys::spa_support;
 
-use pipewire_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::context::events::{ContextEvents, ContextEventsBuilder};
 use crate::core_api::core::Core;

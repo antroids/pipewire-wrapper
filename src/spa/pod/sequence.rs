@@ -4,7 +4,7 @@
 use std::io::{Seek, Write};
 use std::ptr::addr_of;
 
-use pipewire_proc_macro::RawWrapper;
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::pod::control::PodControlRef;
 use crate::spa::pod::iterator::PodIterator;

@@ -7,7 +7,7 @@
 use std::os::fd::RawFd;
 use std::time::Duration;
 
-use pipewire_proc_macro::{spa_interface, RawWrapper};
+use pipewire_wrapper_proc_macro::{spa_interface, RawWrapper};
 
 use crate::spa;
 use crate::spa::loop_::utils::LoopUtilsRef;
