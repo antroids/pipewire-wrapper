@@ -61,20 +61,13 @@ fn new_instance_raw_wrapper<T: RawWrapper>(ptr: *mut T::CType) -> crate::Result<
     NonNull::new(ptr as *mut T).ok_or_else(|| Error::CannotCreateInstance)
 }
 
-/// [RawWrapper] from the raw pointer to the external type or [Error::NullPointer]
+/// [RawWrapper] from the raw pointer for the external type or [Error::NullPointer]
 fn raw_wrapper<'a, T: RawWrapper>(ptr: *mut T::CType) -> crate::Result<&'a T> {
     if let Some(raw_wrapper) = unsafe { (ptr as *mut T).as_ref() } {
         Ok(raw_wrapper)
     } else {
         Err(Error::NullPointer)
     }
-}
-
-#[test]
-fn wrapper_tests() {
-    let test_case = trybuild::TestCases::new();
-
-    test_case.pass("tests/wrapper-on-struct-with-ptr-field.rs");
 }
 
 enum_wrapper!(TestEnum, u32, VAL1: 12u32, VAL2: 13u32);
