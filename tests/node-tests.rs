@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use pipewire_wrapper::{
     core_api::{
@@ -32,6 +35,18 @@ fn test_node_events_via_channel() {
     let _sigterm_handler = main_loop
         .get_loop()
         .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+
+    let main_loop_close_callback = |_expirations| {
+        main_loop.quit().unwrap();
+    };
+    let timer = main_loop
+        .get_loop()
+        .add_timer(Box::new(main_loop_close_callback))
+        .unwrap();
+    main_loop
+        .get_loop()
+        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+        .unwrap();
 
     let (node_sender, node_receiver) = LoopChannel::channel::<Node>();
 
