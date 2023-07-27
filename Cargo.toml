@@ -2,17 +2,24 @@
 name = "pipewire-wrapper"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Anton Kharuzhyi <publicantroids@gmail.com>"]
+description = "Rust bindings for PipeWire"
+homepage = "https://pipewire.org"
+keywords = ["pipewire", "bindings", "audio", "video", "multimedia"]
+readme = "README.md"
+license = "MIT"
+categories = [
+    "multimedia::audio",
+    "multimedia::video",
+    "os::linux-apis",
+    "api-bindings",
+]
 
 [dev-dependencies]
 signal-hook = "0.3.15"
 
 [workspace]
-members = [
-    "pipewire-wrapper-macro-impl",
-    "pipewire-wrapper-proc-macro"
-]
+members = ["pipewire-wrapper-macro-impl", "pipewire-wrapper-proc-macro"]
 
 [dependencies]
 pipewire-macro-impl = { version = "0", path = "pipewire-wrapper-macro-impl" }
