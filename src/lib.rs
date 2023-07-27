@@ -11,6 +11,8 @@
 //! # Examples
 //!
 //! ```
+//! use pipewire_wrapper::core_api::main_loop::MainLoop;
+//! use std::time::Duration;
 //! let main_loop = MainLoop::default();
 //!
 //! let callback = |_expirations| {

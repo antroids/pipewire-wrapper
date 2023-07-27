@@ -104,9 +104,10 @@ pub trait AddListener<'a>: RawWrapper {
 ///
 /// # Example
 ///
-/// ```
+/// ```no_run,ignore
 /// use pipewire_wrapper::core_api::device::DeviceRef;
 /// use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
+/// use crate::pipewire_wrapper::core_api::proxy::Proxied;
 /// let listener = RegistryEventsBuilder::default()
 ///         .global(Box::new(
 ///             move |id, _permissions, type_info, _version, _props| {

@@ -24,6 +24,7 @@ pub struct ListRef {
 ///
 /// # Example
 /// ```
+/// use spa_sys::spa_list;
 /// struct TestElement {
 ///    link: spa_list,
 ///    payload: u32,

@@ -19,9 +19,9 @@ jobs:
         run: sudo apt-get install -y pipewire libpipewire-0.3-dev libspa-0.2-dev pipewire-media-session- wireplumber
       - name: Run PipeWire
         run: systemctl --user --now enable wireplumber.service
-      - name: Cache LLVM and Clang
-        id: cache-llvm
-        uses: actions/cache@v3
+      - name: Cache Restore
+        id: cache-restore
+        uses: actions/cache/restore@v3
         with:
           path: ${{ runner.temp }}/llvm-16
           key: llvm-16
@@ -31,7 +31,13 @@ jobs:
         with:
           version: 16
           directory: ${{ runner.temp }}/llvm-16
-          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+          cached: ${{ steps.cache-restore.outputs.cache-hit }}
+      - name: Save Cache
+        id: cache-save
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ runner.temp }}/llvm-16
+          key: llvm-16
       - name: Cargo Test
         uses: actions-rs/cargo@v1
         env:

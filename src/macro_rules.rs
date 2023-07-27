@@ -13,7 +13,7 @@
 /// * [std::fmt::Debug]
 ///
 /// # Examples
-/// ```
+/// ```no_run,ignore
 /// enum_wrapper!(
 ///    PositionState,
 ///    spa_sys::spa_io_position_state,
@@ -85,14 +85,14 @@ macro_rules! enum_wrapper {
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run,ignore
 /// pub fn hello(&self, version: u32) -> crate::Result<()> {
 ///     let result = spa_interface_call!(self, hello, version)?;
 ///     i32_as_void_result(result)
 /// }
 /// ```
 ///
-/// ```
+/// ```no_run,ignore
 /// pub fn sync(&self, id: u32, seq: i32) -> crate::Result<()> {
 ///      let result = spa_interface_call!(self, sync, id, seq)?;
 ///     i32_as_void_result(result)

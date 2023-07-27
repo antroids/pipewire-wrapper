@@ -51,20 +51,39 @@ pub mod events;
 /// use pipewire_wrapper::core_api::device::DeviceRef;
 /// use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
 /// use pipewire_wrapper::listeners::OwnListeners;
-/// let core = Arc::new(Core::default());
-/// let registry = core.get_registry(0).unwrap();
+/// use std::time::Duration;
 ///
-/// let listener = RegistryEventsBuilder::default()
-///         .global(Box::new(
-///             move |id, _permissions, type_info, _version, _props| {
-///                 if type_info == DeviceRef::type_info() {
-///                     device_added_queue.lock().unwrap().push(id);
-///                     main_loop.signal_event(&device_added_event).unwrap();
-///                 }
+/// let core = Core::default();
+/// let context = core.context();
+///  let main_loop = context.main_loop();
+///  let registry = core.get_registry(0).unwrap();
+///
+/// let _registry_events = registry.add_listener(
+///      RegistryEventsBuilder::default()
+///          .global(Box::new(
+///              |_id, permissions, type_info, version, properties| {
+///                 println!(
+///                      "Global {:?} {:?} {:?} {:?}",
+///                      permissions, type_info, version, properties
+///                 );
 ///             },
 ///         ))
-///         .build();
-/// registry.add_listener(listener);
+///         .build(),
+///  );
+///
+/// let timer_callback = |_| {
+///     core.context().main_loop().quit().unwrap();
+/// };
+/// let timer = main_loop
+///      .get_loop()
+///      .add_timer(Box::new(timer_callback))
+///     .unwrap();
+/// main_loop
+///     .get_loop()
+///     .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+///     .unwrap();
+///
+/// main_loop.run().unwrap();
 /// ```
 #[derive(RawWrapper, Debug)]
 #[interface(methods=pw_sys::pw_registry_methods, interface="Registry")]
