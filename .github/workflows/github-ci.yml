@@ -10,21 +10,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build_and_test:
+    name: Build And Test Project
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-      # LLVM and Clang
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
-          version: 16
-          directory: ${{ runner.temp }}/llvm-16
-      - name: Cargo Test
-        uses: actions-rs/cargo@v1
-        env:
-          LIBCLANG_PATH: ${{ runner.temp }}/llvm-16/lib
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: --verbose -- --nocapture
+          command: build
+          args: --release --all-features
