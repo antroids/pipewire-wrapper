@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
       - name: Install PipeWire
-        run: sudo apt-get install -y libpipewire-0.3-dev libspa-0.2-dev
+        run: sudo apt-get install -y pipewire libpipewire-0.3-dev libspa-0.2-dev
       # LLVM and Clang
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
