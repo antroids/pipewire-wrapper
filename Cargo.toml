@@ -14,6 +14,7 @@ categories = [
     "os::linux-apis",
     "api-bindings",
 ]
+repository = "https://github.com/antroids/pipewire-wrapper"
 
 [dev-dependencies]
 signal-hook = "0.3.15"

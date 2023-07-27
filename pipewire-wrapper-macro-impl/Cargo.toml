@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Anton Kharuzhyi <publicantroids@gmail.com>"]
 license = "MIT"
 description = "Attribute and prop macroses implementations for pipewire-wrapper crate"
+repository = "https://github.com/antroids/pipewire-wrapper"
 
 [dependencies]
 proc-macro2 = "1.0.66"
