@@ -17,6 +17,12 @@ jobs:
         uses: actions/checkout@v2
       - name: Install PipeWire
         run: sudo apt-get install -y pipewire libpipewire-0.3-dev libspa-0.2-dev
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v3
+        with:
+          path: ${{ runner.temp }}/llvm-16
+          key: llvm-3.5
       # LLVM and Clang
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -24,12 +30,6 @@ jobs:
           version: 16
           directory: ${{ runner.temp }}/llvm-16
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-      - name: Cache LLVM and Clang
-        id: cache-llvm
-        uses: actions/cache@v3
-        with:
-          path: ${{ runner.temp }}/llvm-16
-          key: llvm-3.5
       - name: Cargo Test
         uses: actions-rs/cargo@v1
         env:
