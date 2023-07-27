@@ -12,7 +12,7 @@ use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::object::prop::Prop;
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, PrimitiveValue, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue, PrimitiveValue};
 use crate::spa::pod::{
     BasicTypePod, FromPrimitiveValue, FromValue, PodError, PodResult, PodValue, SizedPod, WritePod,
     WriteValue, POD_ALIGN,
@@ -109,9 +109,7 @@ impl<T: PodIdType> PodHeader for PodIdRef<T> {
     fn pod_header(&self) -> &spa_pod {
         &self.raw.pod
     }
-}
 
-impl<T: PodIdType> StaticTypePod for PodIdRef<T> {
     fn static_type() -> Type {
         Type::ID
     }

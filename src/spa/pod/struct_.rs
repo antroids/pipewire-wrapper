@@ -7,7 +7,7 @@ use std::io::{Seek, Write};
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::iterator::PodIterator;
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue};
 use crate::spa::pod::{BasicTypePod, PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};
 use crate::spa::type_::Type;
 
@@ -20,15 +20,13 @@ pub struct PodStructRef {
     raw: spa_sys::spa_pod_struct,
 }
 
-impl StaticTypePod for PodStructRef {
-    fn static_type() -> Type {
-        Type::STRUCT
-    }
-}
-
 impl PodHeader for PodStructRef {
     fn pod_header(&self) -> &spa_sys::spa_pod {
         &self.raw.pod
+    }
+
+    fn static_type() -> Type {
+        Type::STRUCT
     }
 }
 

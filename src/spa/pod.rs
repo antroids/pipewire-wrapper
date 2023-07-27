@@ -30,7 +30,7 @@ use crate::spa::pod::object::PodObjectRef;
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
 use crate::spa::pod::pointer::PodPointerRef;
 use crate::spa::pod::restricted::{
-    BasicTypePod, CloneTo, PodHeader, PrimitiveValue, SizedPod, StaticTypePod, WritePod, WriteValue,
+    BasicTypePod, CloneTo, PodHeader, PrimitiveValue, SizedPod, WritePod, WriteValue,
 };
 use crate::spa::type_::{FractionRef, RectangleRef, Type};
 use crate::wrapper::RawWrapper;
@@ -131,9 +131,7 @@ macro_rules! primitive_type_pod_impl {
             fn pod_header(&self) -> &spa_sys::spa_pod {
                 &self.raw.pod
             }
-        }
 
-        impl StaticTypePod for $pod_ref_type {
             fn static_type() -> Type {
                 $pod_type
             }
@@ -346,7 +344,6 @@ impl<T: PodHeader> CloneTo for &T {
 
 impl<T> BasicTypePod for T
 where
-    T: StaticTypePod,
     T: PodHeader,
     T: RawWrapper,
     T: Debug,
@@ -411,6 +408,10 @@ impl PodRef {
 impl PodHeader for PodRef {
     fn pod_header(&self) -> &spa_pod {
         &self.raw
+    }
+
+    fn static_type() -> Type {
+        Type::POD
     }
 }
 
@@ -516,12 +517,6 @@ impl<'a> PodRawValue for &'a PodRef {
             BasicType::CHOICE(pod) => BasicTypeValue::CHOICE(pod.choice_value()?),
             _ => return Err(PodError::UnknownPodTypeToDowncast),
         })
-    }
-}
-
-impl StaticTypePod for PodRef {
-    fn static_type() -> Type {
-        Type::POD
     }
 }
 

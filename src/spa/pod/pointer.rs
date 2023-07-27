@@ -7,7 +7,7 @@ use std::ptr::addr_of;
 
 use pipewire_proc_macro::RawWrapper;
 
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue};
 use crate::spa::pod::{PodRef, PodResult, PodValue, SizedPod, WritePod, WriteValue};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -46,9 +46,7 @@ impl PodHeader for PodPointerRef {
     fn pod_header(&self) -> &spa_sys::spa_pod {
         &self.raw.pod
     }
-}
 
-impl StaticTypePod for PodPointerRef {
     fn static_type() -> Type {
         Type::POINTER
     }

@@ -8,7 +8,7 @@ use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::control::PodControlRef;
 use crate::spa::pod::iterator::PodIterator;
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod, WritePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue, WritePod};
 use crate::spa::pod::{BasicType, PodResult, PodValue, SizedPod};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -39,9 +39,7 @@ impl PodHeader for PodSequenceRef {
     fn pod_header(&self) -> &spa_sys::spa_pod {
         &self.raw.pod
     }
-}
 
-impl StaticTypePod for PodSequenceRef {
     fn static_type() -> Type {
         Type::SEQUENCE
     }

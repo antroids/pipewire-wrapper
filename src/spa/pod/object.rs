@@ -33,7 +33,7 @@ use crate::spa::pod::object::param_route::ParamRouteType;
 use crate::spa::pod::object::profiler::ProfilerType;
 use crate::spa::pod::object::prop::Prop;
 use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
-use crate::spa::pod::restricted::{CloneTo, PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::restricted::{CloneTo, PodHeader, PodRawValue};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::struct_::PodStructRef;
 use crate::spa::pod::{
@@ -96,9 +96,7 @@ impl PodHeader for PodObjectRef {
     fn pod_header(&self) -> &spa_sys::spa_pod {
         &self.raw.pod
     }
-}
 
-impl StaticTypePod for PodObjectRef {
     fn static_type() -> Type {
         Type::OBJECT
     }

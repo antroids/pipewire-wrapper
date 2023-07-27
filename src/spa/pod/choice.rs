@@ -23,7 +23,7 @@ use crate::spa::pod::iterator::PodValueIterator;
 use crate::spa::pod::object::format::AudioFormat;
 use crate::spa::pod::object::PodObjectRef;
 use crate::spa::pod::pod_buf::AllocatedData;
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::{
     BasicType, BasicTypePod, BasicTypeValue, FromPrimitiveValue, PodBoolRef, PodDoubleRef,
@@ -206,7 +206,7 @@ fn parse_choice<P>(
 ) -> PodResult<ChoiceStructType<P>>
 where
     P: PodRawValue,
-    P: StaticTypePod,
+    P: PodHeader,
 {
     match unsafe { PodChoiceBodyRef::from_raw_ptr(ptr).type_() } {
         ChoiceType::NONE => <PodNoneRef<P> as PodRawValue>::parse_raw_value(ptr, size)
@@ -364,9 +364,7 @@ impl<T: PodRawValue> PodHeader for PodChoiceRef<T> {
     fn pod_header(&self) -> &spa_pod {
         &self.raw.pod
     }
-}
 
-impl<T: PodRawValue> StaticTypePod for PodChoiceRef<T> {
     fn static_type() -> Type {
         Type::CHOICE
     }

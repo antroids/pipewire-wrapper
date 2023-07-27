@@ -8,7 +8,7 @@ use std::io::{Seek, Write};
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::pod_buf::PodBuf;
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue};
 use crate::spa::pod::{
     BasicTypePod, FromValue, PodError, PodResult, PodValue, SizedPod, WritePod, WriteValue,
     POD_ALIGN,
@@ -29,9 +29,7 @@ impl PodHeader for PodStringRef {
     fn pod_header(&self) -> &spa_sys::spa_pod {
         &self.raw.pod
     }
-}
 
-impl StaticTypePod for PodStringRef {
     fn static_type() -> Type {
         Type::STRING
     }

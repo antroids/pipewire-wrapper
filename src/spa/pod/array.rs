@@ -17,7 +17,7 @@ use crate::spa::pod::choice::PodChoiceRef;
 use crate::spa::pod::id::PodIdRef;
 use crate::spa::pod::iterator::PodValueIterator;
 use crate::spa::pod::object::PodObjectRef;
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue};
 use crate::spa::pod::sequence::PodSequenceRef;
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::struct_::PodStructRef;
@@ -66,13 +66,7 @@ where
     fn pod_header(&self) -> &spa_pod {
         &self.raw.pod
     }
-}
 
-impl<T> StaticTypePod for PodArrayRef<T>
-where
-    T: PodRawValue,
-    T: BasicTypePod,
-{
     fn static_type() -> Type {
         Type::ARRAY
     }
@@ -189,9 +183,12 @@ fn test_array() {
     let array = allocated_array.as_pod();
 
     let mut array_value = array.value().unwrap();
+    assert_eq!(array.raw.pod.type_, Type::ARRAY.raw);
+    assert_eq!(array.raw.pod.size, 20);
     assert_eq!(array_value.next(), Some(1i32));
     assert_eq!(array_value.next(), Some(2i32));
     assert_eq!(array_value.next(), Some(3i32));
+    assert_eq!(array_value.next(), None);
 
     assert_eq!(array.elements(), 3);
 }

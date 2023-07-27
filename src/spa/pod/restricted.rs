@@ -35,9 +35,7 @@ pub trait PodHeader {
     fn pod_type(&self) -> Type {
         Type::from_raw(self.pod_header().type_)
     }
-}
 
-pub trait StaticTypePod {
     fn static_type() -> Type;
 }
 
@@ -55,7 +53,6 @@ pub trait WriteValue: PodRawValue {
 
 pub trait BasicTypePod
 where
-    Self: StaticTypePod,
     Self: PodHeader,
     Self: RawWrapper,
     Self: Debug,

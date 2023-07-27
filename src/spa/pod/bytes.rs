@@ -10,7 +10,7 @@ use spa_sys::spa_pod;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::pod_buf::PodBuf;
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue};
 use crate::spa::pod::{
     BasicTypePod, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue, POD_ALIGN,
 };
@@ -40,9 +40,7 @@ impl PodHeader for PodBytesRef {
     fn pod_header(&self) -> &spa_pod {
         &self.raw.pod
     }
-}
 
-impl StaticTypePod for PodBytesRef {
     fn static_type() -> Type {
         Type::BYTES
     }

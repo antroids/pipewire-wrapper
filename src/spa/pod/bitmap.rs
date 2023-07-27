@@ -10,7 +10,7 @@ use spa_sys::spa_pod;
 use pipewire_proc_macro::RawWrapper;
 
 use crate::spa::pod::pod_buf::PodBuf;
-use crate::spa::pod::restricted::{PodHeader, PodRawValue, StaticTypePod};
+use crate::spa::pod::restricted::{PodHeader, PodRawValue};
 use crate::spa::pod::{
     BasicTypePod, PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue, POD_ALIGN,
 };
@@ -36,15 +36,13 @@ impl PodBitmapRef {
     }
 }
 
-impl StaticTypePod for PodBitmapRef {
-    fn static_type() -> Type {
-        Type::BITMAP
-    }
-}
-
 impl PodHeader for PodBitmapRef {
     fn pod_header(&self) -> &spa_pod {
         &self.raw.pod
+    }
+
+    fn static_type() -> Type {
+        Type::BITMAP
     }
 }
 
