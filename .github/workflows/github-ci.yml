@@ -27,6 +27,7 @@ jobs:
         uses: actions-rs/cargo@v1
         env:
           LIBCLANG_PATH: ${{ runner.temp }}/llvm-16/lib
+          RUST_TEST_THREADS: 1
         with:
           command: test
           args: --verbose -- --nocapture
