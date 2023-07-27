@@ -23,6 +23,13 @@ jobs:
         with:
           version: 16
           directory: ${{ runner.temp }}/llvm-16
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v3
+        with:
+          path: ${{ runner.temp }}/llvm-16
+          key: llvm-3.5
       - name: Cargo Test
         uses: actions-rs/cargo@v1
         env:
