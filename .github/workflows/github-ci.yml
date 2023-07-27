@@ -21,10 +21,6 @@ jobs:
         with:
           version: 16
           directory: ${{ runner.temp }}/llvm-16
-      # Rust
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        
       - name: Cargo Test
         uses: actions-rs/cargo@v1
         env:
