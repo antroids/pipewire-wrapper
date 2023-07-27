@@ -16,12 +16,12 @@ jobs:
 
     steps:
     - name: Install LLVM
-    - uses: KyleMayes/install-llvm-action@v1
+      uses: KyleMayes/install-llvm-action@v1
       with:
         version: "15"
         
     - name: Install rust toolchain
-    - uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
         
@@ -32,7 +32,7 @@ jobs:
       run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
       
     - name: Checkout  
-    - uses: actions/checkout@v3
+      uses: actions/checkout@v3
     
     - name: Build
       run: cargo build --verbose
