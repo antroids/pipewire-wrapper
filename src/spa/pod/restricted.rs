@@ -19,13 +19,17 @@ use crate::spa::pod::{
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
+/// Pod with known size.
 pub trait SizedPod {
+    /// Pod size including header.
     fn pod_size(&self) -> usize;
 }
 
+/// Marker trait for types with value that can be sent by value, not by reference.
 pub trait PrimitiveValue {}
 
 pub trait CloneTo {
+    /// Write this pod as bytes slice into the `buffer`.
     fn clone_to(&self, buffer: &mut impl Write) -> PodResult<()>;
 }
 
@@ -51,12 +55,14 @@ pub trait WriteValue: PodRawValue {
         W: std::io::Write + std::io::Seek;
 }
 
+/// Basic pod, trait is implemented automatically.
 pub trait BasicTypePod
 where
     Self: PodHeader,
     Self: RawWrapper,
     Self: Debug,
 {
+    /// Try to cast this pod to another pod type.
     fn cast<T>(&self) -> PodResult<&T>
     where
         T: BasicTypePod,
@@ -90,14 +96,23 @@ where
     }
 }
 
+/// Pod with the value that can be parsed.
+/// The trait is restricted part of [PodValue].
 pub trait PodRawValue: PodValue {
+    /// Raw C-type value of the pod.
+    /// This value with the size must be enough to parse pod.
+    /// For example, we can't use [spa_sys::spa_pod_choice_body].child as `RawValue`,
+    /// because the `type` and `flags` fields are missing
     type RawValue;
 
+    /// Pointer to the raw value.
     fn raw_value_ptr(&self) -> *const Self::RawValue;
 
+    /// Parse the [Self::Value] from the [Self::RawValue].
     fn parse_raw_value(ptr: *const Self::RawValue, size: usize) -> PodResult<Self::Value>;
 }
 
+/// Check whether `buffer` position is properly aligned.
 pub fn check_align<W>(buffer: &mut W) -> PodResult<()>
 where
     W: std::io::Write + std::io::Seek,
@@ -109,6 +124,8 @@ where
     }
 }
 
+/// Write [spa_sys::spa_pod] with the given values.
+/// Align is checked before writing to be sure that `buffer` position is properly aligned.
 pub fn write_header<W>(buffer: &mut W, size: u32, type_: Type) -> PodResult<()>
 where
     W: std::io::Write + std::io::Seek,
@@ -123,6 +140,7 @@ where
     )
 }
 
+/// Write any [Sized] value to the `buffer`.
 pub fn write_value<W, V>(buffer: &mut W, value: &V) -> PodResult<()>
 where
     W: std::io::Write + std::io::Seek,
@@ -135,6 +153,8 @@ where
     Ok(())
 }
 
+/// Write the padding if it's required.
+/// Should be used after each pod write for safety.
 pub fn write_align_padding<W>(buffer: &mut W) -> PodResult<()>
 where
     W: std::io::Write + std::io::Seek,
@@ -149,6 +169,7 @@ where
     Ok(())
 }
 
+/// Count the difference between `buffer` positions before and after usage in `func`.
 pub fn write_count_size<W, F>(buffer: &mut W, func: F) -> PodResult<usize>
 where
     W: std::io::Write + std::io::Seek,
