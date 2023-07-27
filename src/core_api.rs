@@ -2,9 +2,11 @@
  * SPDX-License-Identifier: MIT
  */
 use std::ffi::{CStr, CString};
+use std::ops::{AddAssign, SubAssign};
 use std::pin::Pin;
 use std::rc::Rc;
-use std::sync::Once;
+use std::sync::atomic::AtomicUsize;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use spa_sys::spa_support;
@@ -38,14 +40,14 @@ pub mod type_info;
 
 pub const PW_ID_ANY: u32 = SPA_ID_INVALID;
 
-static mut INIT: Once = Once::new();
+static mut INSTANCES: Mutex<usize> = Mutex::new(0);
 
 /// PipeWire structure
 #[derive(Debug)]
 pub struct PipeWire {}
 
 impl PipeWire {
-    /// Init the pipewire, can be called several times, but the PipeWire will be initialized only once.
+    /// Init the pipewire, can be called several times.
     ///
     /// # Arguments
     ///
@@ -61,11 +63,13 @@ impl PipeWire {
     /// ```
     pub fn init(args: &Vec<&CStr>) -> PipeWire {
         unsafe {
-            INIT.call_once_force(|_state| {
-                let argc = &mut (args.len() as i32) as *mut ::std::os::raw::c_int;
-                let argv = args.as_ptr() as *mut *mut *mut ::std::os::raw::c_char;
+            let argc = &mut (args.len() as i32) as *mut ::std::os::raw::c_int;
+            let argv = args.as_ptr() as *mut *mut *mut ::std::os::raw::c_char;
+            {
+                let mut instances = INSTANCES.lock().unwrap(); // todo try to recover with decrement after (mutex_unpoison #96469)
                 pw_sys::pw_init(argc, argv);
-            });
+                instances.add_assign(1);
+            }
         }
         PipeWire {}
     }
@@ -196,9 +200,11 @@ impl PipeWire {
 impl Drop for PipeWire {
     fn drop(&mut self) {
         unsafe {
-            if INIT.is_completed() {
+            let mut instances = INSTANCES.lock().unwrap();
+            if *instances == 0 {
                 pw_sys::pw_deinit();
-                INIT = Once::new();
+            } else {
+                instances.sub_assign(1);
             }
         }
     }
