@@ -2,12 +2,15 @@
  * SPDX-License-Identifier: MIT
  */
 use proc_macro2::{Ident, Span, TokenStream};
+use quote::__private::ext::RepToTokensExt;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
 use syn::{
-    parse2, AttrStyle, Attribute, Expr, Field, GenericArgument, GenericParam, Generics, ItemStruct,
-    Lit, LitStr, Meta, MetaNameValue, PathArguments, Token, Type, TypePath,
+    parse2, AttrStyle, Attribute, Expr, Field, Fields, GenericArgument, GenericParam, Generics,
+    ItemEnum, ItemStruct, LifetimeParam, Lit, LitStr, Meta, MetaNameValue, PathArguments, Token,
+    Type, TypePath, Variant,
 };
 
 const ATTR_RAW: &str = "raw";
@@ -15,6 +18,13 @@ const ATTR_RAW_WRAPPER: &str = "raw_wrapper";
 
 const ARG_METHODS: &str = "methods";
 const ARG_INTERFACE: &str = "interface";
+
+fn escape_ident(ident_name: &str) -> &str {
+    match ident_name {
+        "type" => "type_",
+        _ => ident_name,
+    }
+}
 
 struct WrappedRawStructInfo {
     struct_ident: Ident,
@@ -55,6 +65,62 @@ impl Parse for WrappedStructInfo {
             }),
             Err(error) => Err(error),
         }
+    }
+}
+
+struct ObjectTypeEnumInfo {
+    ident_: Ident,
+    lifetime: LifetimeParam,
+    variants: Vec<Variant>,
+}
+
+impl Parse for ObjectTypeEnumInfo {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let enum_: ItemEnum = input.parse()?;
+        let ident_ = enum_.ident;
+        let variants: Vec<Variant> = enum_.variants.into_iter().collect();
+
+        if let Some(GenericParam::Lifetime(lifetime)) = enum_.generics.params.first() {
+            Ok(Self {
+                ident_,
+                lifetime: lifetime.clone(),
+                variants,
+            })
+        } else {
+            Err(input.error("Only enums with single lifetime generic parameter are supported"))
+        }
+    }
+}
+
+impl ObjectTypeEnumInfo {
+    fn struct_ident(&self) -> Ident {
+        let enum_ident_string = self.ident_.to_string();
+        let mut ident_string = enum_ident_string.trim_end_matches("Type").to_owned();
+        ident_string.push_str("Info");
+        Ident::new(ident_string.as_str(), self.ident_.span())
+    }
+
+    fn struct_fields_idents(&self) -> Vec<Ident> {
+        self.variants
+            .iter()
+            .map(|variant| {
+                Ident::new(
+                    escape_ident(variant.ident.to_string().to_lowercase().as_str()),
+                    variant.span(),
+                )
+            })
+            .collect()
+    }
+
+    fn struct_fields_types(&self) -> Vec<Type> {
+        self.variants
+            .iter()
+            .map(|variant| match variant.fields.next().unwrap() {
+                Fields::Named(field) => field.named.first().unwrap().ty.clone(),
+                Fields::Unnamed(field) => field.unnamed.first().unwrap().ty.clone(),
+                Fields::Unit => panic!("Unit enum fields are not supported"),
+            })
+            .collect()
     }
 }
 
@@ -449,6 +515,46 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
         impl<'c> AsMut<#ref_type_ident> for #struct_ident <'c> {
             fn as_mut(&mut self) -> &'c mut #ref_type_ident {
                 unsafe { #ref_type_ident::mut_from_raw_ptr(self.ref_.as_raw_ptr().cast()) }
+            }
+        }
+    )
+}
+
+pub fn derive_object_info(input: TokenStream) -> TokenStream {
+    let enum_info: ObjectTypeEnumInfo = parse2(input.clone()).unwrap();
+
+    let enum_ident = &enum_info.ident_;
+    let enum_variants_idents: Vec<Ident> = enum_info
+        .variants
+        .iter()
+        .map(|variant| variant.ident.clone())
+        .collect();
+    let struct_ident = enum_info.struct_ident();
+    let lifetime = &enum_info.lifetime;
+    let struct_fields_idents = enum_info.struct_fields_idents();
+    let struct_fields_types = enum_info.struct_fields_types();
+
+    quote!(
+        #[derive(Default, Debug)]
+        pub struct #struct_ident< #lifetime > {
+            #(pub #struct_fields_idents : Option<#struct_fields_types>),*
+        }
+
+        impl<#lifetime> TryFrom<crate::spa::pod::object::ObjectPropsIterator<#lifetime, #enum_ident<#lifetime>>>
+            for #struct_ident<#lifetime>
+        {
+            type Error = crate::spa::pod::PodError;
+
+            fn try_from(value: crate::spa::pod::object::ObjectPropsIterator<#lifetime, #enum_ident<#lifetime>>) -> Result<Self, Self::Error> {
+                use crate::spa::pod::PodValue;
+                let mut info = Self::default();
+                for prop in value {
+                    match prop.value()? {
+                        #(#enum_ident::#enum_variants_idents (val) => info.#struct_fields_idents = Some(val),)*
+                        _ => panic!("Unsupported type"),
+                    };
+                }
+                Ok(info)
             }
         }
     )

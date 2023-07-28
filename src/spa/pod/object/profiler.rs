@@ -3,17 +3,16 @@
  */
 use std::io::{Seek, Write};
 
+use pipewire_wrapper_proc_macro::ObjectInfo;
+
 use crate::enum_wrapper;
-use crate::spa::pod::id::{PodIdRef, PodIdType};
-use crate::spa::pod::object::param_port_config::Direction;
-use crate::spa::pod::object::{PodObjectRef, PodPropKeyType, PodPropRef};
-use crate::spa::pod::string::PodStringRef;
+use crate::spa::pod::object::{PodPropKeyType, PodPropRef};
 use crate::spa::pod::struct_::PodStructRef;
-use crate::spa::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef, PodResult};
+use crate::spa::pod::{BasicTypePod, PodError, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Debug, ObjectInfo)]
 #[allow(non_camel_case_types)]
 pub enum ProfilerType<'a> {
     INFO(&'a PodStructRef) = Profiler::INFO.raw,
