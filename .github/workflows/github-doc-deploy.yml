@@ -49,6 +49,11 @@ jobs:
         with:
           path: ${{ runner.temp }}/llvm-${{ env.llvm_version }}
           key: llvm-${{ env.llvm_version }}-${{ runner.os }}
+      - name: Install nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
       - name: Cargo Doc
         uses: actions-rs/cargo@v1
         env:
