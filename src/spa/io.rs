@@ -9,7 +9,8 @@ use bitflags::{bitflags, Flags};
 
 use pipewire_wrapper_proc_macro::RawWrapper;
 
-use crate::spa::type_::{FractionRef, PositionState, RectangleRef};
+use crate::enum_wrapper;
+use crate::spa::type_::{FractionRef, RectangleRef};
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper)]
@@ -263,6 +264,14 @@ pub struct IOPositionRef {
     #[raw]
     raw: spa_sys::spa_io_position,
 }
+
+enum_wrapper!(
+    PositionState,
+    spa_sys::spa_io_position_state,
+    STOPPED: spa_sys::SPA_IO_POSITION_STATE_STOPPED,
+    STARTING: spa_sys::SPA_IO_POSITION_STATE_STARTING,
+    RUNNING: spa_sys::SPA_IO_POSITION_STATE_RUNNING,
+);
 
 impl IOPositionRef {
     pub fn clock(&self) -> &IOClockRef {

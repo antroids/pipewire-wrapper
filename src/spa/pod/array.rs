@@ -11,20 +11,11 @@ use spa_sys::spa_pod;
 
 use pipewire_wrapper_proc_macro::RawWrapper;
 
-use crate::spa::pod::bitmap::PodBitmapRef;
-use crate::spa::pod::bytes::PodBytesRef;
-use crate::spa::pod::choice::PodChoiceRef;
-use crate::spa::pod::id::PodIdRef;
 use crate::spa::pod::iterator::PodValueIterator;
-use crate::spa::pod::object::PodObjectRef;
 use crate::spa::pod::restricted::{PodHeader, PodRawValue};
-use crate::spa::pod::sequence::PodSequenceRef;
-use crate::spa::pod::string::PodStringRef;
-use crate::spa::pod::struct_::PodStructRef;
 use crate::spa::pod::{
-    BasicType, BasicTypePod, BasicTypeValue, PodBoolRef, PodDoubleRef, PodError, PodFdRef,
-    PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodPointerRef, PodRectangleRef, PodRef,
-    PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
+    BasicTypePod, PodBoolRef, PodIntRef, PodRef, PodResult, PodValue, SizedPod, WritePod,
+    WriteValue,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -191,4 +182,15 @@ fn test_array() {
     assert_eq!(array_value.next(), None);
 
     assert_eq!(array.elements(), 3);
+
+    let allocated_iter = AllocatedPodValueIterator::<PodBoolRef>::new(vec![]);
+    let allocated_array = PodArrayRef::from_value(&allocated_iter.iter()).unwrap();
+    let array = allocated_array.as_pod();
+
+    let mut array_value = array.value().unwrap();
+    assert_eq!(array.raw.pod.type_, Type::ARRAY.raw);
+    assert_eq!(array.raw.pod.size, 8);
+    assert_eq!(array_value.next(), None);
+
+    assert_eq!(array.elements(), 0);
 }

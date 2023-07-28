@@ -11,8 +11,8 @@ use crate::enum_wrapper;
 use crate::spa::pod::bytes::PodBytesRef;
 use crate::spa::pod::iterator::PodIterator;
 use crate::spa::pod::object::prop::ObjectPropType;
-use crate::spa::pod::object::{ObjectPropsIterator, ObjectType, PodPropRef};
-use crate::spa::pod::restricted::{PodHeader, PodRawValue};
+use crate::spa::pod::object::PodPropRef;
+use crate::spa::pod::restricted::PodRawValue;
 use crate::spa::pod::{BasicTypePod, PodError, PodRef, PodResult, PodValue, SizedPod};
 use crate::wrapper::RawWrapper;
 
@@ -100,4 +100,5 @@ enum_wrapper!(
     PROPERTIES: spa_sys::SPA_CONTROL_Properties,
     MIDI: spa_sys::SPA_CONTROL_Midi,
     OSC: spa_sys::SPA_CONTROL_OSC,
+    _LAST: spa_sys::_SPA_CONTROL_LAST,
 );

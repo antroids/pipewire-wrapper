@@ -1,21 +1,12 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use std::any::TypeId;
-use std::ffi::{CStr, CString};
-use std::fmt::{Debug, Formatter};
-use std::mem::size_of;
-use std::ptr::addr_of;
-use std::slice;
+use std::fmt::Debug;
 use std::time::Duration;
-
-use bitflags::bitflags;
-use spa_sys::spa_pod;
 
 use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::enum_wrapper;
-use crate::spa::pod::*;
 use crate::wrapper::RawWrapper;
 
 #[derive(RawWrapper, Debug, Copy, Clone)]
@@ -258,33 +249,6 @@ pub struct IOBuffersRef {
     raw: spa_sys::spa_io_buffers,
 }
 
-// #[derive(RawWrapper)]
-// #[repr(transparent)]
-// pub struct Ref {
-//     #[raw]
-//     raw: spa_sys::spa_,
-// }
-
-// todo ...
-
-enum_wrapper!(
-    PositionState,
-    spa_sys::spa_io_position_state,
-    STOPPED: spa_sys::SPA_IO_POSITION_STATE_STOPPED,
-    STARTING: spa_sys::SPA_IO_POSITION_STATE_STARTING,
-    RUNNING: spa_sys::SPA_IO_POSITION_STATE_RUNNING,
-);
-
-enum_wrapper!(
-    Control,
-    spa_sys::spa_control_type,
-    INVALID: spa_sys::SPA_CONTROL_Invalid,
-    PROPERTIES: spa_sys::SPA_CONTROL_Properties,
-    MIDI: spa_sys::SPA_CONTROL_Midi,
-    OSC: spa_sys::SPA_CONTROL_OSC,
-    _LAST: spa_sys::_SPA_CONTROL_LAST,
-);
-
 enum_wrapper!(
     EventDevice,
     spa_sys::spa_device_event,
@@ -322,21 +286,6 @@ enum_wrapper!(
     EventNode,
     spa_sys::_bindgen_ty_10,
     START: spa_sys::SPA_EVENT_NODE_START,
-);
-
-enum_wrapper!(
-    IO,
-    spa_sys::spa_io_type,
-    INVALID: spa_sys::SPA_IO_Invalid,
-    BUFFERS: spa_sys::SPA_IO_Buffers,
-    RANGE: spa_sys::SPA_IO_Range,
-    CLOCK: spa_sys::SPA_IO_Clock,
-    LATENCY: spa_sys::SPA_IO_Latency,
-    CONTROL: spa_sys::SPA_IO_Control,
-    NOTIFY: spa_sys::SPA_IO_Notify,
-    POSITION: spa_sys::SPA_IO_Position,
-    RATE_MATCH: spa_sys::SPA_IO_RateMatch,
-    MEMORY: spa_sys::SPA_IO_Memory,
 );
 
 enum_wrapper!(
