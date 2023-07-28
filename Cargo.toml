@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Anton Kharuzhyi <publicantroids@gmail.com>"]
 description = "Rust bindings for PipeWire"
+documentation = "https://antroids.github.io/pipewire-wrapper/pipewire_wrapper/index.html"
 homepage = "https://pipewire.org"
 keywords = ["pipewire", "bindings", "audio", "video", "multimedia"]
 readme = "README.md"

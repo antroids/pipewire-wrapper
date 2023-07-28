@@ -2,6 +2,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+//! [![Docs](https://github.com/antroids/pipewire-wrapper/actions/workflows/github-doc-deploy.yml/badge.svg)](https://github.com/antroids/pipewire-wrapper/actions/workflows/github-doc-deploy.yml)
+//! [![Build](https://github.com/antroids/pipewire-wrapper/actions/workflows/github-ci.yml/badge.svg)](https://github.com/antroids/pipewire-wrapper/actions/workflows/github-ci.yml)
+//!
 //! # Overview
 //!
 //! The crate structure is close to the PipeWire API structure,
