@@ -18,7 +18,7 @@ use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 use crate::spa::dict;
 use crate::spa::dict::{DictItemRef, DictRef, DictRefIterator};
 use crate::wrapper::RawWrapper;
-use crate::{i32_as_result, i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
+use crate::{i32_as_result, new_instance_raw_wrapper, raw_wrapper};
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
@@ -387,12 +387,12 @@ macro_rules! properties_new {
                 $(
                 {
                     let bytes = std::convert::AsRef::<[u8]>::as_ref($key);
-                    std::ffi::CStr::from_bytes_with_nul(bytes).unwrap().as_ptr()
-                },
+                    std::ffi::CStr::from_bytes_with_nul(bytes).unwrap()
+                }.as_ptr(),
                 {
                     let bytes = std::convert::AsRef::<[u8]>::as_ref($val);
-                    std::ffi::CStr::from_bytes_with_nul(bytes).unwrap().as_ptr()
-                },
+                    std::ffi::CStr::from_bytes_with_nul(bytes).unwrap()
+                }.as_ptr(),
                 )+
                 std::ptr::null::<std::os::raw::c_char>(),
             )
