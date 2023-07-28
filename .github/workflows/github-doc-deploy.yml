@@ -23,6 +23,7 @@ jobs:
     name: "Build documentation and deploy to Pages"
     env:
       llvm_version: 16
+      doc_output_path: target/doc/
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -62,12 +63,17 @@ jobs:
         with:
           toolchain: nightly
           command: doc
+      - name: Fix permissions
+        run: |
+            chmod -c -R +rX "${{ env.doc_output_path }}" | while read line; do
+                echo "::warning title=Invalid file permissions automatically fixed::$line"
+            done
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: 'target/doc/'
+          path: ${{ env.doc_output_path }}
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
