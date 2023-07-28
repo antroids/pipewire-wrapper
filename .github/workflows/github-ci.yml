@@ -37,6 +37,7 @@ jobs:
       - name: Save Cache
         id: llvm-cache-save
         uses: actions/cache/save@v3
+        if: ${{ !steps.llvm-cache-restore.outputs.cache-hit }}
         with:
           path: ${{ runner.temp }}/llvm-${{ env.llvm_version }}
           key: llvm-${{ env.llvm_version }}-${{ runner.os }}
