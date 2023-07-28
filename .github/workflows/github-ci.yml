@@ -1,4 +1,4 @@
-name: Rust
+name: Build
 
 on:
   push:
@@ -10,8 +10,11 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build_on_ubuntu_22_04:
+    runs-on: ubuntu-22.04
+    name: "Build the project on ubuntu-22.04"
+    env:
+      llvm_version: 16
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -19,30 +22,28 @@ jobs:
         run: sudo apt-get install -y pipewire libpipewire-0.3-dev libspa-0.2-dev pipewire-media-session- wireplumber
       - name: Run PipeWire
         run: systemctl --user --now enable wireplumber.service
-      - name: Cache Restore
-        id: cache-restore
+      - name: LLVM Cache Restore
+        id: llvm-cache-restore
         uses: actions/cache/restore@v3
         with:
-          path: ${{ runner.temp }}/llvm-16
-          key: llvm-16
-      # LLVM and Clang
+          path: ${{ runner.temp }}/llvm-${{ env.llvm_version }}
+          key: llvm-${{ env.llvm_version }}-${{ runner.os }}
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
         with:
-          version: 16
-          directory: ${{ runner.temp }}/llvm-16
-          cached: ${{ steps.cache-restore.outputs.cache-hit }}
+          version: ${{ env.llvm_version }}
+          directory: ${{ runner.temp }}/llvm-${{ env.llvm_version }}
+          cached: ${{ steps.llvm-cache-restore.outputs.cache-hit }}
       - name: Save Cache
-        id: cache-save
+        id: llvm-cache-save
         uses: actions/cache/save@v3
         with:
-          path: ${{ runner.temp }}/llvm-16
-          key: llvm-16
+          path: ${{ runner.temp }}/llvm-${{ env.llvm_version }}
+          key: llvm-${{ env.llvm_version }}-${{ runner.os }}
       - name: Cargo Test
         uses: actions-rs/cargo@v1
         env:
-          LIBCLANG_PATH: ${{ runner.temp }}/llvm-16/lib
-          RUST_TEST_THREADS: 1
+          LIBCLANG_PATH: ${{ runner.temp }}/llvm-${{ env.llvm_version }}/lib
         with:
           command: test
           args: --verbose -- --nocapture
