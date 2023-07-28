@@ -1,18 +1,26 @@
 name: Build
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on: workflow_dispatch
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build_on_ubuntu_22_04:
+  build_and_deploy_doc:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-22.04
-    name: "Build the project on ubuntu-22.04"
+    name: "Build documentation and deploy to Pages"
     env:
       llvm_version: 16
     steps:
@@ -40,10 +48,21 @@ jobs:
         with:
           path: ${{ runner.temp }}/llvm-${{ env.llvm_version }}
           key: llvm-${{ env.llvm_version }}-${{ runner.os }}
-      - name: Cargo Test
+      - name: Cargo Doc
         uses: actions-rs/cargo@v1
         env:
           LIBCLANG_PATH: ${{ runner.temp }}/llvm-${{ env.llvm_version }}/lib
+          RUSTDOCFLAGS: --enable-index-page -Zunstable-options
         with:
-          command: test
-          args: --verbose -- --nocapture
+          toolchain: nightly
+          command: doc
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: 'target/doc/'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
+      
