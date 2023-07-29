@@ -1,11 +1,16 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+use std::collections::HashMap;
+use std::ffi::CString;
 use std::{ffi::CStr, fmt::Debug};
 
 use bitflags::bitflags;
+
 use pipewire_wrapper_proc_macro::RawWrapper;
 
+use crate::spa::pod::pod_buf::AllocPod;
+use crate::spa::pod::ToOwnedPod;
 use crate::{
     enum_wrapper,
     spa::{dict::DictRef, pod::PodRef},
@@ -98,5 +103,73 @@ impl Debug for LinkInfoRef {
             .field("format", &self.raw.format)
             .field("props", &self.raw.props)
             .finish()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct LinkInfo {
+    id: u32,
+    output_node_id: u32,
+    output_port_id: u32,
+    input_node_id: u32,
+    input_port_id: u32,
+    change_mask: ChangeMask,
+    state: LinkState,
+    error: Option<CString>,
+    format: AllocPod<PodRef>,
+    props: HashMap<CString, CString>,
+}
+
+impl LinkInfo {
+    pub fn from_ref(ref_: &LinkInfoRef) -> Self {
+        Self {
+            id: ref_.id(),
+            output_node_id: ref_.output_node_id(),
+            output_port_id: ref_.output_port_id(),
+            input_node_id: ref_.input_node_id(),
+            input_port_id: ref_.input_port_id(),
+            change_mask: ref_.change_mask(),
+            state: ref_.state(),
+            error: ref_.error().map(CString::from),
+            format: ref_.format().to_owned_pod().unwrap(),
+            props: ref_.props().into(),
+        }
+    }
+
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+    pub fn output_node_id(&self) -> u32 {
+        self.output_node_id
+    }
+    pub fn output_port_id(&self) -> u32 {
+        self.output_port_id
+    }
+    pub fn input_node_id(&self) -> u32 {
+        self.input_node_id
+    }
+    pub fn input_port_id(&self) -> u32 {
+        self.input_port_id
+    }
+    pub fn change_mask(&self) -> ChangeMask {
+        self.change_mask
+    }
+    pub fn state(&self) -> LinkState {
+        self.state
+    }
+    pub fn error(&self) -> &Option<CString> {
+        &self.error
+    }
+    pub fn format(&self) -> &AllocPod<PodRef> {
+        &self.format
+    }
+    pub fn props(&self) -> &HashMap<CString, CString> {
+        &self.props
+    }
+}
+
+impl From<&LinkInfoRef> for LinkInfo {
+    fn from(value: &LinkInfoRef) -> Self {
+        LinkInfo::from_ref(value)
     }
 }
