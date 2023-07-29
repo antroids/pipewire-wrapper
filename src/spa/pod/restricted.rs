@@ -1,21 +1,14 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use std::any::{Any, TypeId};
 use std::fmt::Debug;
-use std::io::{SeekFrom, Write};
+use std::io::Write;
 use std::mem::size_of;
 use std::ops::Rem;
 use std::ptr::addr_of;
 use std::slice;
 
-use spa_sys::spa_pod;
-
-use crate::spa::pod::choice::enum_::PodEnumRef;
-use crate::spa::pod::choice::{ChoiceType, PodChoiceRef};
-use crate::spa::pod::{
-    BasicType, BasicTypeValue, PodError, PodRef, PodResult, PodValue, POD_ALIGN,
-};
+use crate::spa::pod::{PodError, PodRef, PodResult, PodValue, POD_ALIGN};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -30,6 +23,10 @@ pub trait PrimitiveValue {}
 
 pub trait CloneTo {
     /// Write this pod as bytes slice into the `buffer`.
+    ///
+    /// # Note
+    ///
+    /// `buffer` must be aligned properly
     fn clone_to(&self, buffer: &mut impl Write) -> PodResult<()>;
 }
 

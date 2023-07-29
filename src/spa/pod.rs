@@ -259,6 +259,26 @@ where
     fn from_primitive(value: <Self as PodValue>::Value) -> PodResult<AllocPod<Self>>;
 }
 
+/// Allow to convert borrowed pod to allocated.
+pub trait ToOwnedPod {
+    /// Type of the pod
+    type PodType: Sized;
+
+    /// Allocate pod and clone content from the given borrowed
+    fn to_owned_pod(&self) -> PodResult<AllocPod<Self::PodType>>;
+}
+
+impl<'a, T> ToOwnedPod for &'a T
+where
+    &'a T: CloneTo,
+{
+    type PodType = T;
+
+    fn to_owned_pod(&self) -> PodResult<AllocPod<Self::PodType>> {
+        AllocPod::from_pod(self)
+    }
+}
+
 impl<'a, T> FromValue<'a> for T
 where
     T: Sized,
@@ -356,7 +376,7 @@ impl<'a, T: BasicTypePod> Upcast for &'a T {
     }
 }
 
-#[derive(RawWrapper, Clone)]
+#[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodRef {
     #[raw]

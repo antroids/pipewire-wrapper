@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 use std::slice;
 
-use crate::spa::pod::restricted::{BasicTypePod, PodHeader};
+use crate::spa::pod::restricted::{BasicTypePod, CloneTo, PodHeader};
 use crate::spa::pod::{
     PodBoolRef, PodError, PodLongRef, PodRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
 };
@@ -36,9 +36,16 @@ where
         <&'a T>::write_pod(&mut buf, value)?;
         Ok(buf)
     }
+}
 
+impl<'a, T> PodBuf<'a, T>
+where
+    &'a T: CloneTo,
+{
     pub fn from_pod(pod: &'a T) -> PodResult<Self> {
-        Self::from_value(&pod.value()?)
+        let mut buf = Self::new();
+        pod.clone_to(&mut buf)?;
+        Ok(buf)
     }
 }
 
@@ -67,6 +74,12 @@ impl<'a, T> PodBuf<'a, T> {
             pos: 0,
             phantom: PhantomData,
         }
+    }
+
+    pub(crate) fn with_size(size: usize) -> Self {
+        let mut buf = Self::new();
+        buf.allocate_data_if_needed(size as u64);
+        buf
     }
 
     unsafe fn data_bytes_mut(&mut self) -> &mut [u8] {
@@ -178,12 +191,18 @@ where
     &'a T: WritePod,
     T: 'a,
 {
-    pub fn from_pod(pod: &'a T) -> PodResult<Self> {
-        Ok(PodBuf::from_pod(pod)?.into_pod())
-    }
-
     pub fn from_value(value: &<&'a T as PodValue>::Value) -> PodResult<Self> {
         Ok(PodBuf::from_value(value)?.into_pod())
+    }
+}
+
+impl<'a, T> AllocPod<T>
+where
+    &'a T: CloneTo,
+    T: 'a,
+{
+    pub fn from_pod(pod: &'a T) -> PodResult<Self> {
+        Ok(PodBuf::from_pod(pod)?.into_pod())
     }
 }
 
