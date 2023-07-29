@@ -4,11 +4,10 @@
 use core::slice;
 use std::ffi::{CStr, CString};
 use std::fmt::{Debug, Formatter};
-use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 
-use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
+use crate::spa::pod::pod_buf::{AllocPod, PodBuf};
 use crate::spa::pod::restricted::{CloneTo, PodHeader, PodRawValue};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::{
@@ -154,7 +153,7 @@ impl<'a, E: PodRawValue + 'a> Debug for PodValueIterator<'a, E> {
 
 #[repr(transparent)]
 pub struct AllocatedPodIterator<E: SizedPod> {
-    data: AllocatedData<E>,
+    data: AllocPod<E>,
 }
 
 impl<E: SizedPod> AllocatedPodIterator<E> {

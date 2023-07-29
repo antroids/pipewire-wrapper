@@ -5,10 +5,9 @@ use std::fmt::{Debug, Formatter};
 use std::io::{ErrorKind, Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
-use std::ptr::slice_from_raw_parts;
-use std::{io, slice};
+use std::slice;
 
-use crate::spa::pod::restricted::{BasicTypePod, PodHeader, PodRawValue};
+use crate::spa::pod::restricted::{BasicTypePod, PodHeader};
 use crate::spa::pod::{
     PodBoolRef, PodError, PodLongRef, PodRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
 };
@@ -55,8 +54,8 @@ where
 }
 
 impl<'a, T> PodBuf<'a, T> {
-    pub fn into_pod(self) -> AllocatedData<T> {
-        AllocatedData {
+    pub fn into_pod(self) -> AllocPod<T> {
+        AllocPod {
             data: self.data,
             phantom: PhantomData,
         }
@@ -138,12 +137,12 @@ impl<'a, T> Seek for PodBuf<'a, T> {
     }
 }
 
-pub struct AllocatedData<T> {
+pub struct AllocPod<T> {
     data: Vec<AlignedDataType>,
     phantom: PhantomData<T>,
 }
 
-impl<T> Clone for AllocatedData<T> {
+impl<T> Clone for AllocPod<T> {
     fn clone(&self) -> Self {
         Self {
             data: self.data.clone(),
@@ -152,7 +151,7 @@ impl<T> Clone for AllocatedData<T> {
     }
 }
 
-impl<T> AllocatedData<T> {
+impl<T> AllocPod<T> {
     pub fn as_pod(&self) -> &T {
         unsafe { self.as_ptr().as_ref().unwrap() }
     }
@@ -174,7 +173,7 @@ impl<T> AllocatedData<T> {
     }
 }
 
-impl<'a, T> AllocatedData<T>
+impl<'a, T> AllocPod<T>
 where
     &'a T: WritePod,
     T: 'a,
@@ -188,7 +187,7 @@ where
     }
 }
 
-impl<T> AllocatedData<T>
+impl<T> AllocPod<T>
 where
     T: WritePod,
 {
@@ -197,7 +196,7 @@ where
     }
 }
 
-impl<T: Debug> Debug for AllocatedData<T> {
+impl<T: Debug> Debug for AllocPod<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AllocatedData")
             .field("data", &self.data)
@@ -205,7 +204,7 @@ impl<T: Debug> Debug for AllocatedData<T> {
     }
 }
 
-impl<'a, T> TryFrom<&'a PodRef> for AllocatedData<T>
+impl<'a, T> TryFrom<&'a PodRef> for AllocPod<T>
 where
     T: 'a,
     &'a T: WritePod,

@@ -1,7 +1,6 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use std::ffi::CStr;
 use std::fmt::{Debug, Formatter};
 use std::pin::Pin;
 use std::ptr::NonNull;
@@ -16,10 +15,9 @@ use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 use crate::core_api::loop_;
 use crate::core_api::loop_::channel::{Receiver, Sender};
 use crate::core_api::node::info::{NodeInfo, NodeInfoRef};
-use crate::core_api::node::NodeRef;
 use crate::spa::interface::Hook;
-use crate::spa::param::{ParamInfoRef, ParamType};
-use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
+use crate::spa::param::ParamType;
+use crate::spa::pod::pod_buf::AllocPod;
 use crate::spa::pod::PodRef;
 use crate::wrapper::RawWrapper;
 use crate::{events_builder_build, events_channel_builder};
@@ -91,7 +89,7 @@ impl<'p> NodeEvents<'p> {
 #[derive(Clone, Debug)]
 pub enum NodeEventType {
     Info(NodeInfo),
-    Param(i32, ParamType, u32, u32, AllocatedData<PodRef>),
+    Param(i32, ParamType, u32, u32, AllocPod<PodRef>),
 }
 
 impl<'p> NodeEventsChannelBuilder<'p> {
@@ -103,7 +101,7 @@ impl<'p> NodeEventsChannelBuilder<'p> {
 
     fn param_send(sender: Sender<'p, NodeEventType>) -> ParamCallback<'p> {
         Box::new(move |seq, type_, index, next, pod| {
-            if let Ok(pod) = AllocatedData::from_pod(pod) {
+            if let Ok(pod) = AllocPod::from_pod(pod) {
                 sender.send(NodeEventType::Param(seq, type_, index, next, pod));
             }
         })

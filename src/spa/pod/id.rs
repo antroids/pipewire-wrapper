@@ -10,13 +10,9 @@ use spa_sys::spa_pod;
 
 use pipewire_wrapper_proc_macro::RawWrapper;
 
-use crate::spa::pod::object::prop::Prop;
-use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
+use crate::spa::pod::pod_buf::{AllocPod, PodBuf};
 use crate::spa::pod::restricted::{PodHeader, PodRawValue, PrimitiveValue};
-use crate::spa::pod::{
-    BasicTypePod, FromPrimitiveValue, FromValue, PodError, PodResult, PodValue, SizedPod, WritePod,
-    WriteValue, POD_ALIGN,
-};
+use crate::spa::pod::{FromValue, PodResult, PodValue, SizedPod, WritePod, WriteValue, POD_ALIGN};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
@@ -37,7 +33,7 @@ where
     Self: Debug,
     Self: Clone,
 {
-    fn as_alloc_pod(&self) -> AllocatedData<PodIdRef<Self>> {
+    fn as_alloc_pod(&self) -> AllocPod<PodIdRef<Self>> {
         PodIdRef::from_value(self).unwrap()
     }
 }

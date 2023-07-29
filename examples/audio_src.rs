@@ -18,7 +18,7 @@ use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatType;
 use pipewire_wrapper::spa::pod::object::format::{AudioFormat, MediaSubType, MediaType};
 use pipewire_wrapper::spa::pod::object::param_port_config::Direction;
 use pipewire_wrapper::spa::pod::object::{ObjectType, PodObjectRef};
-use pipewire_wrapper::spa::pod::pod_buf::AllocatedData;
+use pipewire_wrapper::spa::pod::pod_buf::AllocPod;
 use pipewire_wrapper::spa::pod::{FromPrimitiveValue, PodIntRef, Upcast};
 use pipewire_wrapper::stream::events::StreamEventsBuilder;
 use pipewire_wrapper::stream::{Stream, StreamFlags};
@@ -78,7 +78,7 @@ pub fn main() {
     main_loop.run().unwrap();
 }
 
-fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
+fn format_param() -> pipewire_wrapper::Result<AllocPod<PodObjectRef>> {
     Ok(PodObjectRef::from_id_and_value(
         ParamType::ENUM_FORMAT,
         &ObjectType::OBJECT_ENUM_FORMAT(

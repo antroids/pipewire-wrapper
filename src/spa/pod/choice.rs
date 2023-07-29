@@ -1,9 +1,8 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use std::any::TypeId;
 use std::fmt::{Debug, Formatter};
-use std::io::{Seek, SeekFrom, Write};
+use std::io::{Seek, Write};
 use std::marker::PhantomData;
 use std::mem::size_of;
 use std::ptr::addr_of;
@@ -19,18 +18,15 @@ use crate::spa::pod::choice::none::PodNoneRef;
 use crate::spa::pod::choice::range::{PodRangeRef, PodRangeValue};
 use crate::spa::pod::choice::step::{PodStepRef, PodStepValue};
 use crate::spa::pod::id::{PodIdRef, PodIdType};
-use crate::spa::pod::iterator::PodValueIterator;
 use crate::spa::pod::object::format::AudioFormat;
 use crate::spa::pod::object::PodObjectRef;
-use crate::spa::pod::pod_buf::AllocatedData;
 use crate::spa::pod::restricted::{PodHeader, PodRawValue};
-use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::{
-    BasicType, BasicTypePod, BasicTypeValue, FromPrimitiveValue, PodBoolRef, PodDoubleRef,
-    PodError, PodFloatRef, PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef, PodRef,
-    PodResult, PodValue, SizedPod, Upcast, WritePod, WriteValue,
+    BasicType, BasicTypePod, FromPrimitiveValue, PodBoolRef, PodDoubleRef, PodError, PodFloatRef,
+    PodFractionRef, PodIntRef, PodLongRef, PodRectangleRef, PodRef, PodResult, PodValue, SizedPod,
+    Upcast, WritePod, WriteValue,
 };
-use crate::spa::type_::{PointRef, Type};
+use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
 
 use super::restricted::write_value;

@@ -13,13 +13,13 @@ use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa::pod::choice::{ChoiceType, PodChoiceBodyRef, PodChoiceRef};
 use crate::spa::pod::iterator::PodValueIterator;
-use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
+use crate::spa::pod::pod_buf::{AllocPod, PodBuf};
 use crate::spa::pod::restricted::{
     write_count_size, write_header, PodHeader, PodRawValue, PrimitiveValue,
 };
 use crate::spa::pod::{
-    BasicTypePod, FromPrimitiveValue, FromValue, PodError, PodIntRef, PodRef, PodResult, PodValue,
-    SizedPod, Upcast, WritePod, WriteValue, POD_ALIGN,
+    BasicTypePod, FromValue, PodError, PodIntRef, PodResult, PodValue, SizedPod, WritePod,
+    WriteValue, POD_ALIGN,
 };
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -45,13 +45,13 @@ impl<T> PodEnumValue<T> {
         }
     }
 
-    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocatedData<PodEnumRef<P>>>
+    pub fn to_alloc_pod<P>(&self) -> PodResult<AllocPod<PodEnumRef<P>>>
     where
         PodEnumRef<P>: WritePod,
         PodEnumRef<P>: PodRawValue<Value = Self>,
         PodEnumRef<P>: PrimitiveValue,
     {
-        AllocatedData::from_value(self)
+        AllocPod::from_value(self)
     }
 }
 

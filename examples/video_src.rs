@@ -28,7 +28,7 @@ use pipewire_wrapper::spa::pod::object::param_buffers::ParamBuffersType;
 use pipewire_wrapper::spa::pod::object::param_meta::{MetaType, ParamMetaType};
 use pipewire_wrapper::spa::pod::object::param_port_config::Direction;
 use pipewire_wrapper::spa::pod::object::{ObjectType, PodObjectRef};
-use pipewire_wrapper::spa::pod::pod_buf::AllocatedData;
+use pipewire_wrapper::spa::pod::pod_buf::AllocPod;
 use pipewire_wrapper::spa::pod::{
     BasicType, FromPrimitiveValue, FromValue, PodFractionRef, PodRectangleRef, PodRef, PodValue,
     Upcast,
@@ -297,7 +297,7 @@ fn on_format_changed(
     Ok(())
 }
 
-fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
+fn format_param() -> pipewire_wrapper::Result<AllocPod<PodObjectRef>> {
     let format = PodObjectRef::from_id_and_value(
         ParamType::ENUM_FORMAT,
         &ObjectType::OBJECT_ENUM_FORMAT(
@@ -334,7 +334,7 @@ fn format_param() -> pipewire_wrapper::Result<AllocatedData<PodObjectRef>> {
 fn stream_params(
     size: RectangleRef,
     stride: u32,
-) -> pipewire_wrapper::Result<Vec<AllocatedData<PodObjectRef>>> {
+) -> pipewire_wrapper::Result<Vec<AllocPod<PodObjectRef>>> {
     let buffers = PodObjectRef::from_id_and_value(
         ParamType::BUFFERS,
         &ObjectType::OBJECT_PARAM_BUFFERS(

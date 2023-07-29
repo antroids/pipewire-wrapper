@@ -1,19 +1,16 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use std::ffi::{c_char, CStr};
 use std::fmt::{Debug, Formatter};
-use std::io::{Cursor, Seek, SeekFrom, Write};
-use std::marker::PhantomData;
-use std::mem::{size_of, size_of_val};
+use std::io::{Seek, Write};
+use std::mem::size_of;
 use std::ops::{Deref, Rem};
 use std::os::fd::RawFd;
-use std::ptr::addr_of;
-use std::{mem, slice};
+use std::slice;
 
-use spa_sys::{spa_pod, spa_pod_bool};
+use spa_sys::spa_pod;
 
-use array::{PodArrayBodyRef, PodArrayRef};
+use array::PodArrayRef;
 use bitmap::PodBitmapRef;
 use bytes::PodBytesRef;
 use choice::PodChoiceRef;
@@ -25,9 +22,8 @@ use string::PodStringRef;
 use struct_::PodStructRef;
 
 use crate::spa::pod::choice::{ChoiceType, ChoiceValueType};
-use crate::spa::pod::object::prop::Prop;
 use crate::spa::pod::object::PodObjectRef;
-use crate::spa::pod::pod_buf::{AllocatedData, PodBuf};
+use crate::spa::pod::pod_buf::{AllocPod, PodBuf};
 use crate::spa::pod::pointer::PodPointerRef;
 use crate::spa::pod::restricted::{
     BasicTypePod, CloneTo, PodHeader, PrimitiveValue, SizedPod, WritePod, WriteValue,
@@ -252,7 +248,7 @@ where
     Self: Sized,
     &'a Self: WritePod,
 {
-    fn from_value(value: &<&'a Self as PodValue>::Value) -> PodResult<AllocatedData<Self>>;
+    fn from_value(value: &<&'a Self as PodValue>::Value) -> PodResult<AllocPod<Self>>;
 }
 
 pub trait FromPrimitiveValue
@@ -260,7 +256,7 @@ where
     Self: Sized,
     Self: WritePod,
 {
-    fn from_primitive(value: <Self as PodValue>::Value) -> PodResult<AllocatedData<Self>>;
+    fn from_primitive(value: <Self as PodValue>::Value) -> PodResult<AllocPod<Self>>;
 }
 
 impl<'a, T> FromValue<'a> for T
@@ -269,7 +265,7 @@ where
     T: 'a,
     &'a T: WritePod,
 {
-    fn from_value(value: &<&'a Self as PodValue>::Value) -> PodResult<AllocatedData<Self>> {
+    fn from_value(value: &<&'a Self as PodValue>::Value) -> PodResult<AllocPod<Self>> {
         Ok(PodBuf::<Self>::from_value(value)?.into_pod())
     }
 }
@@ -279,7 +275,7 @@ where
     T: Sized,
     T: WritePod,
 {
-    fn from_primitive(value: <Self as PodValue>::Value) -> PodResult<AllocatedData<Self>> {
+    fn from_primitive(value: <Self as PodValue>::Value) -> PodResult<AllocPod<Self>> {
         Ok(PodBuf::<Self>::from_primitive_value(value)?.into_pod())
     }
 }
