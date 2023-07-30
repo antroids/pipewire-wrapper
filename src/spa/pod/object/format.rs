@@ -3,7 +3,7 @@
  */
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::ObjectInfo;
+use pipewire_wrapper_proc_macro::object_info;
 
 use crate::enum_wrapper;
 use crate::spa::pod::array::PodArrayRef;
@@ -16,8 +16,9 @@ use crate::spa::pod::{
 use crate::wrapper::RawWrapper;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, ObjectInfo)]
+#[derive(Debug)]
 #[repr(u32)]
+#[object_info(OBJECT_FORMAT)]
 pub enum ObjectFormatType<'a> {
     // Media
     MEDIA_TYPE(&'a PodIdRef<MediaType>) = Format::MEDIA_TYPE.raw,

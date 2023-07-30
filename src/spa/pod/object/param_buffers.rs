@@ -1,6 +1,6 @@
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::ObjectInfo;
+use pipewire_wrapper_proc_macro::object_info;
 
 use crate::enum_wrapper;
 use crate::spa::pod::choice::PodChoiceRef;
@@ -9,8 +9,9 @@ use crate::spa::pod::{BasicTypePod, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
-#[derive(Debug, ObjectInfo)]
+#[derive(Debug)]
 #[allow(non_camel_case_types)]
+#[object_info(OBJECT_PARAM_BUFFERS)]
 pub enum ParamBuffersType<'a> {
     BUFFERS(&'a PodChoiceRef<PodIntRef>) = ParamBuffers::BUFFERS.raw,
     BLOCKS(&'a PodChoiceRef<PodIntRef>) = ParamBuffers::BLOCKS.raw,

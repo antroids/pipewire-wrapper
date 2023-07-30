@@ -7,6 +7,7 @@ use std::{
     time::Duration,
 };
 
+use pipewire_wrapper::spa::param::ParamType;
 use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatInfo;
 use pipewire_wrapper::spa::pod::object::format::ObjectFormatInfo;
 use pipewire_wrapper::spa::pod::object::param_buffers::ParamBuffersInfo;
@@ -20,8 +21,8 @@ use pipewire_wrapper::spa::pod::object::param_route::ParamRouteInfo;
 use pipewire_wrapper::spa::pod::object::profiler::ProfilerInfo;
 use pipewire_wrapper::spa::pod::object::prop::ObjectPropInfo;
 use pipewire_wrapper::spa::pod::object::prop_info::ObjectPropInfoInfo;
-use pipewire_wrapper::spa::pod::object::ObjectType;
-use pipewire_wrapper::spa::pod::{BasicType, PodValue};
+use pipewire_wrapper::spa::pod::BasicType;
+use pipewire_wrapper::spa::type_::Type;
 use pipewire_wrapper::{
     core_api::{
         core::Core,
@@ -143,61 +144,63 @@ fn test_port_params_as_object_info() {
             main_loop.get_loop(),
             Box::new(move |new_ports| {
                 for port in new_ports.try_iter() {
-                    let port_param_callback = |_seq, _id, _index, _next, param: &PodRef| {
+                    let port_param_callback = |_seq, id, _index, _next, param: &PodRef| {
                         if let Ok(BasicType::OBJECT(object)) = param.downcast() {
-                            match object.value().unwrap() {
-                                ObjectType::OBJECT_PROP_INFO(iter) => {
-                                    let info = ObjectPropInfoInfo::try_from(iter).unwrap();
+                            match object.body_type() {
+                                Type::OBJECT_PROP_INFO => {
+                                    let info = ObjectPropInfoInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PROPS(iter) => {
-                                    let info = ObjectPropInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PROPS => {
+                                    let info = ObjectPropInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_FORMAT(iter) => {
-                                    let info = ObjectFormatInfo::try_from(iter).unwrap();
+                                Type::OBJECT_FORMAT => {
+                                    if id == ParamType::ENUM_FORMAT {
+                                        let info = ObjectEnumFormatInfo::try_from(object).unwrap();
+                                        println!("Prop info: {:?}", info);
+                                    } else {
+                                        let info = ObjectFormatInfo::try_from(object).unwrap();
+                                        println!("Prop info: {:?}", info);
+                                    }
+                                }
+                                Type::OBJECT_PARAM_BUFFERS => {
+                                    let info = ParamBuffersInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_ENUM_FORMAT(iter) => {
-                                    let info = ObjectEnumFormatInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PARAM_META => {
+                                    let info = ParamMetaInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PARAM_BUFFERS(iter) => {
-                                    let info = ParamBuffersInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PARAM_IO => {
+                                    let info = ParamIoInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PARAM_META(iter) => {
-                                    let info = ParamMetaInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PARAM_PROFILE => {
+                                    let info = ParamProfileInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PARAM_IO(iter) => {
-                                    let info = ParamIoInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PARAM_PORT_CONFIG => {
+                                    let info = ParamPortConfigInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PARAM_PROFILE(iter) => {
-                                    let info = ParamProfileInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PARAM_ROUTE => {
+                                    let info = ParamRouteInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PARAM_PORT_CONFIG(iter) => {
-                                    let info = ParamPortConfigInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PROFILER => {
+                                    let info = ProfilerInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PARAM_ROUTE(iter) => {
-                                    let info = ParamRouteInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PARAM_LATENCY => {
+                                    let info = ParamLatencyInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PROFILER(iter) => {
-                                    let info = ProfilerInfo::try_from(iter).unwrap();
+                                Type::OBJECT_PARAM_PROCESS_LATENCY => {
+                                    let info = ParamProcessLatencyInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
-                                ObjectType::OBJECT_PARAM_LATENCY(iter) => {
-                                    let info = ParamLatencyInfo::try_from(iter).unwrap();
-                                    println!("Prop info: {:?}", info);
-                                }
-                                ObjectType::OBJECT_PARAM_PROCESS_LATENCY(iter) => {
-                                    let info = ParamProcessLatencyInfo::try_from(iter).unwrap();
-                                    println!("Prop info: {:?}", info);
-                                }
+                                _ => panic!("Unknown type"),
                             }
                         }
                     };

@@ -345,7 +345,7 @@ pub struct PodPropRef<'a, T: PodPropKeyType<'a>> {
 }
 
 bitflags! {
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
     #[repr(transparent)]
     pub struct PodPropFlags: u32 {
         const READONLY = spa_sys::SPA_POD_PROP_FLAG_READONLY;

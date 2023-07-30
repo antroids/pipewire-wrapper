@@ -3,7 +3,7 @@
  */
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::ObjectInfo;
+use pipewire_wrapper_proc_macro::object_info;
 
 use crate::enum_wrapper;
 use crate::spa::pod::array::PodArrayRef;
@@ -16,7 +16,8 @@ use crate::spa::pod::{BasicTypePod, PodBoolRef, PodError, PodIntRef, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
-#[derive(Debug, ObjectInfo)]
+#[derive(Debug)]
+#[object_info(OBJECT_PARAM_ROUTE)]
 pub enum ParamRouteType<'a> {
     INDEX(&'a PodIntRef) = ParamRoute::INDEX.raw,
     DIRECTION(&'a PodIdRef<Direction>) = ParamRoute::DIRECTION.raw,

@@ -100,7 +100,7 @@ impl ObjectTypeEnumInfo {
         Ident::new(ident_string.as_str(), self.ident_.span())
     }
 
-    fn struct_fields_idents(&self) -> Vec<Ident> {
+    fn struct_prop_value_fields_idents(&self) -> Vec<Ident> {
         self.variants
             .iter()
             .map(|variant| {
@@ -108,6 +108,17 @@ impl ObjectTypeEnumInfo {
                     escape_ident(variant.ident.to_string().to_lowercase().as_str()),
                     variant.span(),
                 )
+            })
+            .collect()
+    }
+
+    fn struct_prop_flags_fields_idents(&self) -> Vec<Ident> {
+        self.variants
+            .iter()
+            .map(|variant| {
+                let mut ident = variant.ident.to_string().to_lowercase();
+                ident.push_str("_flags");
+                Ident::new(escape_ident(ident.as_str()), variant.span())
             })
             .collect()
     }
@@ -520,8 +531,9 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
     )
 }
 
-pub fn derive_object_info(input: TokenStream) -> TokenStream {
+pub fn derive_object_info(attr: TokenStream, input: TokenStream) -> TokenStream {
     let enum_info: ObjectTypeEnumInfo = parse2(input.clone()).unwrap();
+    let object_type: Ident = parse2(attr).unwrap();
 
     let enum_ident = &enum_info.ident_;
     let enum_variants_idents: Vec<Ident> = enum_info
@@ -531,30 +543,44 @@ pub fn derive_object_info(input: TokenStream) -> TokenStream {
         .collect();
     let struct_ident = enum_info.struct_ident();
     let lifetime = &enum_info.lifetime;
-    let struct_fields_idents = enum_info.struct_fields_idents();
+    let struct_value_fields_idents = enum_info.struct_prop_value_fields_idents();
+    let struct_flags_fields_idents = enum_info.struct_prop_flags_fields_idents();
     let struct_fields_types = enum_info.struct_fields_types();
 
     quote!(
+        #input
+
         #[derive(Default, Debug)]
-        pub struct #struct_ident< #lifetime > {
-            #(pub #struct_fields_idents : Option<#struct_fields_types>),*
+        pub struct #struct_ident<#lifetime> {
+            pub body_id: u32,
+            #(pub #struct_value_fields_idents : Option<#struct_fields_types>),*,
+            #(pub #struct_flags_fields_idents : crate::spa::pod::object::PodPropFlags),*
         }
 
-        impl<#lifetime> TryFrom<crate::spa::pod::object::ObjectPropsIterator<#lifetime, #enum_ident<#lifetime>>>
-            for #struct_ident<#lifetime>
-        {
-            type Error = crate::spa::pod::PodError;
+        impl<#lifetime> TryFrom<&#lifetime crate::spa::pod::object::PodObjectRef> for #struct_ident<#lifetime> {
+            type Error = PodError;
 
-            fn try_from(value: crate::spa::pod::object::ObjectPropsIterator<#lifetime, #enum_ident<#lifetime>>) -> Result<Self, Self::Error> {
+            fn try_from(value: &#lifetime crate::spa::pod::object::PodObjectRef) -> Result<Self, Self::Error> {
                 use crate::spa::pod::PodValue;
-                let mut info = Self::default();
-                for prop in value {
-                    match prop.value()? {
-                        #(#enum_ident::#enum_variants_idents (val) => info.#struct_fields_idents = Some(val),)*
-                        _ => panic!("Unsupported type"),
-                    };
+                use crate::spa::pod::restricted::PodHeader;
+                if let crate::spa::pod::object::ObjectType::#object_type(iter) = value.value()? {
+                    let mut info = Self::default();
+                    info.body_id = value.body_id();
+
+                    for prop in iter {
+                        match prop.value()? {
+                            #(#enum_ident::#enum_variants_idents (val) => {
+                                info.#struct_value_fields_idents = Some(val);
+                                info.#struct_flags_fields_idents = prop.flags();
+                            }),*,
+                            _ => panic!("Unsupported type"),
+                        };
+                    }
+
+                    Ok(info)
+                } else {
+                    Err(PodError::UnexpectedObjectType(value.body_type().into()))
                 }
-                Ok(info)
             }
         }
     )

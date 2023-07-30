@@ -120,15 +120,16 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 /// Add an *Info structure after the enum definition.
-/// For each enum variant will be added optional struct field.
+/// For each enum variant will be added optional struct fields with value and flags.
 ///
 /// # Examples
 ///
 /// Derive:
 /// ```no_run,ignore
 /// #[allow(non_camel_case_types)]
-/// #[derive(Debug, ObjectInfo)]
+/// #[derive(Debug)]
 /// #[repr(u32)]
+/// #[object_info(OBJECT_PROPS)]
 /// pub enum ObjectPropType<'a> {
 ///     // Device
 ///     DEVICE(&'a PodStringRef) = Prop::DEVICE.raw,
@@ -139,18 +140,17 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
 ///
 /// Usage:
 /// ```no_run,ignore
-///    if let Ok(BasicType::OBJECT(object)) = param.downcast() {
-///        match object.value().unwrap() {
-///            ObjectType::OBJECT_PROP_INFO(iter) => {
-///                let info = ObjectPropInfoInfo::try_from(iter).unwrap();
-///                println!("Prop info: {:?}", info);
-///            }
-///            _ => todo!(),
-///        }
-///    }
-///
+/// if let Ok(BasicType::OBJECT(object)) = param.downcast() {
+///     match object.body_type() {
+///         Type::OBJECT_PROP_INFO => {
+///             let info = ObjectPropInfoInfo::try_from(object).unwrap();
+///             println!("Prop info: {:?}", info);
+///         }
+///         _ => todo!(),
+///     }
+/// }
 /// ```
-#[proc_macro_derive(ObjectInfo)]
-pub fn object_info(input: TokenStream) -> TokenStream {
-    pipewire_wrapper_macro_impl::derive_object_info(input.into()).into()
+#[proc_macro_attribute]
+pub fn object_info(attr: TokenStream, input: TokenStream) -> TokenStream {
+    pipewire_wrapper_macro_impl::derive_object_info(attr.into(), input.into()).into()
 }

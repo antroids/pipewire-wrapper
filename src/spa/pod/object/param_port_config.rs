@@ -3,7 +3,7 @@
  */
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::ObjectInfo;
+use pipewire_wrapper_proc_macro::object_info;
 
 use crate::enum_wrapper;
 use crate::spa::pod::id::{PodIdRef, PodIdType};
@@ -12,7 +12,8 @@ use crate::spa::pod::{BasicTypePod, PodBoolRef, PodError, PodResult};
 use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
-#[derive(Debug, ObjectInfo)]
+#[derive(Debug)]
+#[object_info(OBJECT_PARAM_PORT_CONFIG)]
 pub enum ParamPortConfigType<'a> {
     DIRECTION(&'a PodIdRef<Direction>) = ParamPortConfig::DIRECTION.raw,
     MODE(&'a PodIdRef<ParamPortConfigMode>) = ParamPortConfig::MODE.raw,
