@@ -78,6 +78,80 @@ impl Debug for PodObjectBodyRef {
     }
 }
 
+/// Object pod wrapper, used as param value type in the most cases.
+/// Pod value represented by [ObjectType] enum.
+///
+/// # Examples
+///
+/// Parse value manually:
+/// ```no-run
+/// if let BasicType::OBJECT(obj) = pod.downcast().unwrap() {
+///      if let ObjectType::OBJECT_FORMAT(format) = obj.param_value(ParamType::FORMAT).unwrap() {
+///          for prop in format {
+///              if let ObjectFormatType::VIDEO_SIZE(size) = prop.value()? {
+///                    todo!();
+///              }
+///          }
+///      }
+///  }
+/// ```
+///
+/// Parse as Info object:
+/// ```no-run
+/// if let Ok(BasicType::OBJECT(object)) = param.downcast() {
+///     match object.body_type() {
+///         Type::OBJECT_PROP_INFO => {
+///             let info = ObjectPropInfoInfo::try_from(object).unwrap();
+///             println ! ("Prop info: {:?}", info);
+///         }
+///         _ => todo!(),
+///     }
+/// }
+/// ```
+///
+/// Create the Object pod manually:
+/// ```no-run
+/// PodObjectRef::from_id_and_value(
+///     ParamType::ENUM_FORMAT,
+///     &ObjectType::OBJECT_ENUM_FORMAT(
+///         AllocatedPodIterator::from_values(&[
+///             ObjectEnumFormatType::MEDIA_TYPE(MediaType::AUDIO.to_alloc_pod().as_pod()),
+///             ObjectEnumFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.to_alloc_pod().as_pod()),
+///             ObjectEnumFormatType::AUDIO_FORMAT(
+///             PodEnumValue::from_default(AudioFormat::F32)
+///                 .to_alloc_pod()?
+///                 .as_pod()
+///                 .choice(),
+///             ),
+///             ObjectEnumFormatType::AUDIO_CHANNELS(
+///                 PodIntRef::from_primitive(CHANNELS as i32)?.as_pod().into(),
+///             ),
+///             ObjectEnumFormatType::AUDIO_RATE(
+///                 PodIntRef::from_primitive(RATE as i32)?.as_pod().into(),
+///             ),
+///         ])?
+///         .iter(),
+///     ),
+/// )
+/// ```
+///
+/// Build the pod with builder:
+/// ```no-run
+/// ObjectEnumFormatBuilder::default()
+///     .body_id(ParamType::ENUM_FORMAT.into())
+///     .media_type(MediaType::VIDEO)
+///     .media_subtype(MediaSubType::RAW)
+///     .video_format(ChoiceStructType::ENUM(PodEnumValue::from_default(
+///         VideoFormat::RGB,
+///     )))
+///     .video_size(ChoiceStructType::RANGE(PodRangeValue::new(
+///         RectangleRef::new(320, 240),
+///         RectangleRef::new(1, 1),
+///         RectangleRef::new(4096, 4096),
+///     )))
+///     .video_framerate(ChoiceStructType::NONE(FractionRef::new(25, 1)))
+///     .build()?;
+/// ```
 #[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct PodObjectRef {
