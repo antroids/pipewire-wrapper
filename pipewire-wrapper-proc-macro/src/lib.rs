@@ -18,7 +18,7 @@ use proc_macro::TokenStream;
 /// ```
 #[proc_macro_derive(RawWrapper, attributes(raw))]
 pub fn raw_wrapper(input: TokenStream) -> TokenStream {
-    pipewire_wrapper_macro_impl::derive_raw_wrapper(input.into()).into()
+    pipewire_wrapper_macro_impl::derive_raw_wrapper::derive_raw_wrapper(input.into()).into()
 }
 
 /// Implement [Wrapper](crate::wrapper::Wrapper) trait.
@@ -45,7 +45,7 @@ pub fn raw_wrapper(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_derive(Wrapper, attributes(raw_wrapper))]
 pub fn wrapper(input: TokenStream) -> TokenStream {
-    pipewire_wrapper_macro_impl::derive_wrapper(input.into()).into()
+    pipewire_wrapper_macro_impl::derive_wrapper::derive_wrapper(input.into()).into()
 }
 
 /// Implement [SpaInterface](crate::wrapper::SpaInterface)
@@ -65,7 +65,7 @@ pub fn wrapper(input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn spa_interface(attr: TokenStream, input: TokenStream) -> TokenStream {
-    pipewire_wrapper_macro_impl::spa_interface(attr.into(), input.into()).into()
+    pipewire_wrapper_macro_impl::spa_interface::spa_interface(attr.into(), input.into()).into()
 }
 
 /// Implement [SpaInterface](crate::wrapper::SpaInterface) and
@@ -89,7 +89,7 @@ pub fn spa_interface(attr: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn interface(attr: TokenStream, input: TokenStream) -> TokenStream {
-    pipewire_wrapper_macro_impl::interface(attr.into(), input.into()).into()
+    pipewire_wrapper_macro_impl::interface::interface(attr.into(), input.into()).into()
 }
 
 /// Implement [Wrapper](crate::wrapper::Wrapper) trait for structure with the `ref_: Proxy<'c>` field.
@@ -116,7 +116,7 @@ pub fn interface(attr: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
-    pipewire_wrapper_macro_impl::proxy_wrapper(attr.into(), input.into()).into()
+    pipewire_wrapper_macro_impl::proxy_wrapper::proxy_wrapper(attr.into(), input.into()).into()
 }
 
 /// Add an *Info and *Builder structures after the enum definition.
@@ -152,5 +152,6 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn object_type_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
-    pipewire_wrapper_macro_impl::object_type_impl(attr.into(), input.into()).into()
+    pipewire_wrapper_macro_impl::object_type_impl::object_type_impl(attr.into(), input.into())
+        .into()
 }
