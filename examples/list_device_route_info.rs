@@ -5,7 +5,8 @@ extern crate pipewire_wrapper;
 
 use std::collections::HashMap;
 use std::ffi::CString;
-use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::sync::Mutex;
 
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::device::events::DeviceEventsBuilder;
@@ -31,9 +32,9 @@ pub struct DeviceRouteInfo {
 }
 
 fn main() {
-    let core = Arc::new(Core::default());
-    let devices: Arc<Mutex<HashMap<u32, Device>>> = Arc::new(Mutex::default());
-    let device_added_queue = Arc::new(Mutex::new(Vec::<u32>::new()));
+    let core = Rc::new(Core::default());
+    let devices: Rc<Mutex<HashMap<u32, Device>>> = Rc::new(Mutex::default());
+    let device_added_queue = Rc::new(Mutex::new(Vec::<u32>::new()));
     let main_loop = core.context().main_loop();
     let registry = core.get_registry(0).unwrap();
     let device_added_event = add_device_added_event(
@@ -64,9 +65,9 @@ fn main() {
 
 fn add_registry_listener<'a>(
     registry: Registry<'a>,
-    main_loop: Arc<MainLoop>,
+    main_loop: Rc<MainLoop>,
     device_added_event: EventSource<'a>,
-    device_added_queue: Arc<Mutex<Vec<u32>>>,
+    device_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> ListenerId {
     let listener = RegistryEventsBuilder::default()
         .global(Box::new(
@@ -85,10 +86,10 @@ fn add_registry_listener<'a>(
 }
 
 fn add_device_added_event<'a>(
-    main_loop: &'a Arc<MainLoop>,
-    devices: Arc<Mutex<HashMap<u32, Device<'a>>>>,
+    main_loop: &'a Rc<MainLoop>,
+    devices: Rc<Mutex<HashMap<u32, Device<'a>>>>,
     registry: Registry<'a>,
-    device_added_queue: Arc<Mutex<Vec<u32>>>,
+    device_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> EventSource<'a> {
     main_loop
         .get_loop()

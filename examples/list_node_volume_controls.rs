@@ -5,7 +5,8 @@ extern crate pipewire_wrapper;
 
 use std::collections::HashMap;
 use std::ffi::CString;
-use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::sync::Mutex;
 
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
@@ -29,9 +30,9 @@ pub struct VolumeInfo {
 }
 
 fn main() {
-    let core = Arc::new(Core::default());
-    let nodes: Arc<Mutex<HashMap<u32, Node>>> = Arc::new(Mutex::default());
-    let node_added_queue = Arc::new(Mutex::new(Vec::<u32>::new()));
+    let core = Rc::new(Core::default());
+    let nodes: Rc<Mutex<HashMap<u32, Node>>> = Rc::new(Mutex::default());
+    let node_added_queue = Rc::new(Mutex::new(Vec::<u32>::new()));
     let main_loop = core.context().main_loop();
     let registry = core.get_registry(0).unwrap();
     let node_added_event = add_node_added_event(
@@ -53,9 +54,9 @@ fn main() {
 
 fn add_registry_listener<'a>(
     registry: Registry<'a>,
-    main_loop: Arc<MainLoop>,
+    main_loop: Rc<MainLoop>,
     node_added_event: EventSource<'a>,
-    node_added_queue: Arc<Mutex<Vec<u32>>>,
+    node_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> ListenerId {
     let listener = RegistryEventsBuilder::default()
         .global(Box::new(
@@ -74,10 +75,10 @@ fn add_registry_listener<'a>(
 }
 
 fn add_node_added_event<'a>(
-    main_loop: &'a Arc<MainLoop>,
-    nodes: Arc<Mutex<HashMap<u32, Node<'a>>>>,
+    main_loop: &'a Rc<MainLoop>,
+    nodes: Rc<Mutex<HashMap<u32, Node<'a>>>>,
     registry: Registry<'a>,
-    node_added_queue: Arc<Mutex<Vec<u32>>>,
+    node_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> EventSource<'a> {
     main_loop
         .get_loop()

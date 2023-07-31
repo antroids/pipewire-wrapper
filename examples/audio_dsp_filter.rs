@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  */
 use std::ffi::CString;
-use std::sync::Arc;
+use std::rc::Rc;
 
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::filter::events::FilterEventsBuilder;
@@ -21,7 +21,7 @@ type AudioDataType = f32;
 struct CustomPort {}
 
 pub fn main() {
-    let core = Arc::new(Core::default());
+    let core = Rc::new(Core::default());
     let main_loop = core.context().main_loop();
 
     let quit_main_loop = Box::new(|_| {
@@ -78,7 +78,7 @@ pub fn main() {
             None,
         )
         .unwrap();
-    let filter = Arc::new(filter);
+    let filter = Rc::new(filter);
     let events = FilterEventsBuilder::<CustomPort>::default()
         .process(Box::new({
             let filter = filter.clone();

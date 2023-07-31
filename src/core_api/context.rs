@@ -4,25 +4,18 @@
 
 //! PipeWire [Context](https://docs.pipewire.org/group__pw__context.html) bindings.
 //!
-use std::ffi::CStr;
 use std::pin::Pin;
 use std::ptr::NonNull;
-use std::rc::Rc;
 use std::slice;
-use std::time::Duration;
 
 use pw_sys::pw_global;
-use spa_sys::spa_support;
 
 use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
-use crate::core_api::context::events::{ContextEvents, ContextEventsBuilder};
-use crate::core_api::core::Core;
-use crate::core_api::factory::FactoryRef;
+use crate::core_api::context::events::ContextEvents;
 use crate::core_api::loop_::LoopRef;
 use crate::core_api::main_loop::{MainLoop, MainLoopRef};
 use crate::core_api::properties::{Properties, PropertiesRef};
-use crate::impl_api::data_loop::DataLoopRef;
 use crate::impl_api::global::GlobalRef;
 use crate::impl_api::work_queue::WorkQueueRef;
 use crate::listeners::AddListener;
@@ -63,7 +56,7 @@ pub struct Context {
     #[raw_wrapper]
     ref_: NonNull<ContextRef>,
 
-    main_loop: std::sync::Arc<MainLoop>,
+    main_loop: std::rc::Rc<MainLoop>,
 }
 
 impl Drop for Context {
@@ -79,7 +72,7 @@ impl Context {
     ///
     /// * `main_loop` - main loop
     /// * `properties` - extra properties for the context
-    pub fn new(main_loop: std::sync::Arc<MainLoop>, properties: Properties) -> crate::Result<Self> {
+    pub fn new(main_loop: std::rc::Rc<MainLoop>, properties: Properties) -> crate::Result<Self> {
         let ptr = unsafe {
             pw_sys::pw_context_new(main_loop.get_loop().as_raw_ptr(), properties.into_raw(), 0)
         };
@@ -90,18 +83,14 @@ impl Context {
     }
 
     /// Main loop
-    pub fn main_loop(&self) -> &std::sync::Arc<MainLoop> {
+    pub fn main_loop(&self) -> &std::rc::Rc<MainLoop> {
         &self.main_loop
     }
 }
 
 impl Default for Context {
     fn default() -> Self {
-        Self::new(
-            std::sync::Arc::new(MainLoop::default()),
-            Properties::default(),
-        )
-        .unwrap()
+        Self::new(std::rc::Rc::new(MainLoop::default()), Properties::default()).unwrap()
     }
 }
 

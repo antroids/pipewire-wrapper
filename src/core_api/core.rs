@@ -7,17 +7,13 @@
 use std::ffi::CStr;
 use std::pin::Pin;
 use std::ptr::NonNull;
-use std::rc::Rc;
-use std::time::Duration;
 
-use pipewire_wrapper_proc_macro::{interface, spa_interface, RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{interface, RawWrapper, Wrapper};
 
 use crate::core_api::context::Context;
 use crate::core_api::core::events::CoreEvents;
 use crate::core_api::properties::Properties;
-use crate::core_api::registry::events::RegistryEventsBuilder;
 use crate::core_api::registry::{Registry, RegistryRef};
-use crate::core_api::type_info::TypeInfo;
 use crate::listeners::{AddListener, OwnListeners};
 use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, Wrapper};
@@ -45,7 +41,7 @@ pub struct Core {
     #[raw_wrapper]
     ref_: NonNull<CoreRef>,
 
-    context: std::sync::Arc<Context>,
+    context: std::rc::Rc<Context>,
 }
 
 impl Core {
@@ -55,10 +51,7 @@ impl Core {
     ///
     /// * `context` - [Context]
     /// * `properties` - properties for the [Core]
-    pub fn connect(
-        context: &std::sync::Arc<Context>,
-        properties: Properties,
-    ) -> crate::Result<Self> {
+    pub fn connect(context: &std::rc::Rc<Context>, properties: Properties) -> crate::Result<Self> {
         let ptr =
             unsafe { pw_sys::pw_context_connect(context.as_raw_ptr(), properties.into_raw(), 0) };
         Ok(Self {
@@ -68,7 +61,7 @@ impl Core {
     }
 
     /// Context
-    pub fn context(&self) -> &std::sync::Arc<Context> {
+    pub fn context(&self) -> &std::rc::Rc<Context> {
         &self.context
     }
 
@@ -88,11 +81,7 @@ impl Core {
 
 impl Default for Core {
     fn default() -> Self {
-        Core::connect(
-            &std::sync::Arc::new(Context::default()),
-            Properties::default(),
-        )
-        .unwrap()
+        Core::connect(&std::rc::Rc::new(Context::default()), Properties::default()).unwrap()
     }
 }
 

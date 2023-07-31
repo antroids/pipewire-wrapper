@@ -2,10 +2,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{rc::Rc, sync::Mutex, time::Duration};
 
 #[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::param::ParamType;
@@ -53,7 +50,7 @@ use pipewire_wrapper::{
 
 #[test]
 fn test_port_params() {
-    let core = Arc::new(Core::default());
+    let core = Rc::new(Core::default());
     let registry = core.get_registry(0).unwrap();
     let main_loop = core.context().main_loop();
     let ports: Mutex<Vec<Port>> = Mutex::default();
@@ -124,7 +121,7 @@ fn test_port_params() {
 #[test]
 #[cfg(feature = "spa-pod-object-info")]
 fn test_port_params_as_object_info() {
-    let core = Arc::new(Core::default());
+    let core = Rc::new(Core::default());
     let registry = core.get_registry(0).unwrap();
     let main_loop = core.context().main_loop();
     let ports: Mutex<Vec<Port>> = Mutex::default();

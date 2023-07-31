@@ -1,10 +1,10 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use std::collections::VecDeque;
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::ops::DerefMut;
-use std::sync::{mpsc, Arc, Mutex};
+use std::rc::Rc;
+use std::sync::{mpsc, Mutex};
 
 use crate::core_api::loop_::LoopRef;
 use crate::spa::loop_::EventSource;
@@ -39,7 +39,7 @@ impl<'a> LoopChannel<'a> {
     pub fn from_channel<T>(
         (sender, receiver): (mpsc::Sender<T>, mpsc::Receiver<T>),
     ) -> (Sender<'a, T>, Receiver<'a, T>) {
-        let channel = Arc::new(Mutex::new(LoopChannel {
+        let channel = Rc::new(Mutex::new(LoopChannel {
             loop_: None,
             event: None,
         }));
@@ -56,7 +56,7 @@ impl<'a> LoopChannel<'a> {
 #[derive(Clone)]
 pub struct Sender<'a, T> {
     sender: mpsc::Sender<T>,
-    channel: Arc<Mutex<LoopChannel<'a>>>,
+    channel: Rc<Mutex<LoopChannel<'a>>>,
 }
 
 impl<'a, T> Sender<'a, T> {
@@ -91,7 +91,7 @@ impl<'a, T> Sender<'a, T> {
 
 pub struct Receiver<'a, T: 'a> {
     receiver: mpsc::Receiver<T>,
-    channel: Arc<Mutex<LoopChannel<'a>>>,
+    channel: Rc<Mutex<LoopChannel<'a>>>,
 }
 
 pub type ReceiverCallback<'a, T> = Box<dyn FnMut(&mpsc::Receiver<T>) + 'a>;

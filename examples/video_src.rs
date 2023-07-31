@@ -8,7 +8,8 @@ mod video_src {
     use std::ffi::CString;
     use std::mem::size_of;
     use std::ops::AddAssign;
-    use std::sync::{Arc, Mutex};
+    use std::rc::Rc;
+    use std::sync::Mutex;
     use std::time::Duration;
 
     use pipewire_wrapper::core_api::core::Core;
@@ -20,28 +21,25 @@ mod video_src {
     use pipewire_wrapper::spa::loop_::TimerSource;
     use pipewire_wrapper::spa::param::ParamType;
     use pipewire_wrapper::spa::pod::choice::enum_::PodEnumValue;
-    use pipewire_wrapper::spa::pod::choice::none::PodNoneRef;
-    use pipewire_wrapper::spa::pod::choice::range::{PodRangeRef, PodRangeValue};
+    use pipewire_wrapper::spa::pod::choice::range::PodRangeValue;
     use pipewire_wrapper::spa::pod::choice::ChoiceStructType;
-    use pipewire_wrapper::spa::pod::id::PodIdType;
-    use pipewire_wrapper::spa::pod::iterator::AllocatedPodIterator;
     use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatBuilder;
     use pipewire_wrapper::spa::pod::object::format::{
         MediaSubType, MediaType, ObjectFormatType, VideoFormat,
     };
-    use pipewire_wrapper::spa::pod::object::param_buffers::ParamBuffersType;
-    use pipewire_wrapper::spa::pod::object::param_meta::{MetaType, ParamMetaType};
+    use pipewire_wrapper::spa::pod::object::param_buffers::ParamBuffersBuilder;
+    use pipewire_wrapper::spa::pod::object::param_meta::{MetaType, ParamMetaBuilder};
     use pipewire_wrapper::spa::pod::object::param_port_config::Direction;
     use pipewire_wrapper::spa::pod::object::{ObjectType, PodObjectRef};
     use pipewire_wrapper::spa::pod::pod_buf::AllocPod;
-    use pipewire_wrapper::spa::pod::{BasicType, FromPrimitiveValue, PodRef, PodValue, Upcast};
+    use pipewire_wrapper::spa::pod::{BasicType, PodRef, PodValue, Upcast};
     use pipewire_wrapper::spa::type_::{FractionRef, RectangleRef};
     use pipewire_wrapper::stream::events::StreamEventsBuilder;
     use pipewire_wrapper::stream::{Stream, StreamFlags};
     use pipewire_wrapper::{properties_new, stream};
 
     struct State<'a> {
-        loop_: Arc<MainLoop>,
+        loop_: Rc<MainLoop>,
         size: Option<RectangleRef>,
         timeout_timer: TimerSource<'a>,
 
@@ -68,7 +66,7 @@ mod video_src {
     const ACCUM_STEP: f64 = PI_POW_2 / 50f64;
 
     pub fn main() {
-        let core = Arc::new(Core::default());
+        let core = Rc::new(Core::default());
         let main_loop = core.context().main_loop();
 
         let quit_main_loop = Box::new(|_| {
@@ -81,7 +79,7 @@ mod video_src {
             .get_loop()
             .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
-        let stream = Arc::new(
+        let stream = Rc::new(
             Stream::new(
                 &core,
                 CString::new("Test video source").unwrap().as_ref(),
@@ -96,7 +94,7 @@ mod video_src {
                 move |_| stream.trigger_process().unwrap()
             }))
             .unwrap();
-        let state = Arc::new(Mutex::new(State {
+        let state = Rc::new(Mutex::new(State {
             loop_: main_loop.clone(),
             size: None,
             timeout_timer,
@@ -158,7 +156,7 @@ mod video_src {
         }
     }
 
-    fn on_process(state: &Arc<Mutex<State>>, stream: &Arc<Stream>) {
+    fn on_process(state: &Rc<Mutex<State>>, stream: &Rc<Stream>) {
         if let Some(buf) = stream.dequeue_buffer() {
             let spa_buf = buf.buffer_mut();
             let data_ptr = spa_buf
@@ -249,7 +247,7 @@ mod video_src {
         }
     }
 
-    fn on_state_changed(to: stream::State, state: &Arc<Mutex<State>>) {
+    fn on_state_changed(to: stream::State, state: &Rc<Mutex<State>>) {
         let state = state.lock().unwrap();
         match to {
             stream::State::ERROR | stream::State::UNCONNECTED => state.loop_.quit().unwrap(),
@@ -273,8 +271,8 @@ mod video_src {
     }
 
     fn on_format_changed(
-        state: &Arc<Mutex<State>>,
-        stream: &Arc<Stream>,
+        state: &Rc<Mutex<State>>,
+        stream: &Rc<Stream>,
         pod: &PodRef,
     ) -> pipewire_wrapper::Result<()> {
         if let BasicType::OBJECT(obj) = pod.downcast().unwrap() {
@@ -303,6 +301,7 @@ mod video_src {
 
     fn format_param() -> pipewire_wrapper::Result<AllocPod<PodObjectRef>> {
         let format = ObjectEnumFormatBuilder::default()
+            .body_id(ParamType::ENUM_FORMAT.into())
             .media_type(MediaType::VIDEO)
             .media_subtype(MediaSubType::RAW)
             .video_format(ChoiceStructType::ENUM(PodEnumValue::from_default(
@@ -322,93 +321,49 @@ mod video_src {
         size: RectangleRef,
         stride: u32,
     ) -> pipewire_wrapper::Result<Vec<AllocPod<PodObjectRef>>> {
-        let buffers = PodObjectRef::from_id_and_value(
-            ParamType::BUFFERS,
-            &ObjectType::OBJECT_PARAM_BUFFERS(
-                AllocatedPodIterator::from_values([
-                    &ParamBuffersType::BUFFERS(
-                        PodRangeRef::from_primitive(PodRangeValue::new(8, 2, MAX_BUFFERS))?
-                            .as_pod()
-                            .into(),
-                    ),
-                    &ParamBuffersType::BLOCKS(PodNoneRef::from_primitive(1)?.as_pod().into()),
-                    &ParamBuffersType::SIZE(
-                        PodNoneRef::from_primitive((stride * size.height()) as i32)?
-                            .as_pod()
-                            .into(),
-                    ),
-                    &ParamBuffersType::STRIDE(
-                        PodNoneRef::from_primitive(stride as i32)?.as_pod().into(),
-                    ),
-                ])?
-                .iter(),
-            ),
-        )?;
-        let meta_header = PodObjectRef::from_id_and_value(
-            ParamType::META,
-            &ObjectType::OBJECT_PARAM_META(
-                AllocatedPodIterator::from_values([
-                    &ParamMetaType::TYPE(MetaType::HEADER.to_alloc_pod().as_pod()),
-                    &ParamMetaType::SIZE(
-                        PodNoneRef::from_primitive(size_of::<spa_sys::spa_meta_header>() as i32)?
-                            .as_pod()
-                            .choice(),
-                    ),
-                ])?
-                .iter(),
-            ),
-        )?;
-        let meta_video_damage = PodObjectRef::from_id_and_value(
-            ParamType::META,
-            &ObjectType::OBJECT_PARAM_META(
-                AllocatedPodIterator::from_values([
-                    &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.to_alloc_pod().as_pod()),
-                    &ParamMetaType::SIZE(
-                        PodRangeRef::from_primitive(PodRangeValue::new(
-                            size_of::<spa_sys::spa_meta_region>() as i32 * 16,
-                            size_of::<spa_sys::spa_meta_region>() as i32,
-                            size_of::<spa_sys::spa_meta_region>() as i32 * 16,
-                        ))?
-                        .as_pod()
-                        .choice(),
-                    ),
-                ])?
-                .iter(),
-            ),
-        )?;
-        let meta_video_crop = PodObjectRef::from_id_and_value(
-            ParamType::META,
-            &ObjectType::OBJECT_PARAM_META(
-                AllocatedPodIterator::from_values([
-                    &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.to_alloc_pod().as_pod()),
-                    &ParamMetaType::SIZE(
-                        PodNoneRef::from_primitive(size_of::<spa_sys::spa_meta_region>() as i32)?
-                            .as_pod()
-                            .choice(),
-                    ),
-                ])?
-                .iter(),
-            ),
-        )?;
-        let meta_cursor = PodObjectRef::from_id_and_value(
-            ParamType::META,
-            &ObjectType::OBJECT_PARAM_META(
-                AllocatedPodIterator::from_values([
-                    &ParamMetaType::TYPE(MetaType::VIDEO_DAMAGE.to_alloc_pod().as_pod()),
-                    &ParamMetaType::SIZE(
-                        PodNoneRef::from_primitive(
-                            (size_of::<spa_sys::spa_meta_cursor>() as u32
-                                + size_of::<spa_sys::spa_meta_bitmap>() as u32
-                                + size.width() * size.height() * BPP)
-                                as i32,
-                        )?
-                        .as_pod()
-                        .choice(),
-                    ),
-                ])?
-                .iter(),
-            ),
-        )?;
+        let buffers = ParamBuffersBuilder::default()
+            .body_id(ParamType::BUFFERS.into())
+            .buffers(ChoiceStructType::RANGE(PodRangeValue::new(
+                8,
+                2,
+                MAX_BUFFERS,
+            )))
+            .blocks(ChoiceStructType::NONE(1))
+            .size(ChoiceStructType::NONE((stride * size.height()) as i32))
+            .stride(ChoiceStructType::NONE(stride as i32))
+            .build()?;
+        let meta_header = ParamMetaBuilder::default()
+            .body_id(ParamType::META.into())
+            .type_(MetaType::HEADER)
+            .size(ChoiceStructType::NONE(
+                size_of::<spa_sys::spa_meta_header>() as i32,
+            ))
+            .build()?;
+        let meta_video_damage = ParamMetaBuilder::default()
+            .body_id(ParamType::META.into())
+            .type_(MetaType::VIDEO_DAMAGE)
+            .size(ChoiceStructType::RANGE(PodRangeValue::new(
+                size_of::<spa_sys::spa_meta_region>() as i32 * 16,
+                size_of::<spa_sys::spa_meta_region>() as i32,
+                size_of::<spa_sys::spa_meta_region>() as i32 * 16,
+            )))
+            .build()?;
+        let meta_video_crop = ParamMetaBuilder::default()
+            .body_id(ParamType::META.into())
+            .type_(MetaType::VIDEO_CROP)
+            .size(ChoiceStructType::NONE(
+                size_of::<spa_sys::spa_meta_region>() as i32,
+            ))
+            .build()?;
+        let meta_cursor = ParamMetaBuilder::default()
+            .body_id(ParamType::META.into())
+            .type_(MetaType::CURSOR)
+            .size(ChoiceStructType::NONE(
+                (size_of::<spa_sys::spa_meta_cursor>() as u32
+                    + size_of::<spa_sys::spa_meta_bitmap>() as u32
+                    + size.width() * size.height() * BPP) as i32,
+            ))
+            .build()?;
         Ok(vec![
             buffers,
             meta_header,

@@ -4,6 +4,7 @@
 use std::ffi::CString;
 use std::mem::size_of;
 use std::ops::Add;
+use std::rc::Rc;
 use std::slice;
 use std::sync::{Arc, Mutex};
 
@@ -32,7 +33,7 @@ const PI_POW_2: f64 = std::f64::consts::PI * std::f64::consts::PI;
 type AudioDataType = f32;
 
 pub fn main() {
-    let core = Arc::new(Core::default());
+    let core = Rc::new(Core::default());
     let main_loop = core.context().main_loop();
 
     let quit_main_loop = Box::new(|_| {
@@ -45,7 +46,7 @@ pub fn main() {
         .get_loop()
         .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
-    let stream = Arc::new(
+    let stream = Rc::new(
         Stream::new(
             &core,
             CString::new("Test audio source").unwrap().as_ref(),
@@ -103,7 +104,7 @@ fn format_param() -> pipewire_wrapper::Result<AllocPod<PodObjectRef>> {
     )?)
 }
 
-fn on_process(stream: &Arc<Stream>, accumulator: &Arc<Mutex<f64>>) {
+fn on_process(stream: &Rc<Stream>, accumulator: &Arc<Mutex<f64>>) {
     if let Some(buf) = stream.dequeue_buffer() {
         let spa_buf = buf.buffer_mut();
         if let Some(data) = spa_buf.datas_mut().first_mut() {

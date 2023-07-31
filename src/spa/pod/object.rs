@@ -376,7 +376,7 @@ impl<'a, T: PodPropKeyType<'a>> PodPropRef<'a, T> {
     }
 
     pub fn pod(&self) -> &PodRef {
-        unsafe { PodRef::from_raw_ptr(addr_of!(self.raw.value) as *const spa_sys::spa_pod) }
+        unsafe { PodRef::from_raw_ptr(addr_of!(self.raw.value)) }
     }
 }
 

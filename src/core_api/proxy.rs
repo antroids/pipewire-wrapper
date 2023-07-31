@@ -8,10 +8,7 @@ use std::ffi::CStr;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::ptr::NonNull;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-
-use spa_sys::SPA_TYPE_INFO_Data;
+use std::rc::Rc;
 
 use pipewire_wrapper_proc_macro::RawWrapper;
 
@@ -23,7 +20,6 @@ use crate::i32_as_void_result;
 use crate::impl_api::protocol::ProtocolRef;
 use crate::listeners::AddListener;
 use crate::spa::SPA_ID_INVALID;
-use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, Wrapper};
 
 pub mod events;
@@ -37,7 +33,7 @@ pub struct ProxyRef {
 
 #[derive(Debug)]
 pub struct Proxy<'c> {
-    inner: Arc<InnerProxy>,
+    inner: Rc<InnerProxy>,
 
     core: &'c Core,
 }
@@ -58,7 +54,7 @@ pub trait Proxied: RawWrapper {
 impl<'c> Proxy<'c> {
     pub(crate) fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
         Self {
-            inner: Arc::new(InnerProxy {
+            inner: Rc::new(InnerProxy {
                 ref_: NonNull::new(ref_.as_ptr()).unwrap(),
             }),
             core,
@@ -110,7 +106,7 @@ impl<'c> Clone for Proxy<'c> {
     fn clone(&self) -> Self {
         let cloned = Self {
             inner: self.inner.clone(),
-            core: self.core.clone(),
+            core: self.core,
         };
         unsafe { pw_sys::pw_proxy_ref(self.as_raw_ptr()) };
         cloned
@@ -119,8 +115,7 @@ impl<'c> Clone for Proxy<'c> {
 
 impl<'c> Drop for Proxy<'c> {
     fn drop(&mut self) {
-        if Arc::strong_count(&self.inner) > 1 {
-            // can cause assert errors when used in concurrent env, probably additional sync required
+        if Rc::strong_count(&self.inner) > 1 {
             unsafe { pw_sys::pw_proxy_unref(self.as_raw_ptr()) }
         }
     }

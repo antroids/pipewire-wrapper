@@ -113,9 +113,6 @@ pub fn object_type_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
     quote!(
         #input
 
-        /// Structure that contains all possible properties for object type.
-        /// Can be converted from [PodObjectRef](crate::spa::pod::object::PodObjectRef)
-        /// by [TryFrom] trait.
         #[cfg(feature = "spa-pod-object-info")]
         #[derive(Default, Debug)]
         pub struct #info_struct_ident<#lifetime> {
@@ -123,18 +120,15 @@ pub fn object_type_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
             #(pub #struct_value_fields_idents: Option<#struct_fields_types>),*,
             #(pub #struct_flags_fields_idents: crate::spa::pod::object::PodPropFlags),*
         }
-
         #[cfg(feature = "spa-pod-object-info")]
         impl<#lifetime> TryFrom<&#lifetime crate::spa::pod::object::PodObjectRef> for #info_struct_ident<#lifetime> {
             type Error = PodError;
-
             fn try_from(value: &#lifetime crate::spa::pod::object::PodObjectRef) -> Result<Self, Self::Error> {
                 use crate::spa::pod::PodValue;
                 use crate::spa::pod::restricted::PodHeader;
                 if let crate::spa::pod::object::ObjectType::#object_type(iter) = value.value()? {
                     let mut info = Self::default();
                     info.body_id = value.body_id();
-
                     for prop in iter {
                         match prop.value()? {
                             #(#enum_ident::#enum_variants_idents (val) => {
@@ -144,58 +138,44 @@ pub fn object_type_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
                             _ => panic!("Unsupported type"),
                         };
                     }
-
                     Ok(info)
                 } else {
                     Err(PodError::UnexpectedObjectType(value.body_type().into()))
                 }
             }
         }
-
-        /// The builder for given object type.
-        /// Has setter methods for each property of the object.
         #[cfg(feature = "spa-pod-object-builders")]
         #[derive(Default)]
         pub struct #builder_struct_ident<'a> {
             body_id: u32,
-
             #(#struct_value_fields_idents: Option<<&'a #builder_fields_types as crate::spa::pod::PodValue>::Value>),*,
             #(#struct_flags_fields_idents: crate::spa::pod::object::PodPropFlags),*,
         }
-
         #[cfg(feature = "spa-pod-object-builders")]
         impl<'a> #builder_struct_ident<'a> {
-
             /// Body id, usually [ParamType](pipewire_wrapper::spa::param::ParamType)
             pub fn body_id(mut self, body_id: u32) -> Self {
                 self.body_id = body_id;
                 self
             }
-
             #(pub fn #struct_value_fields_idents(mut self, value: <&'a #builder_fields_types as crate::spa::pod::PodValue>::Value) -> Self {
                 self.#struct_value_fields_idents = Some(value);
                 self
             }
             )*
-
             #(pub fn #struct_flags_fields_idents(mut self, flags: crate::spa::pod::object::PodPropFlags) -> Self {
                 self.#struct_flags_fields_idents = flags;
                 self
             }
             )*
-
-            /// Build the allocated [PodObjectRef](crate::spa::pod::object::PodObjectRef).
             pub fn build(self) -> PodResult<crate::spa::pod::pod_buf::AllocPod<crate::spa::pod::object::PodObjectRef>> {
                 use crate::spa::pod::FromValue;
                 use crate::spa::pod::object::{ObjectPropsIterator, PodPropRef, PodObjectRef, ObjectType};
-
                 let mut props_iter = <ObjectPropsIterator<#enum_ident>>::build();
-
                 #(let #struct_value_fields_idents = self
                     .#struct_value_fields_idents
                     .map(|ref v| <#builder_fields_types as FromValue>::from_value(v))
                     .transpose()?;
-
                 if let Some(#struct_value_fields_idents) = &#struct_value_fields_idents {
                     let prop_value = #enum_ident::#enum_variants_idents(#struct_value_fields_idents.as_pod());
                     let mut prop =
@@ -204,7 +184,6 @@ pub fn object_type_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
                     props_iter = props_iter.push_alloc_pod(prop)?;
                 }
                 )*
-
                 PodObjectRef::from_id_and_value(
                     self.body_id,
                     &ObjectType::#object_type(props_iter.into_pod_iter().iter()),

@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{rc::Rc, sync::Mutex, time::Duration};
 
 use pipewire_wrapper::{
     core_api::{
@@ -22,9 +19,9 @@ use pipewire_wrapper::{
  */
 #[test]
 fn test_node_events_via_channel() {
-    let core = Arc::new(Core::default());
+    let core = Rc::new(Core::default());
     let main_loop = core.context().main_loop();
-    let nodes = Arc::new(Mutex::new(Vec::<Node>::new()));
+    let nodes = Rc::new(Mutex::new(Vec::<Node>::new()));
     let registry = core.get_registry(0).unwrap();
     let quit_main_loop = Box::new(|_| {
         main_loop.quit().unwrap();
