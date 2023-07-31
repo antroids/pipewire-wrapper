@@ -3,7 +3,7 @@
  */
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::object_info;
+use pipewire_wrapper_proc_macro::object_type_impl;
 
 use crate::enum_wrapper;
 use crate::spa::pod::id::{PodIdRef, PodIdType};
@@ -15,7 +15,7 @@ use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
 #[derive(Debug)]
-#[object_info(OBJECT_PARAM_PROFILE)]
+#[object_type_impl(OBJECT_PARAM_PROFILE)]
 pub enum ParamProfileType<'a> {
     INDEX(&'a PodIntRef) = ParamProfile::INDEX.raw,
     NAME(&'a PodStringRef) = ParamProfile::NAME.raw,

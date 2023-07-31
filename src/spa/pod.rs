@@ -343,7 +343,7 @@ impl<T: PodHeader> SizedPod for T {
     }
 }
 
-impl<T: PodHeader> CloneTo for &T {
+impl<T: SizedPod> CloneTo for &T {
     fn clone_to(&self, buffer: &mut impl Write) -> PodResult<()> {
         let size = self.pod_size();
         let slice = unsafe { slice::from_raw_parts(*self as *const T as *const u8, size) };

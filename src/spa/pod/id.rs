@@ -33,7 +33,7 @@ where
     Self: Debug,
     Self: Clone,
 {
-    fn as_alloc_pod(&self) -> AllocPod<PodIdRef<Self>> {
+    fn to_alloc_pod(&self) -> AllocPod<PodIdRef<Self>> {
         PodIdRef::from_value(self).unwrap()
     }
 }

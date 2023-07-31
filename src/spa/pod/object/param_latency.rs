@@ -3,7 +3,7 @@
  */
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::object_info;
+use pipewire_wrapper_proc_macro::object_type_impl;
 
 use crate::enum_wrapper;
 use crate::spa::pod::id::PodIdRef;
@@ -15,7 +15,7 @@ use crate::wrapper::RawWrapper;
 #[repr(u32)]
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
-#[object_info(OBJECT_PARAM_LATENCY)]
+#[object_type_impl(OBJECT_PARAM_LATENCY)]
 pub enum ParamLatencyType<'a> {
     DIRECTION(&'a PodIdRef<Direction>) = ParamLatency::DIRECTION.raw,
     MIN_QUANTUM(&'a PodFloatRef) = ParamLatency::MIN_QUANTUM.raw,

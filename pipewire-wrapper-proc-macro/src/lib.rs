@@ -119,7 +119,7 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
     pipewire_wrapper_macro_impl::proxy_wrapper(attr.into(), input.into()).into()
 }
 
-/// Add an *Info structure after the enum definition.
+/// Add an *Info and *Builder structures after the enum definition.
 /// For each enum variant will be added optional struct fields with value and flags.
 ///
 /// # Examples
@@ -151,6 +151,6 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn object_info(attr: TokenStream, input: TokenStream) -> TokenStream {
-    pipewire_wrapper_macro_impl::derive_object_info(attr.into(), input.into()).into()
+pub fn object_type_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
+    pipewire_wrapper_macro_impl::object_type_impl(attr.into(), input.into()).into()
 }

@@ -83,8 +83,8 @@ fn format_param() -> pipewire_wrapper::Result<AllocPod<PodObjectRef>> {
         ParamType::ENUM_FORMAT,
         &ObjectType::OBJECT_ENUM_FORMAT(
             AllocatedPodIterator::from_values(&[
-                ObjectEnumFormatType::MEDIA_TYPE(MediaType::AUDIO.as_alloc_pod().as_pod()),
-                ObjectEnumFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.as_alloc_pod().as_pod()),
+                ObjectEnumFormatType::MEDIA_TYPE(MediaType::AUDIO.to_alloc_pod().as_pod()),
+                ObjectEnumFormatType::MEDIA_SUBTYPE(MediaSubType::RAW.to_alloc_pod().as_pod()),
                 ObjectEnumFormatType::AUDIO_FORMAT(
                     PodEnumValue::from_default(AudioFormat::F32)
                         .to_alloc_pod()?

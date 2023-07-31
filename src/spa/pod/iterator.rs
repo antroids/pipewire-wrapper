@@ -8,10 +8,10 @@ use std::marker::PhantomData;
 use std::mem::size_of;
 
 use crate::spa::pod::pod_buf::{AllocPod, PodBuf};
-use crate::spa::pod::restricted::{CloneTo, PodHeader, PodRawValue};
+use crate::spa::pod::restricted::{CloneTo, PodRawValue};
 use crate::spa::pod::string::PodStringRef;
 use crate::spa::pod::{
-    BasicTypePod, PodIntRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
+    BasicTypePod, FromValue, PodIntRef, PodResult, PodValue, SizedPod, WritePod, POD_ALIGN,
 };
 
 pub struct PodIterator<'a, E: SizedPod> {
@@ -38,7 +38,7 @@ impl<'a, E: SizedPod> PodIterator<'a, E> {
         }
     }
 
-    pub fn build() -> PodIteratorBuilder<'a, E> {
+    pub fn build() -> PodIteratorBuilder<E> {
         PodIteratorBuilder::new()
     }
 
@@ -195,11 +195,11 @@ impl<E: PodRawValue> AllocatedPodValueIterator<E> {
     }
 }
 
-pub struct PodIteratorBuilder<'a, E: SizedPod> {
-    buf: PodBuf<'a, E>,
+pub struct PodIteratorBuilder<E: SizedPod> {
+    buf: PodBuf<E>,
 }
 
-impl<'a, E: SizedPod> PodIteratorBuilder<'a, E> {
+impl<E: SizedPod> PodIteratorBuilder<E> {
     pub fn new() -> Self {
         Self { buf: PodBuf::new() }
     }
@@ -211,22 +211,30 @@ impl<'a, E: SizedPod> PodIteratorBuilder<'a, E> {
     }
 }
 
-impl<'a, E: SizedPod> Default for PodIteratorBuilder<'a, E> {
+impl<E: SizedPod> Default for PodIteratorBuilder<E> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, E: SizedPod + PodHeader> PodIteratorBuilder<'a, E> {
+impl<E: SizedPod> PodIteratorBuilder<E> {
     pub fn push_pod(mut self, pod_value: &E) -> PodResult<Self> {
         pod_value.clone_to(&mut self.buf)?;
         Ok(self)
     }
+
+    pub fn push_alloc_pod(mut self, alloc_pod: AllocPod<E>) -> PodResult<Self> {
+        unsafe {
+            self.buf.append_alloc_pod(alloc_pod);
+        }
+        Ok(self)
+    }
 }
 
-impl<'a, E> PodIteratorBuilder<'a, E>
+impl<'a, E> PodIteratorBuilder<E>
 where
     &'a E: WritePod,
+    E: 'a,
     E: SizedPod,
 {
     pub fn push_value(mut self, pod_value: &<&'a E as PodValue>::Value) -> PodResult<Self> {

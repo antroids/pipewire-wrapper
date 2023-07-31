@@ -517,7 +517,7 @@ fn test_none_choice() {
 
 #[test]
 fn test_value_choice() {
-    let pod = AudioFormat::F32.as_alloc_pod();
+    let pod = AudioFormat::F32.to_alloc_pod();
     let choice: &PodChoiceRef<PodIdRef<AudioFormat>> = pod.as_pod().into();
 
     assert_eq!(choice.pod_type(), Type::ID);

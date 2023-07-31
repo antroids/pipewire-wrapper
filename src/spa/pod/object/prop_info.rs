@@ -3,7 +3,7 @@
  */
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::object_info;
+use pipewire_wrapper_proc_macro::object_type_impl;
 
 use crate::enum_wrapper;
 use crate::spa::pod::id::PodIdRef;
@@ -17,7 +17,7 @@ use crate::wrapper::RawWrapper;
 #[repr(u32)]
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
-#[object_info(OBJECT_PROP_INFO)]
+#[object_type_impl(OBJECT_PROP_INFO)]
 pub enum ObjectPropInfoType<'a> {
     ID(&'a PodIdRef<Prop>) = PropInfo::ID.raw,
     NAME(&'a PodStringRef) = PropInfo::NAME.raw,

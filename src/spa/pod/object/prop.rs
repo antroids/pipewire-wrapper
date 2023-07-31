@@ -3,7 +3,7 @@
  */
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::object_info;
+use pipewire_wrapper_proc_macro::object_type_impl;
 
 use crate::enum_wrapper;
 use crate::spa::pod::array::PodArrayRef;
@@ -20,7 +20,7 @@ use crate::wrapper::RawWrapper;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 #[repr(u32)]
-#[object_info(OBJECT_PROPS)]
+#[object_type_impl(OBJECT_PROPS)]
 pub enum ObjectPropType<'a> {
     // Device
     DEVICE(&'a PodStringRef) = Prop::DEVICE.raw,

@@ -371,6 +371,10 @@ impl<'a, T: PodPropKeyType<'a>> PodPropRef<'a, T> {
         PodPropFlags::from_bits_retain(self.raw.flags)
     }
 
+    pub fn set_flags(&mut self, flags: PodPropFlags) {
+        self.raw.flags = flags.bits();
+    }
+
     pub fn pod(&self) -> &PodRef {
         unsafe { PodRef::from_raw_ptr(addr_of!(self.raw.value) as *const spa_sys::spa_pod) }
     }

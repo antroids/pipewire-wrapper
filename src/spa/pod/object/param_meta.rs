@@ -3,7 +3,7 @@
  */
 use std::io::{Seek, Write};
 
-use pipewire_wrapper_proc_macro::object_info;
+use pipewire_wrapper_proc_macro::object_type_impl;
 
 use crate::enum_wrapper;
 use crate::spa::pod::choice::PodChoiceRef;
@@ -14,7 +14,7 @@ use crate::wrapper::RawWrapper;
 
 #[repr(u32)]
 #[derive(Debug)]
-#[object_info(OBJECT_PARAM_META)]
+#[object_type_impl(OBJECT_PARAM_META)]
 pub enum ParamMetaType<'a> {
     TYPE(&'a PodIdRef<MetaType>) = ParamMeta::TYPE.raw,
     SIZE(&'a PodChoiceRef<PodIntRef>) = ParamMeta::SIZE.raw,

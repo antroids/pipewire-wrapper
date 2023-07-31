@@ -18,18 +18,16 @@ type AlignedDataType = u64;
 const ZEROED_ALIGNED_DATA: AlignedDataType = 0;
 const DATA_ALIGN: u64 = size_of::<AlignedDataType>() as u64;
 
-pub struct PodBuf<'a, T>
-where
-    T: 'a,
-{
+pub struct PodBuf<T> {
     data: Vec<AlignedDataType>,
     pos: u64,
-    phantom: PhantomData<&'a T>,
+    phantom: PhantomData<T>,
 }
 
-impl<'a, T> PodBuf<'a, T>
+impl<'a, T> PodBuf<T>
 where
     &'a T: WritePod,
+    T: 'a,
 {
     pub fn from_value(value: &<&'a T as PodValue>::Value) -> PodResult<Self> {
         let mut buf = Self::new();
@@ -38,9 +36,10 @@ where
     }
 }
 
-impl<'a, T> PodBuf<'a, T>
+impl<'a, T> PodBuf<T>
 where
     &'a T: CloneTo,
+    T: 'a,
 {
     pub fn from_pod(pod: &'a T) -> PodResult<Self> {
         let mut buf = Self::new();
@@ -49,7 +48,7 @@ where
     }
 }
 
-impl<'a, T> PodBuf<'a, T>
+impl<T> PodBuf<T>
 where
     T: WritePod,
 {
@@ -60,7 +59,7 @@ where
     }
 }
 
-impl<'a, T> PodBuf<'a, T> {
+impl<T> PodBuf<T> {
     pub fn into_pod(self) -> AllocPod<T> {
         AllocPod {
             data: self.data,
@@ -80,6 +79,24 @@ impl<'a, T> PodBuf<'a, T> {
         let mut buf = Self::new();
         buf.allocate_data_if_needed(size as u64);
         buf
+    }
+
+    /// Append all data from [AllocPod] to the buffer.
+    ///
+    /// # Note
+    ///
+    /// Buffer position must be aligned.
+    /// The data after current position will be corrupted.
+    pub(crate) unsafe fn append_alloc_pod(&mut self, mut alloc_pod: AllocPod<T>) -> PodResult<()> {
+        let aligned_size = self.pos / DATA_ALIGN;
+        if (aligned_size * DATA_ALIGN - self.pos) == 0 {
+            self.data.truncate(aligned_size as usize);
+            self.data.append(&mut alloc_pod.data);
+            self.pos = self.data_size() as u64;
+            Ok(())
+        } else {
+            Err(PodError::PodIsNotAligned)
+        }
     }
 
     unsafe fn data_bytes_mut(&mut self) -> &mut [u8] {
@@ -105,7 +122,7 @@ impl<'a, T> PodBuf<'a, T> {
     }
 }
 
-impl<'a, T> Write for PodBuf<'a, T> {
+impl<T> Write for PodBuf<T> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let start_pos = self.pos;
         let end_pos = self
@@ -127,7 +144,7 @@ impl<'a, T> Write for PodBuf<'a, T> {
     }
 }
 
-impl<'a, T> Seek for PodBuf<'a, T> {
+impl<T> Seek for PodBuf<T> {
     fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
         let (from, offset) = match pos {
             SeekFrom::Start(pos) => {

@@ -1,6 +1,8 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+use std::ops::Deref;
+
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::__private::ext::RepToTokensExt;
 use quote::quote;
@@ -93,11 +95,19 @@ impl Parse for ObjectTypeEnumInfo {
 }
 
 impl ObjectTypeEnumInfo {
-    fn struct_ident(&self) -> Ident {
+    fn struct_ident_with_suffix(&self, suffix: &str) -> Ident {
         let enum_ident_string = self.ident_.to_string();
         let mut ident_string = enum_ident_string.trim_end_matches("Type").to_owned();
-        ident_string.push_str("Info");
+        ident_string.push_str(suffix);
         Ident::new(ident_string.as_str(), self.ident_.span())
+    }
+
+    fn info_struct_ident(&self) -> Ident {
+        self.struct_ident_with_suffix("Info")
+    }
+
+    fn builder_struct_ident(&self) -> Ident {
+        self.struct_ident_with_suffix("Builder")
     }
 
     fn struct_prop_value_fields_idents(&self) -> Vec<Ident> {
@@ -531,7 +541,7 @@ pub fn proxy_wrapper(attr: TokenStream, input: TokenStream) -> TokenStream {
     )
 }
 
-pub fn derive_object_info(attr: TokenStream, input: TokenStream) -> TokenStream {
+pub fn object_type_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
     let enum_info: ObjectTypeEnumInfo = parse2(input.clone()).unwrap();
     let object_type: Ident = parse2(attr).unwrap();
 
@@ -541,23 +551,37 @@ pub fn derive_object_info(attr: TokenStream, input: TokenStream) -> TokenStream 
         .iter()
         .map(|variant| variant.ident.clone())
         .collect();
-    let struct_ident = enum_info.struct_ident();
+    let info_struct_ident = enum_info.info_struct_ident();
+    let builder_struct_ident = enum_info.builder_struct_ident();
     let lifetime = &enum_info.lifetime;
     let struct_value_fields_idents = enum_info.struct_prop_value_fields_idents();
     let struct_flags_fields_idents = enum_info.struct_prop_flags_fields_idents();
     let struct_fields_types = enum_info.struct_fields_types();
+    let builder_fields_types: Vec<Type> = enum_info
+        .struct_fields_types()
+        .into_iter()
+        .map(|type_| {
+            if let Type::Reference(ref_) = type_ {
+                ref_.elem.deref().clone()
+            } else {
+                type_
+            }
+        })
+        .collect();
 
     quote!(
         #input
 
+        #[cfg(feature = "spa-pod-object-info")]
         #[derive(Default, Debug)]
-        pub struct #struct_ident<#lifetime> {
+        pub struct #info_struct_ident<#lifetime> {
             pub body_id: u32,
-            #(pub #struct_value_fields_idents : Option<#struct_fields_types>),*,
-            #(pub #struct_flags_fields_idents : crate::spa::pod::object::PodPropFlags),*
+            #(pub #struct_value_fields_idents: Option<#struct_fields_types>),*,
+            #(pub #struct_flags_fields_idents: crate::spa::pod::object::PodPropFlags),*
         }
 
-        impl<#lifetime> TryFrom<&#lifetime crate::spa::pod::object::PodObjectRef> for #struct_ident<#lifetime> {
+        #[cfg(feature = "spa-pod-object-info")]
+        impl<#lifetime> TryFrom<&#lifetime crate::spa::pod::object::PodObjectRef> for #info_struct_ident<#lifetime> {
             type Error = PodError;
 
             fn try_from(value: &#lifetime crate::spa::pod::object::PodObjectRef) -> Result<Self, Self::Error> {
@@ -581,6 +605,56 @@ pub fn derive_object_info(attr: TokenStream, input: TokenStream) -> TokenStream 
                 } else {
                     Err(PodError::UnexpectedObjectType(value.body_type().into()))
                 }
+            }
+        }
+
+        #[cfg(feature = "spa-pod-object-builders")]
+        #[derive(Default)]
+        pub struct #builder_struct_ident<'a> {
+            body_id: u32,
+
+            #(#struct_value_fields_idents: Option<<&'a #builder_fields_types as crate::spa::pod::PodValue>::Value>),*,
+            #(#struct_flags_fields_idents: crate::spa::pod::object::PodPropFlags),*,
+        }
+
+        #[cfg(feature = "spa-pod-object-builders")]
+        impl<'a> #builder_struct_ident<'a> {
+            #(pub fn #struct_value_fields_idents(mut self, value: <&'a #builder_fields_types as crate::spa::pod::PodValue>::Value) -> Self {
+                self.#struct_value_fields_idents = Some(value);
+                self
+            }
+            )*
+
+            #(pub fn #struct_flags_fields_idents(mut self, flags: crate::spa::pod::object::PodPropFlags) -> Self {
+                self.#struct_flags_fields_idents = flags;
+                self
+            }
+            )*
+
+            pub fn build(self) -> PodResult<crate::spa::pod::pod_buf::AllocPod<crate::spa::pod::object::PodObjectRef>> {
+                use crate::spa::pod::FromValue;
+                use crate::spa::pod::object::{ObjectPropsIterator, PodPropRef, PodObjectRef, ObjectType};
+
+                let mut props_iter = <ObjectPropsIterator<#enum_ident>>::build();
+
+                #(let #struct_value_fields_idents = self
+                    .#struct_value_fields_idents
+                    .map(|ref v| <#builder_fields_types as FromValue>::from_value(v))
+                    .transpose()?;
+
+                if let Some(#struct_value_fields_idents) = &#struct_value_fields_idents {
+                    let prop_value = #enum_ident::#enum_variants_idents(#struct_value_fields_idents.as_pod());
+                    let mut prop =
+                        <PodPropRef<#enum_ident> as FromValue>::from_value(&prop_value)?;
+                    prop.as_pod_mut().set_flags(self.#struct_flags_fields_idents);
+                    props_iter = props_iter.push_alloc_pod(prop)?;
+                }
+                )*
+
+                PodObjectRef::from_id_and_value(
+                    self.body_id,
+                    &ObjectType::#object_type(props_iter.into_pod_iter().iter()),
+                )
             }
         }
     )

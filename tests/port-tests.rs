@@ -7,21 +7,37 @@ use std::{
     time::Duration,
 };
 
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::param::ParamType;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::format::ObjectFormatInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_buffers::ParamBuffersInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_io::ParamIoInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_latency::ParamLatencyInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_meta::ParamMetaInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_port_config::ParamPortConfigInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_process_latency::ParamProcessLatencyInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_profile::ParamProfileInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_route::ParamRouteInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::profiler::ProfilerInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::prop::ObjectPropInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::prop_info::ObjectPropInfoInfo;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::BasicType;
+#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::type_::Type;
 use pipewire_wrapper::{
     core_api::{
@@ -106,6 +122,7 @@ fn test_port_params() {
 }
 
 #[test]
+#[cfg(feature = "spa-pod-object-info")]
 fn test_port_params_as_object_info() {
     let core = Arc::new(Core::default());
     let registry = core.get_registry(0).unwrap();
