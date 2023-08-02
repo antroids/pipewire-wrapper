@@ -91,7 +91,10 @@ mod video_src {
             .get_loop()
             .add_timer(Box::new({
                 let stream = stream.clone();
-                move |_| stream.trigger_process().unwrap()
+                move |_| {
+                    println!("Triggering stream process by timer");
+                    stream.trigger_process().unwrap();
+                }
             }))
             .unwrap();
         let state = Rc::new(Mutex::new(State {
@@ -249,6 +252,7 @@ mod video_src {
 
     fn on_state_changed(to: stream::State, state: &Rc<Mutex<State>>) {
         let state = state.lock().unwrap();
+        println!("Video source status updated to {:?}", to);
         match to {
             stream::State::ERROR | stream::State::UNCONNECTED => state.loop_.quit().unwrap(),
             stream::State::PAUSED => state
@@ -277,6 +281,7 @@ mod video_src {
     ) -> pipewire_wrapper::Result<()> {
         if let BasicType::OBJECT(obj) = pod.downcast().unwrap() {
             if let ObjectType::OBJECT_FORMAT(format) = obj.param_value(ParamType::FORMAT).unwrap() {
+                println!("Got format param {:?}", pod.downcast());
                 for prop in format {
                     if let ObjectFormatType::VIDEO_SIZE(size) = prop.value()? {
                         let mut state = state.lock().unwrap();
@@ -332,6 +337,7 @@ mod video_src {
             .size(ChoiceStructType::NONE((stride * size.height()) as i32))
             .stride(ChoiceStructType::NONE(stride as i32))
             .build()?;
+        println!("Video output buffer: {:?}", buffers.as_pod());
         let meta_header = ParamMetaBuilder::default()
             .body_id(ParamType::META.into())
             .type_(MetaType::HEADER)

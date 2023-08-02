@@ -1,0 +1,11 @@
+[package]
+name = "pipewire-sdl-video-player"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pipewire-wrapper = { path = "../.." }
+sdl2 = "0.35.2"
+pw_sys = { package = "pipewire-sys", version = "0.6.0" }
