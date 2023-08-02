@@ -13,6 +13,9 @@ use crate::enum_wrapper;
 use crate::spa::type_::{FractionRef, RectangleRef};
 use crate::wrapper::RawWrapper;
 
+use super::pod::object::param_io::IOType;
+use super::type_::IOBuffersRef;
+
 #[derive(RawWrapper)]
 #[repr(transparent)]
 pub struct IOMemoryRef {
@@ -84,7 +87,7 @@ impl IOClockRef {
     }
 }
 
-#[derive(RawWrapper)]
+#[derive(RawWrapper, Clone)]
 #[repr(transparent)]
 pub struct IOVideoSizeRef {
     #[raw]
@@ -305,4 +308,38 @@ impl IOPositionRef {
 pub struct IORateMatchRef {
     #[raw]
     raw: spa_sys::spa_io_rate_match,
+}
+
+#[repr(u32)]
+pub enum IOValue<'a> {
+    INVALID,
+    BUFFERS(&'a mut IOBuffersRef),
+    RANGE(&'a mut IORangeRef),
+    CLOCK(&'a mut IOClockRef),
+    LATENCY(&'a mut IOLatencyRef),
+    CONTROL(&'a mut IOSequenceRef),
+    NOTIFY(&'a mut IOSequenceRef),
+    POSITION(&'a mut IOPositionRef),
+    RATEMATCH(&'a mut IORateMatchRef),
+    MEMORY(&'a mut IOMemoryRef),
+}
+
+impl<'a> IOValue<'a> {
+    pub(crate) unsafe fn from_type_and_ptr(
+        io_type: IOType,
+        ptr: *mut ::std::os::raw::c_void,
+    ) -> Self {
+        match io_type {
+            IOType::BUFFERS => IOValue::BUFFERS(IOBuffersRef::mut_from_raw_ptr(ptr.cast())),
+            IOType::RANGE => IOValue::RANGE(IORangeRef::mut_from_raw_ptr(ptr.cast())),
+            IOType::CLOCK => IOValue::CLOCK(IOClockRef::mut_from_raw_ptr(ptr.cast())),
+            IOType::LATENCY => IOValue::LATENCY(IOLatencyRef::mut_from_raw_ptr(ptr.cast())),
+            IOType::CONTROL => IOValue::CONTROL(IOSequenceRef::mut_from_raw_ptr(ptr.cast())),
+            IOType::NOTIFY => IOValue::NOTIFY(IOSequenceRef::mut_from_raw_ptr(ptr.cast())),
+            IOType::POSITION => IOValue::POSITION(IOPositionRef::mut_from_raw_ptr(ptr.cast())),
+            IOType::RATEMATCH => IOValue::RATEMATCH(IORateMatchRef::mut_from_raw_ptr(ptr.cast())),
+            IOType::MEMORY => IOValue::MEMORY(IOMemoryRef::mut_from_raw_ptr(ptr.cast())),
+            _ => IOValue::INVALID,
+        }
+    }
 }
