@@ -14,39 +14,39 @@ use crate::wrapper::RawWrapper;
 #[repr(u32)]
 #[derive(Debug)]
 #[object_type_impl(OBJECT_PARAM_IO)]
-pub enum ParamIoType<'a> {
-    ID(&'a PodIdRef<IoType>) = ParamIo::ID.raw,
-    SIZE(&'a PodIntRef) = ParamIo::SIZE.raw,
+pub enum ParamIOType<'a> {
+    ID(&'a PodIdRef<IOType>) = ParamIO::ID.raw,
+    SIZE(&'a PodIntRef) = ParamIO::SIZE.raw,
 }
 
-impl<'a> TryFrom<&'a PodPropRef<'a, ParamIoType<'a>>> for ParamIoType<'a> {
+impl<'a> TryFrom<&'a PodPropRef<'a, ParamIOType<'a>>> for ParamIOType<'a> {
     type Error = PodError;
 
-    fn try_from(value: &'a PodPropRef<'a, ParamIoType<'a>>) -> Result<Self, Self::Error> {
+    fn try_from(value: &'a PodPropRef<'a, ParamIOType<'a>>) -> Result<Self, Self::Error> {
         unsafe {
-            match ParamIo::from_raw(value.raw.key) {
-                ParamIo::ID => Ok(ParamIoType::ID(value.pod().cast()?)),
-                ParamIo::SIZE => Ok(ParamIoType::SIZE(value.pod().cast()?)),
+            match ParamIO::from_raw(value.raw.key) {
+                ParamIO::ID => Ok(ParamIOType::ID(value.pod().cast()?)),
+                ParamIO::SIZE => Ok(ParamIOType::SIZE(value.pod().cast()?)),
                 _ => Err(PodError::UnknownPodTypeToDowncast),
             }
         }
     }
 }
 
-impl<'a> PodPropKeyType<'a> for ParamIoType<'a> {
+impl<'a> PodPropKeyType<'a> for ParamIOType<'a> {
     fn write_prop<W>(&self, buffer: &mut W) -> PodResult<()>
     where
         W: Write + Seek,
     {
         match self {
-            ParamIoType::ID(pod) => Self::write_pod_prop(buffer, ParamIo::ID.raw, 0, pod),
-            ParamIoType::SIZE(pod) => Self::write_pod_prop(buffer, ParamIo::SIZE.raw, 0, pod),
+            ParamIOType::ID(pod) => Self::write_pod_prop(buffer, ParamIO::ID.raw, 0, pod),
+            ParamIOType::SIZE(pod) => Self::write_pod_prop(buffer, ParamIO::SIZE.raw, 0, pod),
         }
     }
 }
 
 enum_wrapper!(
-    ParamIo,
+    ParamIO,
     spa_sys::spa_param_io,
     _START: spa_sys::SPA_PARAM_IO_START,
     ID: spa_sys::SPA_PARAM_IO_id,
@@ -54,7 +54,7 @@ enum_wrapper!(
 );
 
 enum_wrapper!(
-    IoType,
+    IOType,
     spa_sys::spa_io_type,
     INVALID: spa_sys::SPA_IO_Invalid,
     BUFFERS: spa_sys::SPA_IO_Buffers,
@@ -67,4 +67,4 @@ enum_wrapper!(
     RATEMATCH: spa_sys::SPA_IO_RateMatch,
     MEMORY: spa_sys::SPA_IO_Memory,
 );
-impl PodIdType for IoType {}
+impl PodIdType for IOType {}
