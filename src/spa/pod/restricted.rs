@@ -8,6 +8,7 @@ use std::ops::Rem;
 use std::ptr::addr_of;
 use std::slice;
 
+use crate::spa::pod::choice::PodChoiceRef;
 use crate::spa::pod::{PodError, PodRef, PodResult, PodValue, POD_ALIGN};
 use crate::spa::type_::Type;
 use crate::wrapper::RawWrapper;
@@ -69,6 +70,9 @@ where
         #[allow(clippy::if_same_then_else)]
         if target_type == PodRef::static_type() || target_type == pod_type {
             unsafe { Ok(self.cast_unchecked()) }
+        } else if pod_type == Type::CHOICE {
+            let choice: &PodChoiceRef = unsafe { self.cast_unchecked() };
+            choice.body().child().cast()
         } else if target_type == Type::CHOICE
             && (pod_type == Type::BOOL
                 || pod_type == Type::ID
