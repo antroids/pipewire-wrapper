@@ -13,7 +13,7 @@ use pipewire_wrapper::spa::pod::object::format::ObjectFormatInfo;
 #[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_buffers::ParamBuffersInfo;
 #[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_io::ParamIoInfo;
+use pipewire_wrapper::spa::pod::object::param_io::ParamIOInfo;
 #[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::object::param_latency::ParamLatencyInfo;
 #[cfg(feature = "spa-pod-object-info")]
@@ -121,6 +121,8 @@ fn test_port_params() {
 #[test]
 #[cfg(feature = "spa-pod-object-info")]
 fn test_port_params_as_object_info() {
+    use pipewire_wrapper::spa::pod::object::param_io::ParamIOInfo;
+
     let core = Rc::new(Core::default());
     let registry = core.get_registry(0).unwrap();
     let main_loop = core.context().main_loop();
@@ -187,7 +189,7 @@ fn test_port_params_as_object_info() {
                                     println!("Prop info: {:?}", info);
                                 }
                                 Type::OBJECT_PARAM_IO => {
-                                    let info = ParamIoInfo::try_from(object).unwrap();
+                                    let info = ParamIOInfo::try_from(object).unwrap();
                                     println!("Prop info: {:?}", info);
                                 }
                                 Type::OBJECT_PARAM_PROFILE => {
