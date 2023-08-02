@@ -14,6 +14,8 @@ use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::events_builder_build;
 use crate::spa::interface::Hook;
+use crate::spa::io::IOValue;
+use crate::spa::pod::object::param_io::IOType;
 use crate::spa::pod::PodRef;
 use crate::spa::type_::CommandRef;
 use crate::stream::buffer::BufferRef;
@@ -31,7 +33,7 @@ pub struct StreamEventsRef {
 pub type DestroyCallback<'p> = Box<dyn FnMut() + 'p>;
 pub type StateChangedCallback<'p> = Box<dyn for<'a> FnMut(State, State, Option<&'a CStr>) + 'p>;
 pub type ControlInfoCallback<'p> = Box<dyn for<'a> FnMut(u32, &'a ControlRef) + 'p>;
-pub type IOChangedCallback<'p> = Box<dyn for<'a> FnMut(u32, *mut ::std::os::raw::c_void, u32) + 'p>;
+pub type IOChangedCallback<'p> = Box<dyn for<'a> FnMut(IOValue) + 'p>;
 pub type ParamChangedCallback<'p> = Box<dyn for<'a> FnMut(u32, &'a PodRef) + 'p>;
 pub type AddBufferCallback<'p> = Box<dyn for<'a> FnMut(&'a BufferRef) + 'p>;
 pub type RemoveBufferCallback<'p> = Box<dyn for<'a> FnMut(&'a BufferRef) + 'p>;
@@ -104,9 +106,11 @@ impl<'p> StreamEvents<'p> {
         id: u32,
         control: *const pw_stream_control,
     ) {
-        if let Some(events) = (data as *mut StreamEvents).as_mut() {
-            if let Some(callback) = &mut events.control_info {
-                callback(id, ControlRef::from_raw_ptr(control));
+        if !control.is_null() {
+            if let Some(events) = (data as *mut StreamEvents).as_mut() {
+                if let Some(callback) = &mut events.control_info {
+                    callback(id, ControlRef::from_raw_ptr(control));
+                }
             }
         }
     }
@@ -117,9 +121,11 @@ impl<'p> StreamEvents<'p> {
         area: *mut ::std::os::raw::c_void,
         size: u32,
     ) {
-        if let Some(events) = (data as *mut StreamEvents).as_mut() {
-            if let Some(callback) = &mut events.io_changed {
-                callback(id, area, size);
+        if !area.is_null() {
+            if let Some(events) = (data as *mut StreamEvents).as_mut() {
+                if let Some(callback) = &mut events.io_changed {
+                    callback(IOValue::from_type_and_ptr(IOType::from(id), area));
+                }
             }
         }
     }
@@ -129,9 +135,11 @@ impl<'p> StreamEvents<'p> {
         id: u32,
         param: *const spa_pod,
     ) {
-        if let Some(events) = (data as *mut StreamEvents).as_mut() {
-            if let Some(callback) = &mut events.param_changed {
-                callback(id, PodRef::from_raw_ptr(param));
+        if !param.is_null() {
+            if let Some(events) = (data as *mut StreamEvents).as_mut() {
+                if let Some(callback) = &mut events.param_changed {
+                    callback(id, PodRef::from_raw_ptr(param));
+                }
             }
         }
     }
@@ -140,9 +148,11 @@ impl<'p> StreamEvents<'p> {
         data: *mut ::std::os::raw::c_void,
         buffer: *mut pw_buffer,
     ) {
-        if let Some(events) = (data as *mut StreamEvents).as_mut() {
-            if let Some(callback) = &mut events.add_buffer {
-                callback(BufferRef::from_raw_ptr(buffer));
+        if !buffer.is_null() {
+            if let Some(events) = (data as *mut StreamEvents).as_mut() {
+                if let Some(callback) = &mut events.add_buffer {
+                    callback(BufferRef::from_raw_ptr(buffer));
+                }
             }
         }
     }
@@ -151,9 +161,11 @@ impl<'p> StreamEvents<'p> {
         data: *mut ::std::os::raw::c_void,
         buffer: *mut pw_buffer,
     ) {
-        if let Some(events) = (data as *mut StreamEvents).as_mut() {
-            if let Some(callback) = &mut events.remove_buffer {
-                callback(BufferRef::from_raw_ptr(buffer));
+        if !buffer.is_null() {
+            if let Some(events) = (data as *mut StreamEvents).as_mut() {
+                if let Some(callback) = &mut events.remove_buffer {
+                    callback(BufferRef::from_raw_ptr(buffer));
+                }
             }
         }
     }
@@ -178,9 +190,11 @@ impl<'p> StreamEvents<'p> {
         data: *mut ::std::os::raw::c_void,
         command: *const spa_command,
     ) {
-        if let Some(events) = (data as *mut StreamEvents).as_mut() {
-            if let Some(callback) = &mut events.command {
-                callback(CommandRef::from_raw_ptr(command));
+        if !command.is_null() {
+            if let Some(events) = (data as *mut StreamEvents).as_mut() {
+                if let Some(callback) = &mut events.command {
+                    callback(CommandRef::from_raw_ptr(command));
+                }
             }
         }
     }
