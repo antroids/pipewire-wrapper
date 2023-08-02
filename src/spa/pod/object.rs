@@ -84,7 +84,7 @@ impl Debug for PodObjectBodyRef {
 /// # Examples
 ///
 /// Parse value manually:
-/// ```no-run
+/// ```no_run,ignore
 /// if let BasicType::OBJECT(obj) = pod.downcast().unwrap() {
 ///      if let ObjectType::OBJECT_FORMAT(format) = obj.param_value(ParamType::FORMAT).unwrap() {
 ///          for prop in format {
@@ -97,7 +97,7 @@ impl Debug for PodObjectBodyRef {
 /// ```
 ///
 /// Parse as Info object:
-/// ```no-run
+/// ```no_run,ignore
 /// if let Ok(BasicType::OBJECT(object)) = param.downcast() {
 ///     match object.body_type() {
 ///         Type::OBJECT_PROP_INFO => {
@@ -110,7 +110,7 @@ impl Debug for PodObjectBodyRef {
 /// ```
 ///
 /// Create the Object pod manually:
-/// ```no-run
+/// ```no_run,ignore
 /// PodObjectRef::from_id_and_value(
 ///     ParamType::ENUM_FORMAT,
 ///     &ObjectType::OBJECT_ENUM_FORMAT(
@@ -136,7 +136,7 @@ impl Debug for PodObjectBodyRef {
 /// ```
 ///
 /// Build the pod with builder:
-/// ```no-run
+/// ```no_run,ignore
 /// ObjectEnumFormatBuilder::default()
 ///     .body_id(ParamType::ENUM_FORMAT.into())
 ///     .media_type(MediaType::VIDEO)

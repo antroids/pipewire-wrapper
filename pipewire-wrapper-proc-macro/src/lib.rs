@@ -3,7 +3,7 @@
  */
 use proc_macro::TokenStream;
 
-/// Implement [RawWrapper](crate::wrapper::RawWrapper) trait.
+/// Implement RawWrapper trait.
 /// `#[raw]` attribute must be added before field with wrapped raw value.
 ///
 /// # Examples
@@ -21,9 +21,9 @@ pub fn raw_wrapper(input: TokenStream) -> TokenStream {
     pipewire_wrapper_macro_impl::derive_raw_wrapper::derive_raw_wrapper(input.into()).into()
 }
 
-/// Implement [Wrapper](crate::wrapper::Wrapper) trait.
+/// Implement Wrapper trait.
 /// `#[raw_wrapper]` attribute must be added before field with `NonNull<impl RawWrapper>` pointer to *Ref
-/// struct, that implements [RawWrapper](crate::wrapper::RawWrapper)
+/// struct, that implements RawWrapper
 ///
 /// # Examples
 ///
@@ -48,7 +48,7 @@ pub fn wrapper(input: TokenStream) -> TokenStream {
     pipewire_wrapper_macro_impl::derive_wrapper::derive_wrapper(input.into()).into()
 }
 
-/// Implement [SpaInterface](crate::wrapper::SpaInterface)
+/// Implement SpaInterface
 ///
 /// # Arguments
 ///
@@ -68,8 +68,8 @@ pub fn spa_interface(attr: TokenStream, input: TokenStream) -> TokenStream {
     pipewire_wrapper_macro_impl::spa_interface::spa_interface(attr.into(), input.into()).into()
 }
 
-/// Implement [SpaInterface](crate::wrapper::SpaInterface) and
-/// [Proxied](crate::core_api::proxy::Proxied) traits.
+/// Implement SpaInterface and
+/// Proxied traits.
 ///
 /// # Arguments
 ///
@@ -92,7 +92,7 @@ pub fn interface(attr: TokenStream, input: TokenStream) -> TokenStream {
     pipewire_wrapper_macro_impl::interface::interface(attr.into(), input.into()).into()
 }
 
-/// Implement [Wrapper](crate::wrapper::Wrapper) trait for structure with the `ref_: Proxy<'c>` field.
+/// Implement Wrapper trait for structure with the `ref_: Proxy<'c>` field.
 /// Macros parameter will be used as target type to cast underlying proxy.
 ///
 /// # Examples
