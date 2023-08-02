@@ -185,6 +185,10 @@ impl MetaRegionRef {
     pub fn region_mut(&mut self) -> &mut RegionRef {
         unsafe { RegionRef::mut_from_raw_ptr(addr_of_mut!(self.raw.region)) }
     }
+
+    pub fn is_valid(&self) -> bool {
+        self.raw.region.size.width != 0 && self.raw.region.size.height != 0
+    }
 }
 
 /// Bitmap information.
@@ -249,6 +253,10 @@ impl MetaBitmapRef {
         } else {
             None
         }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.format() != VideoFormat::UNKNOWN
     }
 }
 
@@ -325,6 +333,10 @@ impl MetaCursorRef {
                 None
             }
         }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.raw.id != 0
     }
 }
 
