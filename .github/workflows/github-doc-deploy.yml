@@ -61,6 +61,7 @@ jobs:
           LIBCLANG_PATH: ${{ runner.temp }}/llvm-${{ env.llvm_version }}/lib
           RUSTDOCFLAGS: --enable-index-page -Zunstable-options
         with:
+          args: --package pipewire-wrapper*
           toolchain: nightly
           command: doc
       - name: Fix permissions
