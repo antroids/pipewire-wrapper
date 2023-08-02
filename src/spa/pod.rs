@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::io::{Seek, Write};
 use std::mem::size_of;
 use std::ops::{Deref, Rem};
@@ -182,7 +182,7 @@ impl From<std::io::Error> for PodError {
     }
 }
 
-impl Debug for PodError {
+impl Display for PodError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             PodError::DataIsTooShort(expected, actual) => write!(
@@ -232,6 +232,14 @@ impl Debug for PodError {
         }
     }
 }
+
+impl Debug for PodError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+impl std::error::Error for PodError {}
 
 type PodResult<T> = Result<T, PodError>;
 
