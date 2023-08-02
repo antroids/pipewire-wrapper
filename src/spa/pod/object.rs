@@ -20,7 +20,7 @@ use crate::spa::pod::iterator::PodIterator;
 use crate::spa::pod::object::enum_format::ObjectEnumFormatType;
 use crate::spa::pod::object::format::{MediaSubType, MediaType, ObjectFormatType};
 use crate::spa::pod::object::param_buffers::ParamBuffersType;
-use crate::spa::pod::object::param_io::ParamIoType;
+use crate::spa::pod::object::param_io::ParamIOType;
 use crate::spa::pod::object::param_latency::ParamLatencyType;
 use crate::spa::pod::object::param_meta::ParamMetaType;
 use crate::spa::pod::object::param_port_config::ParamPortConfigType;
@@ -510,7 +510,7 @@ pub enum ObjectType<'a> {
     OBJECT_PARAM_BUFFERS(ObjectPropsIterator<'a, ParamBuffersType<'a>>) =
         Type::OBJECT_PARAM_BUFFERS.raw,
     OBJECT_PARAM_META(ObjectPropsIterator<'a, ParamMetaType<'a>>) = Type::OBJECT_PARAM_META.raw,
-    OBJECT_PARAM_IO(ObjectPropsIterator<'a, ParamIoType<'a>>) = Type::OBJECT_PARAM_IO.raw,
+    OBJECT_PARAM_IO(ObjectPropsIterator<'a, ParamIOType<'a>>) = Type::OBJECT_PARAM_IO.raw,
     OBJECT_PARAM_PROFILE(ObjectPropsIterator<'a, ParamProfileType<'a>>) =
         Type::OBJECT_PARAM_PROFILE.raw,
     OBJECT_PARAM_PORT_CONFIG(ObjectPropsIterator<'a, ParamPortConfigType<'a>>) =

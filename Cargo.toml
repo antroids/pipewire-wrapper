@@ -21,7 +21,8 @@ repository = "https://github.com/antroids/pipewire-wrapper"
 signal-hook = "0.3.15"
 
 [workspace]
-members = ["pipewire-wrapper-macro-impl", "pipewire-wrapper-proc-macro"]
+members = ["pipewire-wrapper-macro-impl", "pipewire-wrapper-proc-macro", "examples/*"]
+default-members = ["pipewire-wrapper-macro-impl", "pipewire-wrapper-proc-macro"]
 
 [dependencies]
 pipewire-wrapper-macro-impl = { version = "0.1.1", path = "pipewire-wrapper-macro-impl" }
