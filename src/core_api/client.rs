@@ -47,7 +47,7 @@ impl<'a> AddListener<'a> for ClientRef {
 }
 
 /// Wrapper for the Client proxy, can be obtained from the [crate::core_api::registry::Registry].
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[proxy_wrapper(ClientRef)]
 pub struct Client<'c> {
     ref_: Proxy<'c>,

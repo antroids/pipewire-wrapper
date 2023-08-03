@@ -52,6 +52,8 @@ pub mod impl_api;
 pub mod listeners;
 pub mod macro_rules;
 pub mod spa;
+#[cfg(feature = "state")]
+pub mod state;
 pub mod stream;
 pub mod wrapper;
 

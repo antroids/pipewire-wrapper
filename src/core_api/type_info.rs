@@ -4,8 +4,7 @@
 
 //! [Type info](https://docs.pipewire.org/group__pw__type.html) implementation
 //!
-use std::error::Error;
-use std::ffi::{c_char, CStr, CString};
+use std::ffi::{c_char, CStr};
 use std::fmt::{Debug, Formatter};
 
 /// Type info for global object.
@@ -19,7 +18,7 @@ use std::fmt::{Debug, Formatter};
 /// use pipewire_wrapper::interface_type;
 /// const TEST_INTERFACE: TypeInfo = interface_type!("test_int");
 /// ```
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Hash)]
 pub struct TypeInfo<'a> {
     type_: &'a CStr,
 }

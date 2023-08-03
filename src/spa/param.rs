@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 
 use bitflags::bitflags;
 
-use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::enum_wrapper;
 use crate::wrapper::RawWrapper;
@@ -43,7 +43,30 @@ enum_wrapper!(
     PROCESS_LATENCY: spa_sys::SPA_PARAM_ProcessLatency,
 );
 
-// todo ...
+impl ParamType {
+    pub fn all() -> &'static [ParamType] {
+        ALL_PARAM_TYPES
+    }
+}
+
+const ALL_PARAM_TYPES: &[ParamType] = &[
+    ParamType::PROP_INFO,
+    ParamType::PROPS,
+    ParamType::ENUM_FORMAT,
+    ParamType::FORMAT,
+    ParamType::BUFFERS,
+    ParamType::META,
+    ParamType::IO,
+    ParamType::ENUM_PROFILE,
+    ParamType::PROFILE,
+    ParamType::ENUM_PORT_CONFIG,
+    ParamType::PORT_CONFIG,
+    ParamType::ENUM_ROUTE,
+    ParamType::ROUTE,
+    ParamType::CONTROL,
+    ParamType::LATENCY,
+    ParamType::PROCESS_LATENCY,
+];
 
 #[derive(RawWrapper)]
 #[repr(transparent)]
