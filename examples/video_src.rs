@@ -55,7 +55,7 @@ mod video_src {
         }
     }
 
-    const BPP: u32 = 3;
+    const BPP: u32 = 4;
     const CURSOR_WIDTH: u32 = 64;
     const CURSOR_HEIGHT: u32 = 64;
     const CURSOR_BPP: u32 = 4;

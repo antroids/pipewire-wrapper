@@ -412,7 +412,7 @@ fn on_stream_process(
             .first()
             .map(|first| first.data())
             .and_then(|first_data| unsafe { first_data.as_mut().map(|_| first_data as *mut u8) });
-        if let Some(data_ptr) = data_ptr {
+        if let Some(src_data_ptr) = data_ptr {
             let mut state = state.lock().unwrap();
             let mut render_cursor = false;
             for meta in spa_buf.metas() {
@@ -483,7 +483,7 @@ fn on_stream_process(
             let rect = state.rect;
             if let Some(texture) = state.texture.as_mut() {
                 if is_yuv {
-                    let src = unsafe { slice::from_raw_parts(data_ptr, stride * height) };
+                    let src = unsafe { slice::from_raw_parts(src_data_ptr, stride * height) };
                     texture.update_yuv(
                         None,
                         src,
@@ -503,7 +503,7 @@ fn on_stream_process(
                             src_stride as usize
                         };
                         let src_slice =
-                            unsafe { slice::from_raw_parts(data_ptr, src_stride * height) };
+                            unsafe { slice::from_raw_parts(src_data_ptr, src_stride * height) };
                         if media_subtype == MediaSubType::DSP {
                             for y in 0..height {
                                 let src_pos = src_stride * y;
@@ -548,11 +548,11 @@ fn on_stream_process(
 
 fn video_to_pixel_format(v: VideoFormat) -> PixelFormatEnum {
     match v {
-        VideoFormat::RGB => PixelFormatEnum::RGB24,
+        VideoFormat::RGB => PixelFormatEnum::RGB888,
         VideoFormat::RGB15 => PixelFormatEnum::RGB555,
         VideoFormat::RGB16 => PixelFormatEnum::RGB565,
 
-        VideoFormat::BGR => PixelFormatEnum::BGR24,
+        VideoFormat::BGR => PixelFormatEnum::BGR888,
         VideoFormat::BGR15 => PixelFormatEnum::BGR555,
         VideoFormat::BGR16 => PixelFormatEnum::BGR565,
 

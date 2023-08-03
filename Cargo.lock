@@ -281,7 +281,7 @@ dependencies = [
 
 [[package]]
 name = "pipewire-wrapper"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "bitflags 2.3.3",
  "derive_builder",
