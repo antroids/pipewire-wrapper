@@ -7,32 +7,6 @@ use std::{rc::Rc, sync::Mutex, time::Duration};
 #[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::param::ParamType;
 #[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::format::ObjectFormatInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_buffers::ParamBuffersInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_io::ParamIOInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_latency::ParamLatencyInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_meta::ParamMetaInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_port_config::ParamPortConfigInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_process_latency::ParamProcessLatencyInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_profile::ParamProfileInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::param_route::ParamRouteInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::profiler::ProfilerInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::prop::ObjectPropInfo;
-#[cfg(feature = "spa-pod-object-info")]
-use pipewire_wrapper::spa::pod::object::prop_info::ObjectPropInfoInfo;
-#[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::pod::BasicType;
 #[cfg(feature = "spa-pod-object-info")]
 use pipewire_wrapper::spa::type_::Type;
@@ -121,7 +95,19 @@ fn test_port_params() {
 #[test]
 #[cfg(feature = "spa-pod-object-info")]
 fn test_port_params_as_object_info() {
+    use pipewire_wrapper::spa::pod::object::enum_format::ObjectEnumFormatInfo;
+    use pipewire_wrapper::spa::pod::object::format::ObjectFormatInfo;
+    use pipewire_wrapper::spa::pod::object::param_buffers::ParamBuffersInfo;
     use pipewire_wrapper::spa::pod::object::param_io::ParamIOInfo;
+    use pipewire_wrapper::spa::pod::object::param_latency::ParamLatencyInfo;
+    use pipewire_wrapper::spa::pod::object::param_meta::ParamMetaInfo;
+    use pipewire_wrapper::spa::pod::object::param_port_config::ParamPortConfigInfo;
+    use pipewire_wrapper::spa::pod::object::param_process_latency::ParamProcessLatencyInfo;
+    use pipewire_wrapper::spa::pod::object::param_profile::ParamProfileInfo;
+    use pipewire_wrapper::spa::pod::object::param_route::ParamRouteInfo;
+    use pipewire_wrapper::spa::pod::object::profiler::ProfilerInfo;
+    use pipewire_wrapper::spa::pod::object::prop::ObjectPropInfo;
+    use pipewire_wrapper::spa::pod::object::prop_info::ObjectPropInfoInfo;
 
     let core = Rc::new(Core::default());
     let registry = core.get_registry(0).unwrap();
