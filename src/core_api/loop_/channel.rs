@@ -27,7 +27,6 @@ impl<T> From<SendError<T>> for crate::Error {
 }
 
 pub struct LoopChannel<'a> {
-    loop_: Option<&'a LoopRef>,
     event: Option<EventSource<'a, LoopRef>>,
 }
 
@@ -39,10 +38,7 @@ impl<'a> LoopChannel<'a> {
     pub fn from_channel<T>(
         (sender, receiver): (mpsc::Sender<T>, mpsc::Receiver<T>),
     ) -> (Sender<'a, T>, Receiver<'a, T>) {
-        let channel = Rc::new(Mutex::new(LoopChannel {
-            loop_: None,
-            event: None,
-        }));
+        let channel = Rc::new(Mutex::new(LoopChannel { event: None }));
         (
             Sender {
                 channel: channel.clone(),
@@ -65,14 +61,9 @@ impl<'a, T> Sender<'a, T> {
         self.sender
             .send(value)
             .map_err(|e| SendError::SendError(e))?;
-        if let LoopChannel {
-            loop_: Some(loop_),
-            event: Some(event),
-        } = channel.deref_mut()
-        {
-            loop_
-                .utils()
-                .signal_event(event)
+        if let LoopChannel { event: Some(event) } = channel.deref_mut() {
+            event
+                .signal()
                 .map_err(|e| SendError::CannotSignalEvent(e))?;
         }
         Ok(())
@@ -85,7 +76,6 @@ impl<'a, T> Sender<'a, T> {
     pub fn detach(&self) {
         let mut channel = self.channel.lock().unwrap();
         channel.event = None;
-        channel.loop_ = None;
     }
 }
 
@@ -113,7 +103,6 @@ impl<'a, T: 'a> Receiver<'a, T> {
         )?;
         let mut channel = channel.lock().unwrap();
         channel.event = Some(event);
-        channel.loop_ = Some(loop_);
         Ok(())
     }
 
