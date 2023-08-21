@@ -6,7 +6,7 @@ use crate::core_api::client::info::ClientInfo;
 use crate::listeners::OwnListeners;
 use crate::state::{Message, State};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ClientMessage {
     Added(u32),
     Removed(u32),

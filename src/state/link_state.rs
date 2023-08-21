@@ -6,7 +6,7 @@ use crate::core_api::link::info::LinkInfo;
 use crate::listeners::OwnListeners;
 use crate::state::{Message, State};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LinkMessage {
     Added(u32),
     Removed(u32),

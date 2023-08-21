@@ -12,7 +12,7 @@ use crate::spa::param::ParamType;
 use crate::spa::pod::{BasicType, ToOwnedPod};
 use crate::state::{Message, State};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum NodeMessage {
     Added(u32),
     Removed(u32),
