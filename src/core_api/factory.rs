@@ -12,7 +12,7 @@ use crate::core_api::core::Core;
 use crate::core_api::factory::events::FactoryEvents;
 use crate::core_api::proxy::{Proxy, ProxyRef};
 use crate::core_api::registry::restricted::RegistryBind;
-use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
+use crate::listeners::{AddListener, Listeners, OwnListeners};
 use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, Wrapper};
 
@@ -48,13 +48,13 @@ impl<'a> AddListener<'a> for FactoryRef {
 #[derive(Clone, Debug)]
 #[proxy_wrapper(FactoryRef)]
 pub struct Factory<'c> {
-    ref_: Proxy<'c>,
+    ref_: Proxy,
 
     listeners: Listeners<Pin<Box<FactoryEvents<'c>>>>,
 }
 
 impl<'c> RegistryBind<'c> for Factory<'c> {
-    fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
+    fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
             listeners: Listeners::default(),

@@ -5,8 +5,10 @@
 //! PipeWire [Core](https://docs.pipewire.org/group__pw__core.html) bindings.
 //!
 use std::ffi::CStr;
+use std::ops::Deref;
 use std::pin::Pin;
 use std::ptr::NonNull;
+use std::rc::Rc;
 
 use pipewire_wrapper_proc_macro::{interface, RawWrapper, Wrapper};
 
@@ -36,22 +38,21 @@ pub struct CoreRef {
 }
 
 /// Owned Wrapper for the [CoreRef]
-#[derive(Wrapper, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct Core {
+    inner: Rc<InnerCore>,
+}
+
+#[derive(Wrapper, Debug)]
+pub struct InnerCore {
     #[raw_wrapper]
     ref_: NonNull<CoreRef>,
 
     context: Context,
 }
 
-impl Core {
-    /// Connect to a PipeWire instance.
-    ///
-    /// # Arguments
-    ///
-    /// * `context` - [Context]
-    /// * `properties` - properties for the [Core]
-    pub fn connect(context: Context, properties: Properties) -> crate::Result<Self> {
+impl InnerCore {
+    fn connect(context: Context, properties: Properties) -> crate::Result<Self> {
         let ptr =
             unsafe { pw_sys::pw_context_connect(context.as_raw_ptr(), properties.into_raw(), 0) };
         Ok(Self {
@@ -64,28 +65,15 @@ impl Core {
     pub fn context(&self) -> &Context {
         &self.context
     }
-
-    /// Create a new [Registry] proxy.
-    /// The registry object will emit a global event for each global currently in the registry.
-    ///
-    /// # Arguments
-    ///
-    /// * `version` - registry version
-    pub fn get_registry(&self, version: u32) -> crate::Result<Registry> {
-        use crate::core_api::proxy::Proxied;
-        use crate::core_api::registry::restricted::RegistryBind;
-        let ref_: &RegistryRef = self.as_ref().get_registry(version, 0)?;
-        Ok(Registry::from_ref(self, ref_.as_proxy()))
-    }
 }
 
-impl Default for Core {
+impl Default for InnerCore {
     fn default() -> Self {
-        Core::connect(Context::default(), Properties::default()).unwrap()
+        Self::connect(Context::default(), Properties::default()).unwrap()
     }
 }
 
-impl Drop for Core {
+impl Drop for InnerCore {
     fn drop(&mut self) {
         unsafe {
             pw_sys::pw_core_disconnect(self.as_raw_ptr());
@@ -144,5 +132,41 @@ impl<'a> AddListener<'a> for CoreRef {
         };
 
         events
+    }
+}
+
+impl Deref for Core {
+    type Target = InnerCore;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl Core {
+    /// Connect to a PipeWire instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `context` - [Context]
+    /// * `properties` - properties for the [Core]
+    pub fn connect(context: Context, properties: Properties) -> crate::Result<Self> {
+        let inner = InnerCore::connect(context, properties)?;
+        Ok(Self {
+            inner: Rc::new(inner),
+        })
+    }
+
+    /// Create a new [Registry] proxy.
+    /// The registry object will emit a global event for each global currently in the registry.
+    ///
+    /// # Arguments
+    ///
+    /// * `version` - registry version
+    pub fn get_registry(&self, version: u32) -> crate::Result<Registry> {
+        use crate::core_api::proxy::Proxied;
+        use crate::core_api::registry::restricted::RegistryBind;
+        let ref_: &RegistryRef = self.as_ref().get_registry(version, 0)?;
+        Ok(Registry::from_ref(self.clone(), ref_.as_proxy()))
     }
 }

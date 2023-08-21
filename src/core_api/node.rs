@@ -6,24 +6,20 @@
 //!
 use std::ops::Deref;
 use std::pin::Pin;
-use std::ptr::{null_mut, NonNull};
-use std::sync::{Arc, Mutex};
+use std::ptr::null_mut;
 
-use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper, Wrapper};
+use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper};
 
 use crate::core_api::core::Core;
 use crate::core_api::node::events::NodeEvents;
 use crate::core_api::proxy::{Proxy, ProxyRef};
 use crate::core_api::registry::restricted::RegistryBind;
-use crate::core_api::registry::Registry;
-use crate::core_api::type_info::TypeInfo;
-use crate::core_api::PipeWire;
 use crate::i32_as_void_result;
-use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
+use crate::listeners::{AddListener, Listeners, OwnListeners};
 use crate::spa::param::ParamType;
 use crate::spa::pod::PodRef;
+use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, Wrapper};
-use crate::{enum_wrapper, spa_interface_call};
 
 pub mod events;
 pub mod info;
@@ -93,13 +89,13 @@ impl<'a> AddListener<'a> for NodeRef {
 #[derive(Clone, Debug)]
 #[proxy_wrapper(NodeRef)]
 pub struct Node<'c> {
-    ref_: Proxy<'c>,
+    ref_: Proxy,
 
     listeners: Listeners<Pin<Box<NodeEvents<'c>>>>,
 }
 
 impl<'c> RegistryBind<'c> for Node<'c> {
-    fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
+    fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
             listeners: Listeners::default(),

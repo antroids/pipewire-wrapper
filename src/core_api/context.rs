@@ -66,20 +66,14 @@ pub struct InnerContext {
     main_loop: MainLoop,
 }
 
-impl Drop for Context {
+impl Drop for InnerContext {
     fn drop(&mut self) {
         unsafe { pw_sys::pw_context_destroy(self.as_raw_ptr()) }
     }
 }
 
 impl InnerContext {
-    /// Creates a new [Context] for the given [MainLoop].
-    ///
-    /// # Arguments
-    ///
-    /// * `main_loop` - main loop
-    /// * `properties` - extra properties for the context
-    pub fn new(main_loop: MainLoop, properties: Properties) -> crate::Result<Self> {
+    fn new(main_loop: MainLoop, properties: Properties) -> crate::Result<Self> {
         let ptr = unsafe {
             pw_sys::pw_context_new(main_loop.get_loop().as_raw_ptr(), properties.into_raw(), 0)
         };
@@ -230,5 +224,20 @@ impl Deref for Context {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+impl Context {
+    /// Creates a new [Context] for the given [MainLoop].
+    ///
+    /// # Arguments
+    ///
+    /// * `main_loop` - main loop
+    /// * `properties` - extra properties for the context
+    pub fn new(main_loop: MainLoop, properties: Properties) -> crate::Result<Self> {
+        let inner = InnerContext::new(main_loop, properties)?;
+        Ok(Self {
+            inner: Rc::new(inner),
+        })
     }
 }

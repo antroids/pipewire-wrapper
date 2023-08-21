@@ -32,10 +32,10 @@ pub struct ProxyRef {
 }
 
 #[derive(Debug)]
-pub struct Proxy<'c> {
+pub struct Proxy {
     inner: Rc<InnerProxy>,
 
-    core: &'c Core,
+    core: Core,
 }
 
 #[derive(Debug)]
@@ -51,8 +51,8 @@ pub trait Proxied: RawWrapper {
     }
 }
 
-impl<'c> Proxy<'c> {
-    pub(crate) fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
+impl Proxy {
+    pub(crate) fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             inner: Rc::new(InnerProxy {
                 ref_: NonNull::new(ref_.as_ptr()).unwrap(),
@@ -61,37 +61,37 @@ impl<'c> Proxy<'c> {
         }
     }
 
-    pub fn core(&self) -> &'c Core {
-        self.core
+    pub fn core(&self) -> &Core {
+        &self.core
     }
 }
 
-impl<'c> Wrapper for Proxy<'c> {
+impl Wrapper for Proxy {
     type RawWrapperType = ProxyRef;
 }
 
-impl<'c> AsMut<ProxyRef> for Proxy<'c> {
-    fn as_mut(&mut self) -> &'c mut ProxyRef {
+impl AsMut<ProxyRef> for Proxy {
+    fn as_mut(&mut self) -> &mut ProxyRef {
         unsafe { &mut *self.inner.ref_.as_ptr() }
     }
 }
 
-impl<'c> AsRef<ProxyRef> for Proxy<'c> {
-    fn as_ref(&self) -> &'c ProxyRef {
+impl AsRef<ProxyRef> for Proxy {
+    fn as_ref(&self) -> &ProxyRef {
         unsafe { self.inner.ref_.as_ref() }
     }
 }
 
-impl<'c> Deref for Proxy<'c> {
+impl Deref for Proxy {
     type Target = <Self as crate::wrapper::Wrapper>::RawWrapperType;
 
-    fn deref(&self) -> &'c Self::Target {
+    fn deref(&self) -> &Self::Target {
         unsafe { self.inner.ref_.as_ref() }
     }
 }
 
-impl<'c> DerefMut for Proxy<'c> {
-    fn deref_mut(&mut self) -> &'c mut Self::Target {
+impl DerefMut for Proxy {
+    fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { &mut *self.inner.ref_.as_ptr() }
     }
 }
@@ -102,18 +102,18 @@ impl Drop for InnerProxy {
     }
 }
 
-impl<'c> Clone for Proxy<'c> {
+impl Clone for Proxy {
     fn clone(&self) -> Self {
         let cloned = Self {
             inner: self.inner.clone(),
-            core: self.core,
+            core: self.core.clone(),
         };
         unsafe { pw_sys::pw_proxy_ref(self.as_raw_ptr()) };
         cloned
     }
 }
 
-impl<'c> Drop for Proxy<'c> {
+impl Drop for Proxy {
     fn drop(&mut self) {
         if Rc::strong_count(&self.inner) > 1 {
             unsafe { pw_sys::pw_proxy_unref(self.as_raw_ptr()) }

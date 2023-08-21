@@ -1,8 +1,6 @@
 #[cfg(feature = "state")]
 use std::collections::HashMap;
 #[cfg(feature = "state")]
-use std::rc::Rc;
-#[cfg(feature = "state")]
 use std::sync::Arc;
 #[cfg(feature = "state")]
 use std::thread;
@@ -33,7 +31,7 @@ use pipewire_wrapper::state::State;
 #[test]
 #[cfg(feature = "state")]
 fn test() {
-    let core = Rc::new(Core::default());
+    let core = Core::default();
     let context = core.context();
     let main_loop = context.main_loop();
     let registry = core.get_registry(0).unwrap();
@@ -63,7 +61,6 @@ fn test() {
     params_subscriptions.insert(DeviceRef::type_info(), ParamType::all().to_vec());
     let mut state = State::new(
         core.clone(),
-        context.clone(),
         registry.clone(),
         subscriptions,
         params_subscriptions,

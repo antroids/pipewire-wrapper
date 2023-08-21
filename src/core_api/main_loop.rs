@@ -81,7 +81,7 @@ impl AsLoopRef for MainLoopRef {
 }
 
 impl MainLoopInner {
-    pub fn new(pipewire: PipeWire, props: &DictRef) -> crate::Result<Self> {
+    fn new(pipewire: PipeWire, props: &DictRef) -> crate::Result<Self> {
         let main_loop_ptr = unsafe { pw_sys::pw_main_loop_new(props.as_raw_ptr()) };
         let ref_ = new_instance_raw_wrapper(main_loop_ptr)?;
         Ok(Self { ref_, pipewire })

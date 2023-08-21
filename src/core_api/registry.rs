@@ -6,24 +6,18 @@
 //!
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
-use std::ptr::NonNull;
-use std::rc::Rc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
 use pw_sys::pw_proxy;
 
 use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper, Wrapper};
 
 use crate::core_api::core::Core;
-use crate::core_api::factory::events::FactoryEvents;
-use crate::core_api::factory::FactoryRef;
 use crate::core_api::proxy::Proxied;
 use crate::core_api::proxy::{Proxy, ProxyRef};
 use crate::core_api::registry::events::RegistryEvents;
 use crate::core_api::registry::restricted::RegistryBind;
 use crate::core_api::type_info::TypeInfo;
-use crate::listeners::{AddListener, ListenerId, Listeners, OwnListeners};
+use crate::listeners::{AddListener, Listeners, OwnListeners};
 use crate::spa_interface_call;
 use crate::wrapper::*;
 use crate::{i32_as_void_result, raw_wrapper};
@@ -145,13 +139,13 @@ impl<'a> AddListener<'a> for RegistryRef {
 #[derive(Clone, Debug)]
 #[proxy_wrapper(RegistryRef)]
 pub struct Registry<'c> {
-    ref_: Proxy<'c>,
+    ref_: Proxy,
 
     listeners: Listeners<Pin<Box<RegistryEvents<'c>>>>,
 }
 
 impl<'c> RegistryBind<'c> for Registry<'c> {
-    fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
+    fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
             listeners: Listeners::default(),
@@ -184,13 +178,11 @@ impl<'c> Registry<'c> {
     {
         let type_info = T::RawWrapperType::type_info();
         let ref_ = self.bind(id, type_info, version)?;
-        Ok(T::from_ref(self.ref_.core(), ref_))
+        Ok(T::from_ref(self.ref_.core().clone(), ref_))
     }
 }
 
 pub(crate) mod restricted {
-    use std::sync::Arc;
-
     use crate::core_api::proxy::{Proxied, ProxyRef};
     use crate::wrapper::Wrapper;
 
@@ -199,6 +191,6 @@ pub(crate) mod restricted {
         Self: Wrapper,
         Self::RawWrapperType: Proxied,
     {
-        fn from_ref(core: &'c crate::core_api::core::Core, ref_: &ProxyRef) -> Self;
+        fn from_ref(core: crate::core_api::core::Core, ref_: &ProxyRef) -> Self;
     }
 }

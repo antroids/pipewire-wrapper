@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use bitflags::Flags;
@@ -8,7 +7,6 @@ use node_state::NodeMessage;
 
 use crate::core_api::client::info::ClientInfo;
 use crate::core_api::client::{Client, ClientRef};
-use crate::core_api::context::Context;
 use crate::core_api::core::Core;
 use crate::core_api::device::info::DeviceInfo;
 use crate::core_api::device::{Device, DeviceRef};
@@ -55,9 +53,7 @@ type ObjectsParamsMap = Arc<Mutex<HashMap<u32, HashMap<ParamType, AllocPod<PodOb
 
 #[derive(Debug, Clone)]
 pub struct State<'a> {
-    core: Rc<Core>,
-    context: Context,
-
+    core: Core,
     registry: Registry<'a>,
 
     subscriptions: Vec<TypeInfo<'static>>,
@@ -86,17 +82,13 @@ pub struct State<'a> {
 
 impl<'a> State<'a> {
     pub fn new(
-        core: Rc<Core>,
-        context: Context,
-
+        core: Core,
         registry: Registry<'a>,
         subscriptions: Vec<TypeInfo<'static>>,
         params_subscriptions: HashMap<TypeInfo<'static>, Vec<ParamType>>,
     ) -> Self {
         Self {
             core,
-            context,
-
             registry,
 
             subscriptions,

@@ -6,23 +6,22 @@
 //!
 use std::pin::Pin;
 
-use crate::wrapper::RawWrapper;
 use pipewire_wrapper_proc_macro::{interface, proxy_wrapper, RawWrapper};
 
+use crate::wrapper::RawWrapper;
 use crate::{
     listeners::{AddListener, Listeners, OwnListeners},
-    spa::interface,
     spa_interface_call,
     wrapper::Wrapper,
 };
-
-use self::events::LinkEvents;
 
 use super::{
     core::Core,
     proxy::{Proxy, ProxyRef},
     registry::restricted::RegistryBind,
 };
+
+use self::events::LinkEvents;
 
 pub mod events;
 pub mod info;
@@ -56,13 +55,13 @@ impl<'a> AddListener<'a> for LinkRef {
 #[derive(Clone, Debug)]
 #[proxy_wrapper(LinkRef)]
 pub struct Link<'c> {
-    ref_: Proxy<'c>,
+    ref_: Proxy,
 
     listeners: Listeners<Pin<Box<LinkEvents<'c>>>>,
 }
 
 impl<'c> RegistryBind<'c> for Link<'c> {
-    fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
+    fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
             listeners: Listeners::default(),

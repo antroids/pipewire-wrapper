@@ -50,13 +50,13 @@ impl<'a> AddListener<'a> for ClientRef {
 #[derive(Clone, Debug)]
 #[proxy_wrapper(ClientRef)]
 pub struct Client<'c> {
-    ref_: Proxy<'c>,
+    ref_: Proxy,
 
     listeners: Listeners<Pin<Box<ClientEvents<'c>>>>,
 }
 
 impl<'c> RegistryBind<'c> for Client<'c> {
-    fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
+    fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
             listeners: Listeners::default(),

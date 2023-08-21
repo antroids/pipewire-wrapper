@@ -94,13 +94,13 @@ impl<'a> AddListener<'a> for DeviceRef {
 #[derive(Clone, Debug)]
 #[proxy_wrapper(DeviceRef)]
 pub struct Device<'c> {
-    ref_: Proxy<'c>,
+    ref_: Proxy,
 
     listeners: Listeners<Pin<Box<DeviceEvents<'c>>>>,
 }
 
 impl<'c> RegistryBind<'c> for Device<'c> {
-    fn from_ref(core: &'c Core, ref_: &ProxyRef) -> Self {
+    fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
             listeners: Listeners::default(),
