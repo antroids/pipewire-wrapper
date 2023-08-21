@@ -5,8 +5,6 @@
 //! PipeWire [Data Loop](https://docs.pipewire.org/group__pw__data__loop.html) bindings.
 //!
 use std::ptr::NonNull;
-use std::rc::Rc;
-use std::time::Duration;
 
 use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
@@ -30,7 +28,7 @@ pub struct DataLoop {
     #[raw_wrapper]
     ref_: NonNull<DataLoopRef>,
 
-    pipewire: std::sync::Arc<PipeWire>,
+    pipewire: PipeWire,
 }
 
 impl Drop for DataLoop {
@@ -41,20 +39,16 @@ impl Drop for DataLoop {
 
 impl Default for DataLoop {
     fn default() -> Self {
-        Self::new(
-            &std::sync::Arc::new(PipeWire::default()),
-            Properties::default().dict(),
-        )
-        .unwrap()
+        Self::new(PipeWire::default(), Properties::default().dict()).unwrap()
     }
 }
 
 impl DataLoop {
-    pub fn new(pipewire: &std::sync::Arc<PipeWire>, properties: &DictRef) -> crate::Result<Self> {
+    pub fn new(pipewire: PipeWire, properties: &DictRef) -> crate::Result<Self> {
         let ptr = unsafe { pw_sys::pw_data_loop_new(properties.as_raw_ptr()) };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
-            pipewire: pipewire.clone(),
+            pipewire,
         })
     }
 

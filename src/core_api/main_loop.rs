@@ -4,18 +4,10 @@
 
 //! PipeWire [Main Loop](https://docs.pipewire.org/group__pw__main__loop.html) bindings.
 //!
-use std::ffi::CStr;
-use std::fmt::{Debug, Formatter};
-use std::mem::MaybeUninit;
-use std::ops::{Deref, DerefMut};
-use std::os::fd::RawFd;
+use std::fmt::Debug;
+use std::ops::Deref;
 use std::os::raw;
-use std::pin::Pin;
-use std::ptr::{addr_of, addr_of_mut, NonNull};
-use std::rc::Rc;
-use std::time::Duration;
-
-use pw_sys::pw_main_loop_events;
+use std::ptr::NonNull;
 
 use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
@@ -23,11 +15,7 @@ use crate::core_api::loop_::{LoopRef, LoopRefIterator};
 use crate::core_api::properties::Properties;
 use crate::core_api::PipeWire;
 use crate::spa::dict::DictRef;
-use crate::spa::interface::{Hook, HookRef};
-use crate::spa::list::ListElement;
-use crate::spa::loop_::{
-    AsLoopRef, EventSource, IOSource, IdleSource, SignalSource, SourceRef, TimerSource,
-};
+use crate::spa::loop_::AsLoopRef;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_void_result, new_instance_raw_wrapper};
 
@@ -43,7 +31,7 @@ pub struct MainLoop {
     #[raw_wrapper]
     ref_: NonNull<MainLoopRef>,
 
-    pipewire: std::sync::Arc<PipeWire>,
+    pipewire: PipeWire,
 }
 
 impl MainLoopRef {
@@ -87,7 +75,7 @@ impl AsLoopRef for MainLoopRef {
 }
 
 impl MainLoop {
-    pub fn new(pipewire: std::sync::Arc<PipeWire>, props: &DictRef) -> crate::Result<Self> {
+    pub fn new(pipewire: PipeWire, props: &DictRef) -> crate::Result<Self> {
         let main_loop_ptr = unsafe { pw_sys::pw_main_loop_new(props.as_raw_ptr()) };
         let ref_ = new_instance_raw_wrapper(main_loop_ptr)?;
         Ok(Self { ref_, pipewire })
@@ -96,10 +84,6 @@ impl MainLoop {
 
 impl Default for MainLoop {
     fn default() -> Self {
-        MainLoop::new(
-            std::sync::Arc::new(PipeWire::default()),
-            Properties::default().dict(),
-        )
-        .unwrap()
+        MainLoop::new(PipeWire::default(), Properties::default().dict()).unwrap()
     }
 }

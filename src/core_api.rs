@@ -6,23 +6,17 @@
 //!
 use std::ffi::{CStr, CString};
 use std::ops::{AddAssign, SubAssign};
-use std::pin::Pin;
-use std::rc::Rc;
-use std::sync::atomic::AtomicUsize;
 use std::sync::Mutex;
-use std::time::Duration;
 
 use spa_sys::spa_support;
 
-use crate::core_api::loop_::LoopRef;
-use crate::core_api::main_loop::{MainLoop, MainLoopRef};
 use crate::spa::dict::DictRef;
 use crate::spa::handle::HandleRef;
 use crate::spa::loop_::AsLoopRef;
 use crate::spa::pod::object::param_port_config::Direction;
 use crate::spa::support::SupportRef;
 use crate::wrapper::{RawWrapper, Wrapper};
-use crate::{error, i32_as_void_result, spa, SPA_ID_INVALID};
+use crate::{i32_as_void_result, SPA_ID_INVALID};
 
 pub mod client;
 pub mod context;
@@ -209,6 +203,14 @@ impl Drop for PipeWire {
                 instances.sub_assign(1);
             }
         }
+    }
+}
+
+impl Clone for PipeWire {
+    fn clone(&self) -> Self {
+        let mut instances = unsafe { INSTANCES.lock().unwrap() };
+        instances.add_assign(1);
+        Self {}
     }
 }
 
