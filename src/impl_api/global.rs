@@ -1,10 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
-use std::ffi::{c_char, CStr, CString};
+use std::ffi::{c_char, CStr};
 use std::fmt::{Debug, Formatter};
 use std::ptr::{null, NonNull};
-use std::rc::Rc;
 
 use bitflags::Flags;
 
@@ -14,7 +13,6 @@ use crate::core_api::context::{Context, ContextRef};
 use crate::core_api::permissions::Permissions;
 use crate::core_api::properties::PropertiesRef;
 use crate::core_api::type_info::TypeInfo;
-use crate::error::Error;
 use crate::i32_as_void_result;
 use crate::impl_api::impl_client::{ImplClient, ImplClientRef};
 use crate::spa::dict::DictRef;
@@ -32,7 +30,7 @@ pub struct Global {
     #[raw_wrapper]
     ref_: NonNull<GlobalRef>,
 
-    context: std::sync::Arc<Context>,
+    context: Context,
     bind_func: Box<dyn FnMut() -> crate::Result<i32>>,
 }
 

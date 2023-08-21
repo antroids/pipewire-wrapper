@@ -4,8 +4,10 @@
 
 //! PipeWire [Context](https://docs.pipewire.org/group__pw__context.html) bindings.
 //!
+use std::ops::Deref;
 use std::pin::Pin;
 use std::ptr::NonNull;
+use std::rc::Rc;
 use std::slice;
 
 use pw_sys::pw_global;
@@ -51,12 +53,17 @@ pub struct ContextRef {
 }
 
 /// Owned wrapper for the [ContextRef].
-#[derive(Wrapper, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Context {
+    inner: Rc<InnerContext>,
+}
+
+#[derive(Wrapper, Debug)]
+pub struct InnerContext {
     #[raw_wrapper]
     ref_: NonNull<ContextRef>,
 
-    main_loop: std::rc::Rc<MainLoop>,
+    main_loop: MainLoop,
 }
 
 impl Drop for Context {
@@ -65,14 +72,14 @@ impl Drop for Context {
     }
 }
 
-impl Context {
+impl InnerContext {
     /// Creates a new [Context] for the given [MainLoop].
     ///
     /// # Arguments
     ///
     /// * `main_loop` - main loop
     /// * `properties` - extra properties for the context
-    pub fn new(main_loop: std::rc::Rc<MainLoop>, properties: Properties) -> crate::Result<Self> {
+    pub fn new(main_loop: MainLoop, properties: Properties) -> crate::Result<Self> {
         let ptr = unsafe {
             pw_sys::pw_context_new(main_loop.get_loop().as_raw_ptr(), properties.into_raw(), 0)
         };
@@ -83,14 +90,14 @@ impl Context {
     }
 
     /// Main loop
-    pub fn main_loop(&self) -> &std::rc::Rc<MainLoop> {
+    pub fn main_loop(&self) -> &MainLoop {
         &self.main_loop
     }
 }
 
-impl Default for Context {
+impl Default for InnerContext {
     fn default() -> Self {
-        Self::new(std::rc::Rc::new(MainLoop::default()), Properties::default()).unwrap()
+        Self::new(MainLoop::default(), Properties::default()).unwrap()
     }
 }
 
@@ -155,7 +162,7 @@ impl ContextRef {
         F: FnMut(&GlobalRef) -> i32,
     {
         unsafe extern "C" fn callback_call<F>(
-            data: *mut ::std::os::raw::c_void,
+            data: *mut std::os::raw::c_void,
             global: *mut pw_global,
         ) -> i32
         where
@@ -215,5 +222,13 @@ impl<'a> AddListener<'a> for ContextRef {
             );
         }
         events
+    }
+}
+
+impl Deref for Context {
+    type Target = InnerContext;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }

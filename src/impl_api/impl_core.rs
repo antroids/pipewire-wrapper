@@ -2,7 +2,6 @@
  * SPDX-License-Identifier: MIT
  */
 use std::ptr::NonNull;
-use std::rc::Rc;
 
 use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
@@ -26,7 +25,7 @@ pub struct ImplCore {
     #[raw_wrapper]
     ref_: NonNull<ImplCoreRef>,
 
-    context: std::sync::Arc<Context>,
+    context: Context,
 }
 
 impl Drop for ImplCore {
@@ -36,17 +35,17 @@ impl Drop for ImplCore {
 }
 
 impl ImplCore {
-    pub fn new(context: &std::sync::Arc<Context>, properties: Properties) -> crate::Result<Self> {
+    pub fn new(context: Context, properties: Properties) -> crate::Result<Self> {
         let ptr = unsafe {
             pw_sys::pw_context_create_core(context.as_raw_ptr(), properties.into_raw(), 0)
         };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
-            context: context.clone(),
+            context,
         })
     }
 
-    pub fn context(&self) -> &std::sync::Arc<Context> {
+    pub fn context(&self) -> &Context {
         &self.context
     }
 }

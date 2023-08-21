@@ -8,6 +8,7 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use std::os::raw;
 use std::ptr::NonNull;
+use std::rc::Rc;
 
 use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
@@ -26,8 +27,13 @@ pub struct MainLoopRef {
     raw: pw_sys::pw_main_loop,
 }
 
-#[derive(Wrapper, Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct MainLoop {
+    inner: Rc<MainLoopInner>,
+}
+
+#[derive(Wrapper, Debug)]
+pub struct MainLoopInner {
     #[raw_wrapper]
     ref_: NonNull<MainLoopRef>,
 
@@ -56,13 +62,13 @@ impl MainLoopRef {
     }
 }
 
-impl Drop for MainLoop {
+impl Drop for MainLoopInner {
     fn drop(&mut self) {
         unsafe { pw_sys::pw_main_loop_destroy(self.as_raw()) }
     }
 }
 
-impl AsLoopRef for MainLoop {
+impl AsLoopRef for MainLoopInner {
     fn loop_(&self) -> &crate::spa::loop_::LoopRef {
         self.get_loop().loop_()
     }
@@ -74,7 +80,7 @@ impl AsLoopRef for MainLoopRef {
     }
 }
 
-impl MainLoop {
+impl MainLoopInner {
     pub fn new(pipewire: PipeWire, props: &DictRef) -> crate::Result<Self> {
         let main_loop_ptr = unsafe { pw_sys::pw_main_loop_new(props.as_raw_ptr()) };
         let ref_ = new_instance_raw_wrapper(main_loop_ptr)?;
@@ -82,8 +88,25 @@ impl MainLoop {
     }
 }
 
-impl Default for MainLoop {
+impl Default for MainLoopInner {
     fn default() -> Self {
-        MainLoop::new(PipeWire::default(), Properties::default().dict()).unwrap()
+        MainLoopInner::new(PipeWire::default(), Properties::default().dict()).unwrap()
+    }
+}
+
+impl MainLoop {
+    pub fn new(pipewire: PipeWire, props: &DictRef) -> crate::Result<Self> {
+        let inner = MainLoopInner::new(pipewire, props)?;
+        Ok(Self {
+            inner: Rc::new(inner),
+        })
+    }
+}
+
+impl Deref for MainLoop {
+    type Target = MainLoopInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }

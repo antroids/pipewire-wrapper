@@ -54,7 +54,7 @@ fn main() {
 
 fn add_registry_listener<'a>(
     registry: Registry<'a>,
-    main_loop: Rc<MainLoop>,
+    main_loop: MainLoop,
     node_added_event: EventSource<'a>,
     node_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> ListenerId {
@@ -75,7 +75,7 @@ fn add_registry_listener<'a>(
 }
 
 fn add_node_added_event<'a>(
-    main_loop: &'a Rc<MainLoop>,
+    main_loop: &'a MainLoop,
     nodes: Rc<Mutex<HashMap<u32, Node<'a>>>>,
     registry: Registry<'a>,
     node_added_queue: Rc<Mutex<Vec<u32>>>,

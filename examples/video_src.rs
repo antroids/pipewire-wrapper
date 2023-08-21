@@ -39,7 +39,7 @@ mod video_src {
     use pipewire_wrapper::{properties_new, stream};
 
     struct State<'a> {
-        loop_: Rc<MainLoop>,
+        loop_: MainLoop,
         size: Option<RectangleRef>,
         timeout_timer: TimerSource<'a>,
 

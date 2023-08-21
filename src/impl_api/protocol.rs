@@ -3,7 +3,6 @@
  */
 use std::ffi::CStr;
 use std::ptr::NonNull;
-use std::rc::Rc;
 
 use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
@@ -25,7 +24,7 @@ pub struct Protocol {
     #[raw_wrapper]
     ref_: NonNull<ProtocolRef>,
 
-    context: std::sync::Arc<Context>,
+    context: Context,
 }
 
 impl Drop for Protocol {
@@ -35,15 +34,15 @@ impl Drop for Protocol {
 }
 
 impl Protocol {
-    pub fn new(context: &std::sync::Arc<Context>, name: &CStr) -> crate::Result<Self> {
+    pub fn new(context: Context, name: &CStr) -> crate::Result<Self> {
         let ptr = unsafe { pw_sys::pw_protocol_new(context.as_raw_ptr(), name.as_ptr(), 0) };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
-            context: context.clone(),
+            context,
         })
     }
 
-    pub fn context(&self) -> &std::sync::Arc<Context> {
+    pub fn context(&self) -> &Context {
         &self.context
     }
 }

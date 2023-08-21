@@ -56,7 +56,7 @@ type ObjectsParamsMap = Arc<Mutex<HashMap<u32, HashMap<ParamType, AllocPod<PodOb
 #[derive(Debug, Clone)]
 pub struct State<'a> {
     core: Rc<Core>,
-    context: Rc<Context>,
+    context: Context,
 
     registry: Registry<'a>,
 
@@ -87,7 +87,7 @@ pub struct State<'a> {
 impl<'a> State<'a> {
     pub fn new(
         core: Rc<Core>,
-        context: Rc<Context>,
+        context: Context,
 
         registry: Registry<'a>,
         subscriptions: Vec<TypeInfo<'static>>,

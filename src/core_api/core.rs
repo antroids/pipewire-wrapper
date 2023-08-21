@@ -41,7 +41,7 @@ pub struct Core {
     #[raw_wrapper]
     ref_: NonNull<CoreRef>,
 
-    context: std::rc::Rc<Context>,
+    context: Context,
 }
 
 impl Core {
@@ -51,17 +51,17 @@ impl Core {
     ///
     /// * `context` - [Context]
     /// * `properties` - properties for the [Core]
-    pub fn connect(context: &std::rc::Rc<Context>, properties: Properties) -> crate::Result<Self> {
+    pub fn connect(context: Context, properties: Properties) -> crate::Result<Self> {
         let ptr =
             unsafe { pw_sys::pw_context_connect(context.as_raw_ptr(), properties.into_raw(), 0) };
         Ok(Self {
             ref_: new_instance_raw_wrapper(ptr)?,
-            context: context.clone(),
+            context,
         })
     }
 
     /// Context
-    pub fn context(&self) -> &std::rc::Rc<Context> {
+    pub fn context(&self) -> &Context {
         &self.context
     }
 
@@ -81,7 +81,7 @@ impl Core {
 
 impl Default for Core {
     fn default() -> Self {
-        Core::connect(&std::rc::Rc::new(Context::default()), Properties::default()).unwrap()
+        Core::connect(Context::default(), Properties::default()).unwrap()
     }
 }
 

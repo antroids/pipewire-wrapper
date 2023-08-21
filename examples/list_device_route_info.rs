@@ -65,7 +65,7 @@ fn main() {
 
 fn add_registry_listener<'a>(
     registry: Registry<'a>,
-    main_loop: Rc<MainLoop>,
+    main_loop: MainLoop,
     device_added_event: EventSource<'a>,
     device_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> ListenerId {
@@ -86,7 +86,7 @@ fn add_registry_listener<'a>(
 }
 
 fn add_device_added_event<'a>(
-    main_loop: &'a Rc<MainLoop>,
+    main_loop: &'a MainLoop,
     devices: Rc<Mutex<HashMap<u32, Device<'a>>>>,
     registry: Registry<'a>,
     device_added_queue: Rc<Mutex<Vec<u32>>>,

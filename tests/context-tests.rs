@@ -1,4 +1,4 @@
-use std::{rc::Rc, time::Duration};
+use std::time::Duration;
 
 use pipewire_wrapper::{
     core_api::{
@@ -37,7 +37,7 @@ fn test_context_init() {
 
 #[test]
 fn test_context_events() {
-    let context = Rc::new(Context::default());
+    let context = Context::default();
 
     let events = ContextEventsBuilder::default()
         .global_added(Box::new(|global| {
@@ -46,7 +46,7 @@ fn test_context_events() {
         .build();
     let _events = context.add_listener(events);
 
-    let _core = Core::connect(&context, Properties::default()).unwrap();
+    let _core = Core::connect(context.clone(), Properties::default()).unwrap();
 
     let timer_callback = |_| {
         context.main_loop().quit().unwrap();
