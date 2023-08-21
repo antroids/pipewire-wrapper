@@ -12,7 +12,7 @@ use spa_sys::spa_support;
 
 use crate::spa::dict::DictRef;
 use crate::spa::handle::HandleRef;
-use crate::spa::loop_::AsLoopRef;
+use crate::spa::loop_::restricted::AsLoopRef;
 use crate::spa::pod::object::param_port_config::Direction;
 use crate::spa::support::SupportRef;
 use crate::wrapper::{RawWrapper, Wrapper};

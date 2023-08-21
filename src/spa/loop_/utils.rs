@@ -1,9 +1,9 @@
 /*
  * SPDX-License-Identifier: MIT
  */
+use std::marker::PhantomData;
 use std::os::fd::RawFd;
 use std::ptr::{null_mut, NonNull};
-use std::rc::Rc;
 use std::time::Duration;
 
 use pipewire_wrapper_proc_macro::{spa_interface, RawWrapper};
@@ -20,26 +20,27 @@ use crate::wrapper::{RawWrapper, SpaInterface, Wrapper};
 #[derive(RawWrapper, Debug)]
 #[spa_interface(methods=spa_sys::spa_loop_utils_methods)]
 #[repr(transparent)]
-pub struct LoopUtilsRef {
+pub struct LoopUtilsRef<T> {
     #[raw]
     raw: spa_sys::spa_loop_utils,
+    phantom: PhantomData<T>,
 }
 
-impl LoopUtilsRef {
+impl<T: AsLoopRef> LoopUtilsRef<T> {
     pub fn add_io<'l, F>(
         &self,
-        loop_: &'l dyn AsLoopRef,
+        loop_: &'l T,
         fd: RawFd,
         mask: u32,
         callback: Box<F>,
-    ) -> crate::Result<IOSource<'l>>
+    ) -> crate::Result<IOSource<'l, T>>
     where
         F: FnMut(RawFd, u32),
         F: 'l,
     {
         unsafe extern "C" fn callback_call<F>(
-            data: *mut ::std::os::raw::c_void,
-            fd: ::std::os::raw::c_int,
+            data: *mut std::os::raw::c_void,
+            fd: std::os::raw::c_int,
             mask: u32,
         ) where
             F: FnMut(RawFd, u32),
@@ -59,22 +60,22 @@ impl LoopUtilsRef {
         })
     }
 
-    pub fn update_io(&self, source: &IOSource, mask: u32) -> crate::Result<()> {
+    pub fn update_io(&self, source: &IOSource<T>, mask: u32) -> crate::Result<()> {
         let result = spa_interface_call!(self, update_io, source.as_raw(), mask)?;
         i32_as_void_result(result)
     }
 
     pub fn add_idle<'l, F>(
         &self,
-        loop_: &'l dyn AsLoopRef,
+        loop_: &'l T,
         enabled: bool,
         callback: Box<F>,
-    ) -> crate::Result<IdleSource<'l>>
+    ) -> crate::Result<IdleSource<'l, T>>
     where
         F: FnMut(),
         F: 'l,
     {
-        unsafe extern "C" fn callback_call<F>(data: *mut ::std::os::raw::c_void)
+        unsafe extern "C" fn callback_call<F>(data: *mut std::os::raw::c_void)
         where
             F: FnMut(),
         {
@@ -92,21 +93,21 @@ impl LoopUtilsRef {
         })
     }
 
-    pub fn enable_idle(&self, source: &IdleSource, enabled: bool) -> crate::Result<()> {
+    pub fn enable_idle(&self, source: &IdleSource<T>, enabled: bool) -> crate::Result<()> {
         let result = spa_interface_call!(self, enable_idle, source.as_raw(), enabled)?;
         i32_as_void_result(result)
     }
 
     pub fn add_event<'l, F>(
         &self,
-        loop_: &'l dyn AsLoopRef,
+        loop_: &'l T,
         callback: Box<F>,
-    ) -> crate::Result<EventSource<'l>>
+    ) -> crate::Result<EventSource<'l, T>>
     where
         F: FnMut(u64),
         F: 'l,
     {
-        unsafe extern "C" fn callback_call<F>(data: *mut ::std::os::raw::c_void, count: u64)
+        unsafe extern "C" fn callback_call<F>(data: *mut std::os::raw::c_void, count: u64)
         where
             F: FnMut(u64),
         {
@@ -124,21 +125,21 @@ impl LoopUtilsRef {
         })
     }
 
-    pub fn signal_event(&self, source: &EventSource) -> crate::Result<()> {
+    pub fn signal_event(&self, source: &EventSource<T>) -> crate::Result<()> {
         let result = spa_interface_call!(self, signal_event, source.as_raw())?;
         i32_as_void_result(result)
     }
 
     pub fn add_timer<'l, F>(
         &self,
-        loop_: &'l dyn AsLoopRef,
+        loop_: &'l T,
         callback: Box<F>,
-    ) -> crate::Result<TimerSource<'l>>
+    ) -> crate::Result<TimerSource<'l, T>>
     where
         F: FnMut(u64),
         F: 'l,
     {
-        unsafe extern "C" fn callback_call<F>(data: *mut ::std::os::raw::c_void, count: u64)
+        unsafe extern "C" fn callback_call<F>(data: *mut std::os::raw::c_void, count: u64)
         where
             F: FnMut(u64),
         {
@@ -158,7 +159,7 @@ impl LoopUtilsRef {
 
     pub fn update_timer(
         &self,
-        source: &TimerSource,
+        source: &TimerSource<T>,
         value: Duration,
         interval: Duration,
         absolute: bool,
@@ -176,7 +177,7 @@ impl LoopUtilsRef {
         i32_as_void_result(result)
     }
 
-    pub fn disable_timer(&self, source: &TimerSource) -> crate::Result<()> {
+    pub fn disable_timer(&self, source: &TimerSource<T>) -> crate::Result<()> {
         let result = spa_interface_call!(
             self,
             update_timer,
@@ -190,17 +191,17 @@ impl LoopUtilsRef {
 
     pub fn add_signal<'l, F>(
         &self,
-        loop_: &'l dyn AsLoopRef,
+        loop_: &'l T,
         signal_number: i32,
         callback: Box<F>,
-    ) -> crate::Result<SignalSource<'l>>
+    ) -> crate::Result<SignalSource<'l, T>>
     where
         F: FnMut(i32),
         F: 'l,
     {
         unsafe extern "C" fn callback_call<F>(
-            data: *mut ::std::os::raw::c_void,
-            signal_number: ::std::os::raw::c_int,
+            data: *mut std::os::raw::c_void,
+            signal_number: std::os::raw::c_int,
         ) where
             F: FnMut(i32),
         {

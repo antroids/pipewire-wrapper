@@ -9,6 +9,7 @@ use std::rc::Rc;
 use std::sync::Mutex;
 
 use pipewire_wrapper::core_api::core::Core;
+use pipewire_wrapper::core_api::loop_::LoopRef;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
 use pipewire_wrapper::core_api::node::events::NodeEventsBuilder;
 use pipewire_wrapper::core_api::node::{Node, NodeRef};
@@ -55,7 +56,7 @@ fn main() {
 fn add_registry_listener<'a>(
     registry: Registry<'a>,
     main_loop: MainLoop,
-    node_added_event: EventSource<'a>,
+    node_added_event: EventSource<'a, LoopRef>,
     node_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> ListenerId {
     let listener = RegistryEventsBuilder::default()
@@ -79,7 +80,7 @@ fn add_node_added_event<'a>(
     nodes: Rc<Mutex<HashMap<u32, Node<'a>>>>,
     registry: Registry<'a>,
     node_added_queue: Rc<Mutex<Vec<u32>>>,
-) -> EventSource<'a> {
+) -> EventSource<'a, LoopRef> {
     main_loop
         .get_loop()
         .add_event(Box::new({

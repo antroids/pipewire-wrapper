@@ -43,16 +43,22 @@ pub fn spa_interface(attr: TokenStream, input: TokenStream) -> TokenStream {
     let raw_field_ident = &struct_info.raw_field.ident;
     let methods_type = spa_interface_attr.methods;
 
+    let mut struct_generics_without_default = struct_info.struct_generics.clone();
+    crate::strip_defaults_from_generics(&mut struct_generics_without_default);
+
+    let mut struct_generics_without_bounds = struct_generics_without_default.clone();
+    crate::strip_bounds_from_generics(&mut struct_generics_without_bounds);
+
     quote!(
         #input
 
-        impl crate::wrapper::SpaInterface for #struct_ident {
+        impl #struct_generics_without_default crate::wrapper::SpaInterface for #struct_ident #struct_generics_without_bounds {
             type Methods = #methods_type;
 
             fn spa_interface(&self) -> &crate::spa::interface::InterfaceRef {
                 use crate::wrapper::RawWrapper;
                 unsafe {
-                    assert_ne!(0, std::mem::size_of::<#struct_ident>(),
+                    assert_ne!(0, std::mem::size_of::<#struct_ident #struct_generics_without_bounds>(),
                         "Objects with spa_interface should contain the iface pointer, they cannot \
                         be zero-size pointers. Probably #[pw_interface(...)] should be used here");
                     crate::spa::interface::InterfaceRef::from_raw_ptr(

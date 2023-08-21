@@ -7,13 +7,13 @@
 use std::os::fd::RawFd;
 use std::time::Duration;
 
-use pipewire_wrapper_proc_macro::{spa_interface, RawWrapper};
+use pipewire_wrapper_proc_macro::RawWrapper;
 
 use crate::spa;
+use crate::spa::loop_::restricted::AsLoopRef;
 use crate::spa::loop_::utils::LoopUtilsRef;
 use crate::spa::loop_::{
-    AsLoopRef, EventSource, IOSource, IdleSource, LoopControlRef, SignalSource, SourceRef,
-    TimerSource,
+    EventSource, IOSource, IdleSource, LoopControlRef, SignalSource, SourceRef, TimerSource,
 };
 use crate::spa::system::SystemRef;
 use crate::wrapper::*;
@@ -40,7 +40,7 @@ impl LoopRef {
         unsafe { LoopControlRef::from_raw_ptr(self.raw.control) }
     }
 
-    pub fn utils(&self) -> &LoopUtilsRef {
+    pub fn utils(&self) -> &LoopUtilsRef<Self> {
         unsafe { LoopUtilsRef::from_raw_ptr(self.raw.utils) }
     }
 
@@ -55,7 +55,7 @@ impl LoopRef {
         fd: RawFd,
         mask: u32,
         callback: Box<F>,
-    ) -> crate::Result<IOSource<'l>>
+    ) -> crate::Result<IOSource<'l, Self>>
     where
         F: FnMut(RawFd, u32),
         F: 'l,
@@ -63,7 +63,7 @@ impl LoopRef {
         self.utils().add_io(self, fd, mask, callback)
     }
 
-    pub fn update_io(&self, source: &IOSource, mask: u32) -> crate::Result<()> {
+    pub fn update_io(&self, source: &IOSource<Self>, mask: u32) -> crate::Result<()> {
         self.utils().update_io(source, mask)
     }
 
@@ -71,7 +71,7 @@ impl LoopRef {
         &'l self,
         enabled: bool,
         callback: Box<F>,
-    ) -> crate::Result<IdleSource<'l>>
+    ) -> crate::Result<IdleSource<'l, Self>>
     where
         F: FnMut(),
         F: 'l,
@@ -79,11 +79,11 @@ impl LoopRef {
         self.utils().add_idle(self, enabled, callback)
     }
 
-    pub fn enable_idle(&self, source: &IdleSource, enabled: bool) -> crate::Result<()> {
+    pub fn enable_idle(&self, source: &IdleSource<Self>, enabled: bool) -> crate::Result<()> {
         self.utils().enable_idle(source, enabled)
     }
 
-    pub fn add_event<'l, F>(&'l self, callback: Box<F>) -> crate::Result<EventSource<'l>>
+    pub fn add_event<'l, F>(&'l self, callback: Box<F>) -> crate::Result<EventSource<'l, Self>>
     where
         F: FnMut(u64),
         F: 'l,
@@ -91,11 +91,11 @@ impl LoopRef {
         self.utils().add_event(self, callback)
     }
 
-    pub fn signal_event(&self, source: &EventSource) -> crate::Result<()> {
+    pub fn signal_event(&self, source: &EventSource<Self>) -> crate::Result<()> {
         self.utils().signal_event(source)
     }
 
-    pub fn add_timer<'l, F>(&'l self, callback: Box<F>) -> crate::Result<TimerSource<'l>>
+    pub fn add_timer<'l, F>(&'l self, callback: Box<F>) -> crate::Result<TimerSource<'l, Self>>
     where
         F: FnMut(u64),
         F: 'l,
@@ -105,7 +105,7 @@ impl LoopRef {
 
     pub fn update_timer(
         &self,
-        source: &TimerSource,
+        source: &TimerSource<Self>,
         value: Duration,
         interval: Duration,
         absolute: bool,
@@ -113,7 +113,7 @@ impl LoopRef {
         self.utils().update_timer(source, value, interval, absolute)
     }
 
-    pub fn disable_timer(&self, source: &TimerSource) -> crate::Result<()> {
+    pub fn disable_timer(&self, source: &TimerSource<Self>) -> crate::Result<()> {
         self.utils().disable_timer(source)
     }
 
@@ -121,7 +121,7 @@ impl LoopRef {
         &'l self,
         signal_number: i32,
         callback: Box<F>,
-    ) -> crate::Result<SignalSource<'l>>
+    ) -> crate::Result<SignalSource<'l, Self>>
     where
         F: FnMut(i32),
         F: 'l,
@@ -182,5 +182,33 @@ impl Drop for LoopRefIterator<'_> {
 impl AsLoopRef for LoopRef {
     fn loop_(&self) -> &spa::loop_::LoopRef {
         self.loop_()
+    }
+}
+
+impl<'l> IOSource<'l, LoopRef> {
+    pub fn update(&self, mask: u32) -> crate::Result<()> {
+        self.loop_.update_io(self, mask)
+    }
+}
+
+impl<'l> IdleSource<'l, LoopRef> {
+    pub fn enable(&self, enabled: bool) -> crate::Result<()> {
+        self.loop_.enable_idle(self, enabled)
+    }
+}
+
+impl<'l> EventSource<'l, LoopRef> {
+    pub fn signal(&self) -> crate::Result<()> {
+        self.loop_.signal_event(self)
+    }
+}
+
+impl<'l> TimerSource<'l, LoopRef> {
+    pub fn update(&self, value: Duration, interval: Duration, absolute: bool) -> crate::Result<()> {
+        self.loop_.update_timer(self, value, interval, absolute)
+    }
+
+    pub fn disable(&self) -> crate::Result<()> {
+        self.loop_.disable_timer(self)
     }
 }

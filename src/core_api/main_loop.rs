@@ -16,7 +16,7 @@ use crate::core_api::loop_::{LoopRef, LoopRefIterator};
 use crate::core_api::properties::Properties;
 use crate::core_api::PipeWire;
 use crate::spa::dict::DictRef;
-use crate::spa::loop_::AsLoopRef;
+use crate::spa::loop_::restricted::AsLoopRef;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_void_result, new_instance_raw_wrapper};
 

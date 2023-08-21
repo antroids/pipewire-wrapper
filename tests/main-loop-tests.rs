@@ -19,9 +19,8 @@ fn test_init_main_loop() {
         main_loop.quit().unwrap();
     };
     let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+    timer
+        .update(Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
 
     main_loop.run().unwrap();
@@ -38,7 +37,7 @@ fn test_sources() {
         .get_loop()
         .add_idle(false, Box::new(callback))
         .unwrap();
-    main_loop.get_loop().enable_idle(&idle, false).unwrap();
+    idle.enable(false).unwrap();
 
     let callback = |signal_number| {
         println!("Signal: {:?}", signal_number);
@@ -59,18 +58,16 @@ fn test_sources() {
         main_loop.get_loop().signal_event(&event).unwrap();
     };
     let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+    timer
+        .update(Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
 
     let callback = |_expirations| {
         main_loop.quit().unwrap();
     };
     let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(3), Duration::ZERO, false)
+    timer
+        .update(Duration::from_secs(3), Duration::ZERO, false)
         .unwrap();
 
     main_loop.run().unwrap();
@@ -97,9 +94,8 @@ fn test_iterate_main_loop() {
         assert_eq!(*loop_iterations.lock().unwrap(), 10)
     };
     let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+    timer
+        .update(Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
 
     main_loop.run().unwrap();

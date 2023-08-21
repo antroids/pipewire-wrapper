@@ -40,9 +40,8 @@ fn test_node_events_via_channel() {
         .get_loop()
         .add_timer(Box::new(main_loop_close_callback))
         .unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+    timer
+        .update(Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
 
     let (node_sender, node_receiver) = LoopChannel::channel::<Node>();

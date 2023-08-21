@@ -43,9 +43,8 @@ fn test() {
         .get_loop()
         .add_timer(Box::new(timer_callback))
         .unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+    timer
+        .update(Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
 
     let subscriptions = vec![

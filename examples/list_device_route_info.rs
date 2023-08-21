@@ -11,6 +11,7 @@ use std::sync::Mutex;
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::device::events::DeviceEventsBuilder;
 use pipewire_wrapper::core_api::device::{Device, DeviceRef};
+use pipewire_wrapper::core_api::loop_::LoopRef;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
 use pipewire_wrapper::core_api::proxy::Proxied;
 use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
@@ -66,7 +67,7 @@ fn main() {
 fn add_registry_listener<'a>(
     registry: Registry<'a>,
     main_loop: MainLoop,
-    device_added_event: EventSource<'a>,
+    device_added_event: EventSource<'a, LoopRef>,
     device_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> ListenerId {
     let listener = RegistryEventsBuilder::default()
@@ -90,7 +91,7 @@ fn add_device_added_event<'a>(
     devices: Rc<Mutex<HashMap<u32, Device<'a>>>>,
     registry: Registry<'a>,
     device_added_queue: Rc<Mutex<Vec<u32>>>,
-) -> EventSource<'a> {
+) -> EventSource<'a, LoopRef> {
     main_loop
         .get_loop()
         .add_event(Box::new({

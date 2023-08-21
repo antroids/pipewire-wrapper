@@ -28,7 +28,7 @@ impl<T> From<SendError<T>> for crate::Error {
 
 pub struct LoopChannel<'a> {
     loop_: Option<&'a LoopRef>,
-    event: Option<EventSource<'a>>,
+    event: Option<EventSource<'a, LoopRef>>,
 }
 
 impl<'a> LoopChannel<'a> {

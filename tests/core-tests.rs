@@ -1,9 +1,6 @@
 use std::time::Duration;
 
-use pipewire_wrapper::{
-    core_api::{core::Core, registry::events::RegistryEventsBuilder},
-    listeners::AddListener,
-};
+use pipewire_wrapper::core_api::{core::Core, registry::events::RegistryEventsBuilder};
 
 /*
  * SPDX-License-Identifier: MIT
@@ -35,9 +32,8 @@ fn test_create_core() {
         .get_loop()
         .add_timer(Box::new(timer_callback))
         .unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
+    timer
+        .update(Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
 
     main_loop.run().unwrap();

@@ -13,6 +13,7 @@ mod video_src {
     use std::time::Duration;
 
     use pipewire_wrapper::core_api::core::Core;
+    use pipewire_wrapper::core_api::loop_::LoopRef;
     use pipewire_wrapper::core_api::main_loop::MainLoop;
     use pipewire_wrapper::listeners::OwnListeners;
     use pipewire_wrapper::spa::buffers::meta::{
@@ -41,7 +42,7 @@ mod video_src {
     struct State<'a> {
         loop_: MainLoop,
         size: Option<RectangleRef>,
-        timeout_timer: TimerSource<'a>,
+        timeout_timer: TimerSource<'a, LoopRef>,
 
         seq: u64,
         counter: u32,
