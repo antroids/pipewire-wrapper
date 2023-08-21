@@ -38,7 +38,7 @@ mod link_state;
 mod node_state;
 mod port_state;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Message {
     GlobalAdded(u32),
 
