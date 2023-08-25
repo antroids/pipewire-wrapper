@@ -9,6 +9,7 @@ use std::slice;
 use std::sync::{Arc, Mutex};
 
 use pipewire_wrapper::core_api::core::Core;
+use pipewire_wrapper::core_api::loop_::Loop;
 use pipewire_wrapper::listeners::OwnListeners;
 use pipewire_wrapper::properties_new;
 use pipewire_wrapper::spa::param::ParamType;
@@ -36,15 +37,14 @@ pub fn main() {
     let core = Rc::new(Core::default());
     let main_loop = core.context().main_loop();
 
-    let quit_main_loop = Box::new(|_| {
-        main_loop.quit().unwrap();
-    });
-    let _sigint_handler = main_loop
-        .get_loop()
-        .add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
-    let _sigterm_handler = main_loop
-        .get_loop()
-        .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+    let quit_main_loop = {
+        let main_loop = main_loop.clone();
+        move |_| {
+            main_loop.quit().unwrap();
+        }
+    };
+    let _sigint_handler = main_loop.add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
+    let _sigterm_handler = main_loop.add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
     let stream = Rc::new(
         Stream::new(

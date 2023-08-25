@@ -28,21 +28,20 @@ pub struct FilterEventsRef {
     raw: pw_sys::pw_filter_events,
 }
 
-pub type DestroyCallback<'p> = Box<dyn FnMut() + 'p>;
-pub type StateChangedCallback<'p> =
-    Box<dyn for<'a> FnMut(FilterState, FilterState, Option<&'a CStr>) + 'p>;
-pub type IOChangedCallback<'p, T> =
-    Box<dyn for<'a> FnMut(Option<&mut T>, u32, *mut ::std::os::raw::c_void, u32) + 'p>;
-pub type ParamChangedCallback<'p, T> = Box<dyn for<'a> FnMut(Option<&mut T>, u32, &'a PodRef) + 'p>;
-pub type AddBufferCallback<'p, T> = Box<dyn for<'a> FnMut(&mut T, &'a BufferRef) + 'p>;
-pub type RemoveBufferCallback<'p, T> = Box<dyn for<'a> FnMut(&mut T, &'a BufferRef) + 'p>;
-pub type ProcessCallback<'p> = Box<dyn for<'a> FnMut(&'a IOPositionRef) + 'p>;
-pub type DrainedCallback<'p> = Box<dyn FnMut() + 'p>;
-pub type CommandCallback<'p> = Box<dyn for<'a> FnMut(&'a CommandRef) + 'p>;
+pub type DestroyCallback = Box<dyn FnMut()>;
+pub type StateChangedCallback = Box<dyn for<'a> FnMut(FilterState, FilterState, Option<&'a CStr>)>;
+pub type IOChangedCallback<T> =
+    Box<dyn for<'a> FnMut(Option<&mut T>, u32, *mut ::std::os::raw::c_void, u32)>;
+pub type ParamChangedCallback<T> = Box<dyn for<'a> FnMut(Option<&mut T>, u32, &'a PodRef)>;
+pub type AddBufferCallback<T> = Box<dyn for<'a> FnMut(&mut T, &'a BufferRef)>;
+pub type RemoveBufferCallback<T> = Box<dyn for<'a> FnMut(&mut T, &'a BufferRef)>;
+pub type ProcessCallback = Box<dyn for<'a> FnMut(&'a IOPositionRef)>;
+pub type DrainedCallback = Box<dyn FnMut()>;
+pub type CommandCallback = Box<dyn for<'a> FnMut(&'a CommandRef)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct FilterEvents<'p, T> {
+pub struct FilterEvents<T> {
     #[raw_wrapper]
     ref_: NonNull<FilterEventsRef>,
 
@@ -50,28 +49,28 @@ pub struct FilterEvents<'p, T> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    destroy: Option<DestroyCallback<'p>>,
+    destroy: Option<DestroyCallback>,
     #[builder(setter)]
-    state_changed: Option<StateChangedCallback<'p>>,
+    state_changed: Option<StateChangedCallback>,
     #[builder(setter)]
-    io_changed: Option<IOChangedCallback<'p, T>>,
+    io_changed: Option<IOChangedCallback<T>>,
     #[builder(setter)]
-    param_changed: Option<ParamChangedCallback<'p, T>>,
+    param_changed: Option<ParamChangedCallback<T>>,
     #[builder(setter)]
-    add_buffer: Option<AddBufferCallback<'p, T>>,
+    add_buffer: Option<AddBufferCallback<T>>,
     #[builder(setter)]
-    remove_buffer: Option<RemoveBufferCallback<'p, T>>,
+    remove_buffer: Option<RemoveBufferCallback<T>>,
     #[builder(setter)]
-    process: Option<ProcessCallback<'p>>,
+    process: Option<ProcessCallback>,
     #[builder(setter)]
-    drained: Option<DrainedCallback<'p>>,
+    drained: Option<DrainedCallback>,
     #[builder(setter)]
-    command: Option<CommandCallback<'p>>,
+    command: Option<CommandCallback>,
 }
 
-impl<'p, T> FilterEvents<'p, T> {
+impl<T> FilterEvents<T> {
     unsafe extern "C" fn destroy_call(data: *mut ::std::os::raw::c_void) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.destroy {
                 callback();
             }
@@ -84,7 +83,7 @@ impl<'p, T> FilterEvents<'p, T> {
         state: pw_filter_state,
         error: *const ::std::os::raw::c_char,
     ) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.state_changed {
                 callback(
                     FilterState::from_raw(old),
@@ -102,7 +101,7 @@ impl<'p, T> FilterEvents<'p, T> {
         area: *mut ::std::os::raw::c_void,
         size: u32,
     ) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.io_changed {
                 callback((port_data as *mut T).as_mut(), id, area, size);
             }
@@ -115,7 +114,7 @@ impl<'p, T> FilterEvents<'p, T> {
         id: u32,
         param: *const spa_pod,
     ) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.param_changed {
                 callback(
                     (port_data as *mut T).as_mut(),
@@ -131,7 +130,7 @@ impl<'p, T> FilterEvents<'p, T> {
         data: *mut ::std::os::raw::c_void,
         buffer: *mut pw_buffer,
     ) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.add_buffer {
                 callback(
                     (port_data as *mut T).as_mut().unwrap(),
@@ -146,7 +145,7 @@ impl<'p, T> FilterEvents<'p, T> {
         data: *mut ::std::os::raw::c_void,
         buffer: *mut pw_buffer,
     ) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.remove_buffer {
                 callback(
                     (port_data as *mut T).as_mut().unwrap(),
@@ -160,7 +159,7 @@ impl<'p, T> FilterEvents<'p, T> {
         data: *mut ::std::os::raw::c_void,
         position: *mut spa_sys::spa_io_position,
     ) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.process {
                 callback(IOPositionRef::from_raw_ptr(position));
             }
@@ -168,7 +167,7 @@ impl<'p, T> FilterEvents<'p, T> {
     }
 
     unsafe extern "C" fn drained_call(data: *mut ::std::os::raw::c_void) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.drained {
                 callback();
             }
@@ -179,7 +178,7 @@ impl<'p, T> FilterEvents<'p, T> {
         data: *mut ::std::os::raw::c_void,
         command: *const spa_command,
     ) {
-        if let Some(events) = (data as *mut FilterEvents<'p, T>).as_mut() {
+        if let Some(events) = (data as *mut FilterEvents<T>).as_mut() {
             if let Some(callback) = &mut events.command {
                 callback(CommandRef::from_raw_ptr(command));
             }
@@ -191,9 +190,9 @@ impl<'p, T> FilterEvents<'p, T> {
     }
 }
 
-impl<'p, T> FilterEventsBuilder<'p, T> {
+impl<T> FilterEventsBuilder<T> {
     events_builder_build! {
-        FilterEvents<'p, T>,
+        FilterEvents<T>,
         pw_filter_events,
         destroy => destroy_call,
         state_changed => state_changed_call,
@@ -207,7 +206,7 @@ impl<'p, T> FilterEventsBuilder<'p, T> {
     }
 }
 
-impl<T> Debug for FilterEvents<'_, T> {
+impl<T> Debug for FilterEvents<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("FilterEvents")
             .field("raw", &self.raw)

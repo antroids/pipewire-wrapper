@@ -73,8 +73,8 @@ impl DeviceRef {
     }
 }
 
-impl<'a> AddListener<'a> for DeviceRef {
-    type Events = DeviceEvents<'a>;
+impl AddListener for DeviceRef {
+    type Events = DeviceEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -93,13 +93,13 @@ impl<'a> AddListener<'a> for DeviceRef {
 
 #[derive(Clone, Debug)]
 #[proxy_wrapper(DeviceRef)]
-pub struct Device<'c> {
+pub struct Device {
     ref_: Proxy,
 
-    listeners: Listeners<Pin<Box<DeviceEvents<'c>>>>,
+    listeners: Listeners<Pin<Box<DeviceEvents>>>,
 }
 
-impl<'c> RegistryBind<'c> for Device<'c> {
+impl RegistryBind for Device {
     fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
@@ -108,10 +108,10 @@ impl<'c> RegistryBind<'c> for Device<'c> {
     }
 }
 
-impl<'a> OwnListeners<'a> for Device<'a> {
+impl OwnListeners for Device {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }

@@ -29,13 +29,12 @@ pub struct RegistryEventsRef {
     raw: pw_sys::pw_registry_events,
 }
 
-pub type GlobalCallback<'r> =
-    Box<dyn for<'a> FnMut(u32, Permissions, TypeInfo<'a>, u32, &'a DictRef) + 'r>;
-pub type GlobalRemoveCallback<'r> = Box<dyn FnMut(u32) + 'r>;
+pub type GlobalCallback = Box<dyn for<'a> FnMut(u32, Permissions, TypeInfo<'a>, u32, &'a DictRef)>;
+pub type GlobalRemoveCallback = Box<dyn FnMut(u32)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct RegistryEvents<'r> {
+pub struct RegistryEvents {
     #[raw_wrapper]
     ref_: NonNull<RegistryEventsRef>,
 
@@ -43,12 +42,12 @@ pub struct RegistryEvents<'r> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    global: Option<GlobalCallback<'r>>,
+    global: Option<GlobalCallback>,
     #[builder(setter)]
-    global_remove: Option<GlobalRemoveCallback<'r>>,
+    global_remove: Option<GlobalRemoveCallback>,
 }
 
-impl<'r> RegistryEvents<'r> {
+impl RegistryEvents {
     unsafe extern "C" fn global_call(
         object: *mut ::std::os::raw::c_void,
         id: u32,
@@ -89,16 +88,16 @@ impl<'r> RegistryEvents<'r> {
 
 // todo: channel builder
 
-impl<'c> RegistryEventsBuilder<'c> {
+impl RegistryEventsBuilder {
     events_builder_build! {
-        RegistryEvents<'c>,
+        RegistryEvents,
         pw_registry_events,
         global => global_call,
         global_remove => global_remove_call,
     }
 }
 
-impl Debug for RegistryEvents<'_> {
+impl Debug for RegistryEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RegistryEvents")
             .field("raw", &self.raw)

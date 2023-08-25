@@ -29,7 +29,7 @@ pub struct LoopUtilsRef<T> {
 impl<T: AsLoopRef> LoopUtilsRef<T> {
     pub fn add_io<'l, F>(
         &self,
-        loop_: &'l T,
+        loop_: T,
         fd: RawFd,
         mask: u32,
         callback: Box<F>,
@@ -67,7 +67,7 @@ impl<T: AsLoopRef> LoopUtilsRef<T> {
 
     pub fn add_idle<'l, F>(
         &self,
-        loop_: &'l T,
+        loop_: T,
         enabled: bool,
         callback: Box<F>,
     ) -> crate::Result<IdleSource<'l, T>>
@@ -98,11 +98,7 @@ impl<T: AsLoopRef> LoopUtilsRef<T> {
         i32_as_void_result(result)
     }
 
-    pub fn add_event<'l, F>(
-        &self,
-        loop_: &'l T,
-        callback: Box<F>,
-    ) -> crate::Result<EventSource<'l, T>>
+    pub fn add_event<'l, F>(&self, loop_: T, callback: Box<F>) -> crate::Result<EventSource<'l, T>>
     where
         F: FnMut(u64),
         F: 'l,
@@ -130,11 +126,7 @@ impl<T: AsLoopRef> LoopUtilsRef<T> {
         i32_as_void_result(result)
     }
 
-    pub fn add_timer<'l, F>(
-        &self,
-        loop_: &'l T,
-        callback: Box<F>,
-    ) -> crate::Result<TimerSource<'l, T>>
+    pub fn add_timer<'l, F>(&self, loop_: T, callback: Box<F>) -> crate::Result<TimerSource<'l, T>>
     where
         F: FnMut(u64),
         F: 'l,
@@ -191,7 +183,7 @@ impl<T: AsLoopRef> LoopUtilsRef<T> {
 
     pub fn add_signal<'l, F>(
         &self,
-        loop_: &'l T,
+        loop_: T,
         signal_number: i32,
         callback: Box<F>,
     ) -> crate::Result<SignalSource<'l, T>>

@@ -9,14 +9,16 @@ use std::ops::Deref;
 use std::os::raw;
 use std::ptr::NonNull;
 use std::rc::Rc;
+use std::time::Duration;
 
 use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
+use crate::core_api::loop_::restricted::AsLoopRef;
 use crate::core_api::loop_::{LoopRef, LoopRefIterator};
 use crate::core_api::properties::Properties;
 use crate::core_api::PipeWire;
 use crate::spa::dict::DictRef;
-use crate::spa::loop_::restricted::AsLoopRef;
+use crate::spa::loop_::TimerSource;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_void_result, new_instance_raw_wrapper};
 
@@ -68,15 +70,9 @@ impl Drop for MainLoopInner {
     }
 }
 
-impl AsLoopRef for MainLoopInner {
-    fn loop_(&self) -> &crate::spa::loop_::LoopRef {
-        self.get_loop().loop_()
-    }
-}
-
-impl AsLoopRef for MainLoopRef {
-    fn loop_(&self) -> &crate::spa::loop_::LoopRef {
-        self.get_loop().loop_()
+impl AsLoopRef for MainLoop {
+    fn loop_(&self) -> &LoopRef {
+        self.get_loop()
     }
 }
 
@@ -108,5 +104,21 @@ impl Deref for MainLoop {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+//#[cfg(test)]
+impl MainLoop {
+    pub fn quit_after(&self, after: Duration) -> crate::Result<TimerSource<Self>> {
+        use crate::core_api::loop_::Loop;
+
+        let main_loop = self.clone();
+        let timer = self
+            .add_timer(move |_| {
+                main_loop.quit().unwrap();
+            })
+            .unwrap();
+        timer.update(after, Duration::ZERO, false)?;
+        Ok(timer)
     }
 }

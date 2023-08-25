@@ -27,12 +27,12 @@ pub struct DeviceEventsRef {
     raw: pw_sys::pw_device_events,
 }
 
-pub type InfoCallback<'p> = Box<dyn for<'a> FnMut(&'a DeviceInfoRef) + 'p>;
-pub type ParamCallback<'p> = Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>;
+pub type InfoCallback = Box<dyn for<'a> FnMut(&'a DeviceInfoRef)>;
+pub type ParamCallback = Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct DeviceEvents<'p> {
+pub struct DeviceEvents {
     #[raw_wrapper]
     ref_: NonNull<DeviceEventsRef>,
 
@@ -40,12 +40,12 @@ pub struct DeviceEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<InfoCallback<'p>>,
+    info: Option<InfoCallback>,
     #[builder(setter)]
-    param: Option<ParamCallback<'p>>,
+    param: Option<ParamCallback>,
 }
 
-impl<'p> DeviceEvents<'p> {
+impl DeviceEvents {
     unsafe extern "C" fn info_call(data: *mut ::std::os::raw::c_void, info: *const pw_device_info) {
         if let Some(events) = (data as *mut DeviceEvents).as_mut() {
             if let Some(callback) = &mut events.info {
@@ -86,16 +86,16 @@ impl<'p> DeviceEvents<'p> {
 
 // todo: channel builder
 
-impl<'p> DeviceEventsBuilder<'p> {
+impl DeviceEventsBuilder {
     events_builder_build! {
-        DeviceEvents<'p>,
+        DeviceEvents,
         pw_device_events,
         info => info_call,
         param => param_call,
     }
 }
 
-impl Debug for DeviceEvents<'_> {
+impl Debug for DeviceEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DeviceEvents")
             .field("raw", &self.raw)

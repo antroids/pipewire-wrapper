@@ -25,12 +25,12 @@ pub struct ClientEventsRef {
     raw: pw_sys::pw_client_events,
 }
 
-pub type InfoCallback<'f> = Box<dyn for<'a> FnMut(&'a ClientInfoRef) + 'f>;
-pub type PermissionsCallback<'f> = Box<dyn for<'a> FnMut(u32, &'a [Permissions]) + 'f>;
+pub type InfoCallback = Box<dyn for<'a> FnMut(&'a ClientInfoRef)>;
+pub type PermissionsCallback = Box<dyn for<'a> FnMut(u32, &'a [Permissions])>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct ClientEvents<'f> {
+pub struct ClientEvents {
     #[raw_wrapper]
     ref_: NonNull<ClientEventsRef>,
 
@@ -38,12 +38,12 @@ pub struct ClientEvents<'f> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<InfoCallback<'f>>,
+    info: Option<InfoCallback>,
     #[builder(setter)]
-    permissions: Option<PermissionsCallback<'f>>,
+    permissions: Option<PermissionsCallback>,
 }
 
-impl<'f> ClientEvents<'f> {
+impl ClientEvents {
     unsafe extern "C" fn info_call(data: *mut ::std::os::raw::c_void, info: *const pw_client_info) {
         if let Some(client_events) = (data as *mut ClientEvents).as_mut() {
             if let Some(callback) = &mut client_events.info {
@@ -79,16 +79,16 @@ impl<'f> ClientEvents<'f> {
 
 // todo: channel builder
 
-impl<'f> ClientEventsBuilder<'f> {
+impl ClientEventsBuilder {
     events_builder_build! {
-        ClientEvents<'f>,
+        ClientEvents,
         pw_client_events,
         info => info_call,
         permissions => permissions_call,
     }
 }
 
-impl Debug for ClientEvents<'_> {
+impl Debug for ClientEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ClientEvents")
             .field("raw", &self.raw)

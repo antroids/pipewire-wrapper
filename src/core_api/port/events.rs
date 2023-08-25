@@ -27,12 +27,12 @@ pub struct PortEventsRef {
     raw: pw_sys::pw_port_events,
 }
 
-pub type InfoCallback<'p> = Box<dyn for<'a> FnMut(&'a PortInfoRef) + 'p>;
-pub type ParamCallback<'p> = Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>;
+pub type InfoCallback = Box<dyn for<'a> FnMut(&'a PortInfoRef)>;
+pub type ParamCallback = Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct PortEvents<'p> {
+pub struct PortEvents {
     #[raw_wrapper]
     ref_: NonNull<PortEventsRef>,
 
@@ -40,12 +40,12 @@ pub struct PortEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<InfoCallback<'p>>,
+    info: Option<InfoCallback>,
     #[builder(setter)]
-    param: Option<ParamCallback<'p>>,
+    param: Option<ParamCallback>,
 }
 
-impl<'p> PortEvents<'p> {
+impl PortEvents {
     unsafe extern "C" fn info_call(data: *mut ::std::os::raw::c_void, info: *const pw_port_info) {
         if let Some(events) = (data as *mut PortEvents).as_mut() {
             if let Some(callback) = &mut events.info {
@@ -86,16 +86,16 @@ impl<'p> PortEvents<'p> {
 
 // todo: channel builder
 
-impl<'p> PortEventsBuilder<'p> {
+impl PortEventsBuilder {
     events_builder_build! {
-        PortEvents<'p>,
+        PortEvents,
         pw_port_events,
         info => info_call,
         param => param_call,
     }
 }
 
-impl Debug for PortEvents<'_> {
+impl Debug for PortEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PortEvents")
             .field("raw", &self.raw)

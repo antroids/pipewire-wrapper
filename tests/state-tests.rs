@@ -36,16 +36,7 @@ fn test() {
     let main_loop = context.main_loop();
     let registry = core.get_registry(0).unwrap();
 
-    let timer_callback = |_| {
-        main_loop.quit().unwrap();
-    };
-    let timer = main_loop
-        .get_loop()
-        .add_timer(Box::new(timer_callback))
-        .unwrap();
-    timer
-        .update(Duration::from_secs(1), Duration::ZERO, false)
-        .unwrap();
+    let _timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 
     let subscriptions = vec![
         NodeRef::type_info(),

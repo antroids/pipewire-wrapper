@@ -1,3 +1,5 @@
+use pipewire_wrapper::core_api::loop_::Loop;
+use std::rc::Rc;
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -15,13 +17,7 @@ use pipewire_wrapper::core_api::main_loop::MainLoop;
 fn test_init_main_loop() {
     let main_loop = MainLoop::default();
 
-    let callback = |_expirations| {
-        main_loop.quit().unwrap();
-    };
-    let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
-    timer
-        .update(Duration::from_secs(1), Duration::ZERO, false)
-        .unwrap();
+    let _timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 
     main_loop.run().unwrap();
 }
@@ -30,45 +26,42 @@ fn test_init_main_loop() {
 fn test_sources() {
     let main_loop = MainLoop::default();
 
-    let callback = || {
-        println!("Idle");
-    };
     let idle = main_loop
-        .get_loop()
-        .add_idle(false, Box::new(callback))
+        .add_idle(false, || {
+            println!("Idle");
+        })
         .unwrap();
     idle.enable(false).unwrap();
 
-    let callback = |signal_number| {
-        println!("Signal: {:?}", signal_number);
-    };
     let _signal = main_loop
-        .get_loop()
-        .add_signal(123, Box::new(callback))
+        .add_signal(123, |signal_number| {
+            println!("Signal: {:?}", signal_number);
+        })
         .unwrap();
 
-    let event_signal = AtomicBool::new(false);
-    let callback = |count| {
-        println!("Event: count {:?}", count);
-        event_signal.store(true, Ordering::Relaxed);
-    };
-    let event = main_loop.get_loop().add_event(Box::new(callback)).unwrap();
+    let event_signal = Rc::new(AtomicBool::new(false));
+    let event = main_loop
+        .add_event({
+            let event_signal = event_signal.clone();
+            move |count| {
+                println!("Event: count {:?}", count);
+                event_signal.store(true, Ordering::Relaxed);
+            }
+        })
+        .unwrap();
 
-    let callback = |_expirations| {
-        main_loop.get_loop().signal_event(&event).unwrap();
-    };
-    let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
+    let timer = main_loop
+        .add_timer({
+            move |_expirations| {
+                let _ = &event.signal().unwrap();
+            }
+        })
+        .unwrap();
     timer
         .update(Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();
 
-    let callback = |_expirations| {
-        main_loop.quit().unwrap();
-    };
-    let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
-    timer
-        .update(Duration::from_secs(3), Duration::ZERO, false)
-        .unwrap();
+    let _timer = main_loop.quit_after(Duration::from_secs(3)).unwrap();
 
     main_loop.run().unwrap();
 
@@ -80,20 +73,23 @@ fn test_iterate_main_loop() {
     let main_loop = MainLoop::default();
     let loop_iterations = Mutex::new(0);
 
-    let callback = |_expirations| {
-        for _elapsed in main_loop.iter(100) {
-            let mut loop_iterations = loop_iterations.lock().unwrap();
-            *loop_iterations += 1;
-            if *loop_iterations == 10 {
-                break;
+    let callback = {
+        let main_loop = main_loop.clone();
+        move |_expirations| {
+            for _elapsed in main_loop.iter(100) {
+                let mut loop_iterations = loop_iterations.lock().unwrap();
+                *loop_iterations += 1;
+                if *loop_iterations == 10 {
+                    break;
+                }
             }
+
+            main_loop.quit().unwrap();
+
+            assert_eq!(*loop_iterations.lock().unwrap(), 10)
         }
-
-        main_loop.quit().unwrap();
-
-        assert_eq!(*loop_iterations.lock().unwrap(), 10)
     };
-    let timer = main_loop.get_loop().add_timer(Box::new(callback)).unwrap();
+    let timer = main_loop.add_timer(callback).unwrap();
     timer
         .update(Duration::from_secs(1), Duration::ZERO, false)
         .unwrap();

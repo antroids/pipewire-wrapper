@@ -14,6 +14,7 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::EventPump;
 
 use pipewire_wrapper::core_api::core::Core;
+use pipewire_wrapper::core_api::loop_::Loop;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
 use pipewire_wrapper::listeners::OwnListeners;
 use pipewire_wrapper::spa::buffers::meta::{
@@ -43,11 +44,11 @@ use pipewire_wrapper::{properties_new, stream};
 
 const EINVAL: i32 = 22; // Invalid argument
 
-struct State<'a> {
-    texture_creator: &'a TextureCreator<WindowContext>,
+struct State {
+    texture_creator: TextureCreator<WindowContext>,
     event_pump: EventPump,
-    main_loop: &'a MainLoop,
-    stream: Rc<Stream<'a>>,
+    main_loop: MainLoop,
+    stream: Rc<Stream>,
 
     video_format: VideoFormat,
     size: RectangleRef,
@@ -56,13 +57,13 @@ struct State<'a> {
 
     io_video_size: Option<IOVideoSizeRef>,
 
-    texture: Option<Texture<'a>>,
-    cursor: Option<Texture<'a>>,
+    texture: Option<Texture>,
+    cursor: Option<Texture>,
     rect: Rect,
     cursor_rect: Rect,
 }
 
-impl State<'_> {
+impl State {
     fn pixel_format(&self) -> PixelFormatEnum {
         if self.media_subtype == MediaSubType::DSP {
             PixelFormatEnum::RGBA8888
@@ -83,12 +84,12 @@ impl State<'_> {
     }
 }
 
-impl<'a> State<'a> {
+impl State {
     fn new(
-        texture_creator: &'a TextureCreator<WindowContext>,
+        texture_creator: TextureCreator<WindowContext>,
         event_pump: EventPump,
-        main_loop: &'a MainLoop,
-        stream: Rc<Stream<'a>>,
+        main_loop: MainLoop,
+        stream: Rc<Stream>,
     ) -> Self {
         Self {
             texture_creator,
@@ -114,8 +115,9 @@ fn main() -> Result<(), String> {
     let video_subsystem = sdl_context.video().unwrap();
     let window = video_subsystem.window("Window", 800, 600).build().unwrap();
 
-    let core = Rc::new(Core::default());
-    let main_loop = core.context().main_loop();
+    let core = Core::default();
+    let context = core.context();
+    let main_loop = context.main_loop();
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
     let texture_creator = canvas.texture_creator();
@@ -134,20 +136,20 @@ fn main() -> Result<(), String> {
     );
 
     let state: Rc<Mutex<State>> = Rc::new(Mutex::new(State::new(
-        &texture_creator,
+        texture_creator,
         event_pump,
-        main_loop,
+        main_loop.clone(),
         stream.clone(),
     )));
 
     let main_loop_timer = main_loop
-        .get_loop()
-        .add_timer(Box::new(|_| handle_sdl_events(&state).unwrap()))
+        .add_timer({
+            let state = state.clone();
+            move |_| handle_sdl_events(&state).unwrap()
+        })
         .unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(
-            &main_loop_timer,
+    main_loop_timer
+        .update(
             Duration::from_millis(100),
             Duration::from_millis(100),
             false,
@@ -209,7 +211,7 @@ fn main() -> Result<(), String> {
 
 fn handle_sdl_events(state: &Mutex<State>) -> Result<(), Box<dyn std::error::Error>> {
     let mut state = state.lock().unwrap();
-    let main_loop = state.main_loop;
+    let main_loop = state.main_loop.clone();
     let stream = state.stream.clone();
     for event in state.event_pump.poll_iter() {
         match event {
@@ -271,7 +273,7 @@ fn sdl_enum_format() -> pipewire_wrapper::Result<AllocPod<PodObjectRef>> {
 }
 
 fn on_stream_param_changed(
-    state: &Mutex<State<'_>>,
+    state: &Mutex<State>,
     format_info: ObjectFormatInfo,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if let (Some(media_type), Some(media_subtype), Some(video_format)) = (

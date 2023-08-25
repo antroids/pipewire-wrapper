@@ -34,8 +34,8 @@ pub struct LinkRef {
     raw: pw_sys::pw_link,
 }
 
-impl<'a> AddListener<'a> for LinkRef {
-    type Events = LinkEvents<'a>;
+impl AddListener for LinkRef {
+    type Events = LinkEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -54,13 +54,13 @@ impl<'a> AddListener<'a> for LinkRef {
 
 #[derive(Clone, Debug)]
 #[proxy_wrapper(LinkRef)]
-pub struct Link<'c> {
+pub struct Link {
     ref_: Proxy,
 
-    listeners: Listeners<Pin<Box<LinkEvents<'c>>>>,
+    listeners: Listeners<Pin<Box<LinkEvents>>>,
 }
 
-impl<'c> RegistryBind<'c> for Link<'c> {
+impl RegistryBind for Link {
     fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
@@ -69,10 +69,10 @@ impl<'c> RegistryBind<'c> for Link<'c> {
     }
 }
 
-impl<'a> OwnListeners<'a> for Link<'a> {
+impl OwnListeners for Link {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }

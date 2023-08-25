@@ -23,15 +23,15 @@ pub struct ProxyEventsRef {
     raw: pw_sys::pw_proxy_events,
 }
 
-pub type DestroyCallback<'p> = Box<dyn FnMut() + 'p>;
-pub type BoundCallback<'p> = Box<dyn FnMut(u32) + 'p>;
-pub type RemovedCallback<'p> = Box<dyn FnMut() + 'p>;
-pub type DoneCallback<'p> = Box<dyn FnMut(i32) + 'p>;
-pub type ErrorCallback<'p> = Box<dyn for<'a> FnMut(i32, i32, &'a CStr) + 'p>;
+pub type DestroyCallback = Box<dyn FnMut()>;
+pub type BoundCallback = Box<dyn FnMut(u32)>;
+pub type RemovedCallback = Box<dyn FnMut()>;
+pub type DoneCallback = Box<dyn FnMut(i32)>;
+pub type ErrorCallback = Box<dyn for<'a> FnMut(i32, i32, &'a CStr)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct ProxyEvents<'p> {
+pub struct ProxyEvents {
     #[raw_wrapper]
     ref_: NonNull<ProxyEventsRef>,
 
@@ -39,18 +39,18 @@ pub struct ProxyEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    destroy: Option<DestroyCallback<'p>>,
+    destroy: Option<DestroyCallback>,
     #[builder(setter)]
-    bound: Option<BoundCallback<'p>>,
+    bound: Option<BoundCallback>,
     #[builder(setter)]
-    removed: Option<RemovedCallback<'p>>,
+    removed: Option<RemovedCallback>,
     #[builder(setter)]
-    done: Option<DoneCallback<'p>>,
+    done: Option<DoneCallback>,
     #[builder(setter)]
-    error: Option<ErrorCallback<'p>>,
+    error: Option<ErrorCallback>,
 }
 
-impl<'p> ProxyEvents<'p> {
+impl ProxyEvents {
     unsafe extern "C" fn destroy_call(data: *mut ::std::os::raw::c_void) {
         if let Some(events) = (data as *mut ProxyEvents).as_mut() {
             if let Some(callback) = &mut events.destroy {
@@ -107,9 +107,9 @@ impl<'p> ProxyEvents<'p> {
 
 // todo: channel builder
 
-impl<'c> ProxyEventsBuilder<'c> {
+impl ProxyEventsBuilder {
     events_builder_build! {
-        ProxyEvents<'c>,
+        ProxyEvents,
         pw_proxy_events,
         destroy => destroy_call,
         bound => bound_call,
@@ -119,7 +119,7 @@ impl<'c> ProxyEventsBuilder<'c> {
     }
 }
 
-impl Debug for ProxyEvents<'_> {
+impl Debug for ProxyEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ProxyEvents")
             .field("raw", &self.raw)

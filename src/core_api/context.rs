@@ -203,8 +203,8 @@ impl ContextRef {
     //todo pw_context_get_object
 }
 
-impl<'a> AddListener<'a> for ContextRef {
-    type Events = ContextEvents<'a>;
+impl AddListener for ContextRef {
+    type Events = ContextEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {

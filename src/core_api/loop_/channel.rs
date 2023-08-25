@@ -6,7 +6,7 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 use std::sync::{mpsc, Mutex};
 
-use crate::core_api::loop_::LoopRef;
+use crate::core_api::loop_::{Loop, LoopRef};
 use crate::spa::loop_::EventSource;
 
 #[derive(Debug)]
@@ -26,18 +26,18 @@ impl<T> From<SendError<T>> for crate::Error {
     }
 }
 
-pub struct LoopChannel<'a> {
-    event: Option<EventSource<'a, LoopRef>>,
+pub struct LoopChannel<L: Loop> {
+    event: Option<EventSource<'static, L>>,
 }
 
-impl<'a> LoopChannel<'a> {
-    pub fn channel<T>() -> (Sender<'a, T>, Receiver<'a, T>) {
+impl<L: Loop> LoopChannel<L> {
+    pub fn channel<T>() -> (Sender<T, L>, Receiver<T, L>) {
         Self::from_channel(mpsc::channel())
     }
 
     pub fn from_channel<T>(
         (sender, receiver): (mpsc::Sender<T>, mpsc::Receiver<T>),
-    ) -> (Sender<'a, T>, Receiver<'a, T>) {
+    ) -> (Sender<T, L>, Receiver<T, L>) {
         let channel = Rc::new(Mutex::new(LoopChannel { event: None }));
         (
             Sender {
@@ -50,12 +50,12 @@ impl<'a> LoopChannel<'a> {
 }
 
 #[derive(Clone)]
-pub struct Sender<'a, T> {
+pub struct Sender<T, L: Loop> {
     sender: mpsc::Sender<T>,
-    channel: Rc<Mutex<LoopChannel<'a>>>,
+    channel: Rc<Mutex<LoopChannel<L>>>,
 }
 
-impl<'a, T> Sender<'a, T> {
+impl<T, L: Loop> Sender<T, L> {
     pub fn send(&self, value: T) -> Result<(), SendError<T>> {
         let mut channel = self.channel.lock().unwrap();
         self.sender
@@ -79,28 +79,21 @@ impl<'a, T> Sender<'a, T> {
     }
 }
 
-pub struct Receiver<'a, T: 'a> {
+pub struct Receiver<T, L: Loop> {
     receiver: mpsc::Receiver<T>,
-    channel: Rc<Mutex<LoopChannel<'a>>>,
+    channel: Rc<Mutex<LoopChannel<L>>>,
 }
 
-pub type ReceiverCallback<'a, T> = Box<dyn FnMut(&mpsc::Receiver<T>) + 'a>;
+pub type ReceiverCallback<T> = Box<dyn FnMut(&mpsc::Receiver<T>)>;
 
-impl<'a, T: 'a> Receiver<'a, T> {
-    pub fn attach(
-        self,
-        loop_: &'a LoopRef,
-        mut callback: ReceiverCallback<'a, T>,
-    ) -> crate::Result<()> {
+impl<T: 'static, L: Loop> Receiver<T, L> {
+    pub fn attach(self, loop_: &L, mut callback: ReceiverCallback<T>) -> crate::Result<()> {
         let channel = self.channel.clone();
-        let event = loop_.utils().add_event(
-            loop_,
-            Box::new({
-                move |_count| {
-                    callback(&self.receiver);
-                }
-            }),
-        )?;
+        let event = loop_.add_event(Box::new({
+            move |_count| {
+                callback(&self.receiver);
+            }
+        }))?;
         let mut channel = channel.lock().unwrap();
         channel.event = Some(event);
         Ok(())

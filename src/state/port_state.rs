@@ -22,7 +22,7 @@ pub enum PortMessage {
     Props(u32),
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn subscribe_port_changes(&self, id: u32) {
         if let Some(port) = self.ports.lock().unwrap().get_mut(&id) {
             let listener = PortEventsBuilder::default()

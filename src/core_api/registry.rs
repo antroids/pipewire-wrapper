@@ -116,8 +116,8 @@ impl RegistryRef {
     }
 }
 
-impl<'a> AddListener<'a> for RegistryRef {
-    type Events = RegistryEvents<'a>;
+impl AddListener for RegistryRef {
+    type Events = RegistryEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -138,13 +138,13 @@ impl<'a> AddListener<'a> for RegistryRef {
 /// See [RegistryRef]
 #[derive(Clone, Debug)]
 #[proxy_wrapper(RegistryRef)]
-pub struct Registry<'c> {
+pub struct Registry {
     ref_: Proxy,
 
-    listeners: Listeners<Pin<Box<RegistryEvents<'c>>>>,
+    listeners: Listeners<Pin<Box<RegistryEvents>>>,
 }
 
-impl<'c> RegistryBind<'c> for Registry<'c> {
+impl RegistryBind for Registry {
     fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
@@ -153,15 +153,15 @@ impl<'c> RegistryBind<'c> for Registry<'c> {
     }
 }
 
-impl<'a> OwnListeners<'a> for Registry<'a> {
+impl OwnListeners for Registry {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }
 
-impl<'c> Registry<'c> {
+impl Registry {
     /// Bind to the global object with id and use the client proxy.
     /// After this call, methods can be send to the remote global object and events can be received.
     ///
@@ -173,7 +173,7 @@ impl<'c> Registry<'c> {
     /// Returns bound [Proxy] object.
     pub fn bind_proxy<T>(&self, id: u32, version: u32) -> crate::Result<T>
     where
-        T: RegistryBind<'c>,
+        T: RegistryBind,
         <T as Wrapper>::RawWrapperType: Proxied,
     {
         let type_info = T::RawWrapperType::type_info();
@@ -186,7 +186,7 @@ pub(crate) mod restricted {
     use crate::core_api::proxy::{Proxied, ProxyRef};
     use crate::wrapper::Wrapper;
 
-    pub trait RegistryBind<'c>
+    pub trait RegistryBind
     where
         Self: Wrapper,
         Self::RawWrapperType: Proxied,

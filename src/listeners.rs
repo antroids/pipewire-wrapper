@@ -85,9 +85,9 @@ impl<T> Default for Listeners<T> {
 /// [RawWrapper] that can register listener.
 /// Ownership of the listener is not taken, so it's should be stored somewhere.
 /// If this is possible, owned wrapper with the [OwnListeners] trait is preferred for usage.
-pub trait AddListener<'a>: RawWrapper {
+pub trait AddListener: RawWrapper {
     /// Events listener struct
-    type Events: 'a;
+    type Events;
 
     /// Register listener and return it.
     ///
@@ -120,15 +120,15 @@ pub trait AddListener<'a>: RawWrapper {
 ///         .build();
 /// registry.add_listener(listener)
 /// ```
-pub trait OwnListeners<'a>
+pub trait OwnListeners
 where
     Self: Wrapper,
-    <Self as Wrapper>::RawWrapperType: AddListener<'a>,
+    <Self as Wrapper>::RawWrapperType: AddListener,
 {
     /// Listeners storege
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>>;
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>>;
 
     /// Register new listener and add it to storage.
     ///
@@ -139,7 +139,7 @@ where
     /// Returns [ListenerId] that can be used to remove listener from storage.
     fn add_listener(
         &self,
-        events: Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>,
+        events: Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>,
     ) -> ListenerId {
         let raw_wrapper = unsafe { Self::RawWrapperType::from_raw_ptr(self.as_raw_ptr().cast()) };
         let mut listener = raw_wrapper.add_listener(events);
@@ -152,9 +152,9 @@ where
     ///
     /// The listener will be unsubscribed after drop.
     fn remove_listener(
-        &'a mut self,
+        &mut self,
         id: ListenerId,
-    ) -> Option<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> Option<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         self.listeners().remove(id)
     }
 

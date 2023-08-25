@@ -27,8 +27,8 @@ pub struct FactoryRef {
     raw: pw_sys::pw_factory,
 }
 
-impl<'a> AddListener<'a> for FactoryRef {
-    type Events = FactoryEvents<'a>;
+impl AddListener for FactoryRef {
+    type Events = FactoryEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -47,13 +47,13 @@ impl<'a> AddListener<'a> for FactoryRef {
 
 #[derive(Clone, Debug)]
 #[proxy_wrapper(FactoryRef)]
-pub struct Factory<'c> {
+pub struct Factory {
     ref_: Proxy,
 
-    listeners: Listeners<Pin<Box<FactoryEvents<'c>>>>,
+    listeners: Listeners<Pin<Box<FactoryEvents>>>,
 }
 
-impl<'c> RegistryBind<'c> for Factory<'c> {
+impl RegistryBind for Factory {
     fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
@@ -62,10 +62,10 @@ impl<'c> RegistryBind<'c> for Factory<'c> {
     }
 }
 
-impl<'a> OwnListeners<'a> for Factory<'a> {
+impl OwnListeners for Factory {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }

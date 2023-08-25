@@ -22,7 +22,7 @@ pub enum DeviceMessage {
     Props(u32),
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn subscribe_device_changes(&self, id: u32) {
         if let Some(device) = self.devices.lock().unwrap().get_mut(&id) {
             let listener = DeviceEventsBuilder::default()

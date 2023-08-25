@@ -15,7 +15,7 @@ pub enum ClientMessage {
     Props(u32),
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn subscribe_client_changes(&self, id: u32) {
         if let Some(client) = self.clients.lock().unwrap().get_mut(&id) {
             let listener = ClientEventsBuilder::default()

@@ -25,15 +25,15 @@ pub struct ContextEventsRef {
     raw: pw_sys::pw_context_events,
 }
 
-pub type DestroyCallback<'c> = Box<dyn FnMut() + 'c>;
-pub type FreeCallback<'c> = Box<dyn FnMut() + 'c>;
-pub type CheckAccessCallback<'c> = Box<dyn for<'a> FnMut(&'a ImplClientRef) + 'c>;
-pub type GlobalAddedCallback<'c> = Box<dyn for<'a> FnMut(&'a GlobalRef) + 'c>;
-pub type GlobalRemovedCallback<'c> = Box<dyn for<'a> FnMut(&'a GlobalRef) + 'c>;
+pub type DestroyCallback = Box<dyn FnMut()>;
+pub type FreeCallback = Box<dyn FnMut()>;
+pub type CheckAccessCallback = Box<dyn for<'a> FnMut(&'a ImplClientRef)>;
+pub type GlobalAddedCallback = Box<dyn for<'a> FnMut(&'a GlobalRef)>;
+pub type GlobalRemovedCallback = Box<dyn for<'a> FnMut(&'a GlobalRef)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct ContextEvents<'c> {
+pub struct ContextEvents {
     #[raw_wrapper]
     ref_: NonNull<ContextEventsRef>,
 
@@ -41,18 +41,18 @@ pub struct ContextEvents<'c> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    destroy: Option<DestroyCallback<'c>>,
+    destroy: Option<DestroyCallback>,
     #[builder(setter)]
-    free: Option<FreeCallback<'c>>,
+    free: Option<FreeCallback>,
     #[builder(setter)]
-    check_access: Option<CheckAccessCallback<'c>>,
+    check_access: Option<CheckAccessCallback>,
     #[builder(setter)]
-    global_added: Option<GlobalAddedCallback<'c>>,
+    global_added: Option<GlobalAddedCallback>,
     #[builder(setter)]
-    global_removed: Option<GlobalRemovedCallback<'c>>,
+    global_removed: Option<GlobalRemovedCallback>,
 }
 
-impl<'c> ContextEvents<'c> {
+impl ContextEvents {
     unsafe extern "C" fn destroy_call(data: *mut ::std::os::raw::c_void) {
         if let Some(context_events) = (data as *mut ContextEvents).as_mut() {
             if let Some(callback) = &mut context_events.destroy {
@@ -111,13 +111,13 @@ impl<'c> ContextEvents<'c> {
     }
 }
 
-impl Drop for ContextEvents<'_> {
+impl Drop for ContextEvents {
     fn drop(&mut self) {
         // handled by hook
     }
 }
 
-impl Debug for ContextEvents<'_> {
+impl Debug for ContextEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ContextEvents").finish()
     }
@@ -125,9 +125,9 @@ impl Debug for ContextEvents<'_> {
 
 // todo: channel builder
 
-impl<'c> ContextEventsBuilder<'c> {
+impl ContextEventsBuilder {
     events_builder_build! {
-        ContextEvents<'c>,
+        ContextEvents,
         pw_context_events,
         destroy => destroy_call,
         free => free_call,

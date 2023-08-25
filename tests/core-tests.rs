@@ -1,10 +1,11 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
+
 use pipewire_wrapper::core_api::{core::Core, registry::events::RegistryEventsBuilder};
 use pipewire_wrapper::listeners::OwnListeners;
 use std::time::Duration;
 
-/*
- * SPDX-License-Identifier: MIT
- */
 #[test]
 fn test_create_core() {
     let core = Core::default();
@@ -25,16 +26,7 @@ fn test_create_core() {
             .build(),
     );
 
-    let timer_callback = |_| {
-        core.context().main_loop().quit().unwrap();
-    };
-    let timer = main_loop
-        .get_loop()
-        .add_timer(Box::new(timer_callback))
-        .unwrap();
-    timer
-        .update(Duration::from_secs(1), Duration::ZERO, false)
-        .unwrap();
+    let _timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 
     main_loop.run().unwrap();
 }

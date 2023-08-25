@@ -27,11 +27,11 @@ pub struct LinkEventsRef {
     raw: pw_sys::pw_link_events,
 }
 
-pub type InfoCallback<'p> = Box<dyn for<'a> FnMut(&'a LinkInfoRef) + 'p>;
+pub type InfoCallback = Box<dyn for<'a> FnMut(&'a LinkInfoRef)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct LinkEvents<'p> {
+pub struct LinkEvents {
     #[raw_wrapper]
     ref_: NonNull<LinkEventsRef>,
 
@@ -39,10 +39,10 @@ pub struct LinkEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<InfoCallback<'p>>,
+    info: Option<InfoCallback>,
 }
 
-impl<'p> LinkEvents<'p> {
+impl LinkEvents {
     unsafe extern "C" fn info_call(data: *mut ::std::os::raw::c_void, info: *const pw_link_info) {
         if let Some(events) = (data as *mut LinkEvents).as_mut() {
             if let Some(callback) = &mut events.info {
@@ -62,15 +62,15 @@ impl<'p> LinkEvents<'p> {
 
 // todo: channel builder
 
-impl<'p> LinkEventsBuilder<'p> {
+impl LinkEventsBuilder {
     events_builder_build! {
-        LinkEvents<'p>,
+        LinkEvents,
         pw_link_events,
         info => info_call,
     }
 }
 
-impl Debug for LinkEvents<'_> {
+impl Debug for LinkEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LinkEvents")
             .field("raw", &self.raw)

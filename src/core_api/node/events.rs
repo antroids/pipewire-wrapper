@@ -14,6 +14,7 @@ use pipewire_wrapper_proc_macro::{RawWrapper, Wrapper};
 
 use crate::core_api::loop_;
 use crate::core_api::loop_::channel::{Receiver, Sender};
+use crate::core_api::loop_::Loop;
 use crate::core_api::node::info::{NodeInfo, NodeInfoRef};
 use crate::spa::interface::Hook;
 use crate::spa::param::ParamType;
@@ -29,12 +30,12 @@ pub struct NodeEventsRef {
     raw: pw_sys::pw_node_events,
 }
 
-pub type InfoCallback<'p> = Box<dyn for<'a> FnMut(&'a NodeInfoRef) + 'p>;
-pub type ParamCallback<'p> = Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef) + 'p>;
+pub type InfoCallback = Box<dyn for<'a> FnMut(&'a NodeInfoRef)>;
+pub type ParamCallback = Box<dyn for<'a> FnMut(i32, ParamType, u32, u32, &'a PodRef)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct NodeEvents<'p> {
+pub struct NodeEvents {
     #[raw_wrapper]
     ref_: NonNull<NodeEventsRef>,
 
@@ -42,12 +43,12 @@ pub struct NodeEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<InfoCallback<'p>>,
+    info: Option<InfoCallback>,
     #[builder(setter)]
-    param: Option<ParamCallback<'p>>,
+    param: Option<ParamCallback>,
 }
 
-impl<'p> NodeEvents<'p> {
+impl NodeEvents {
     unsafe extern "C" fn info_call(data: *mut ::std::os::raw::c_void, info: *const pw_node_info) {
         if let Some(events) = (data as *mut NodeEvents).as_mut() {
             if let Some(callback) = &mut events.info {
@@ -92,14 +93,14 @@ pub enum NodeEventType {
     Param(i32, ParamType, u32, u32, AllocPod<PodRef>),
 }
 
-impl<'p> NodeEventsChannelBuilder<'p> {
-    fn info_send(sender: Sender<'p, NodeEventType>) -> InfoCallback<'p> {
+impl<L: Loop> NodeEventsChannelBuilder<L> {
+    fn info_send(sender: Sender<NodeEventType, L>) -> InfoCallback {
         Box::new(move |i| {
             sender.send(NodeEventType::Info(i.into()));
         })
     }
 
-    fn param_send(sender: Sender<'p, NodeEventType>) -> ParamCallback<'p> {
+    fn param_send(sender: Sender<NodeEventType, L>) -> ParamCallback {
         Box::new(move |seq, type_, index, next, pod| {
             if let Ok(pod) = AllocPod::from_pod(pod) {
                 sender.send(NodeEventType::Param(seq, type_, index, next, pod));
@@ -114,16 +115,16 @@ events_channel_builder! {
     param => param_send,
 }
 
-impl<'p> NodeEventsBuilder<'p> {
+impl NodeEventsBuilder {
     events_builder_build! {
-        NodeEvents<'p>,
+        NodeEvents,
         pw_node_events,
         info => info_call,
         param => param_call,
     }
 }
 
-impl Debug for NodeEvents<'_> {
+impl Debug for NodeEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("NodeEvents")
             .field("raw", &self.raw)

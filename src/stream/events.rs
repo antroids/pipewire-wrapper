@@ -30,21 +30,21 @@ pub struct StreamEventsRef {
     raw: pw_sys::pw_stream_events,
 }
 
-pub type DestroyCallback<'p> = Box<dyn FnMut() + 'p>;
-pub type StateChangedCallback<'p> = Box<dyn for<'a> FnMut(State, State, Option<&'a CStr>) + 'p>;
-pub type ControlInfoCallback<'p> = Box<dyn for<'a> FnMut(u32, &'a ControlRef) + 'p>;
-pub type IOChangedCallback<'p> = Box<dyn for<'a> FnMut(IOValue) + 'p>;
-pub type ParamChangedCallback<'p> = Box<dyn for<'a> FnMut(u32, &'a PodRef) + 'p>;
-pub type AddBufferCallback<'p> = Box<dyn for<'a> FnMut(&'a BufferRef) + 'p>;
-pub type RemoveBufferCallback<'p> = Box<dyn for<'a> FnMut(&'a BufferRef) + 'p>;
-pub type ProcessCallback<'p> = Box<dyn FnMut() + 'p>;
-pub type DrainedCallback<'p> = Box<dyn FnMut() + 'p>;
-pub type CommandCallback<'p> = Box<dyn for<'a> FnMut(&'a CommandRef) + 'p>;
-pub type TriggerDoneCallback<'p> = Box<dyn FnMut() + 'p>;
+pub type DestroyCallback = Box<dyn FnMut()>;
+pub type StateChangedCallback = Box<dyn for<'a> FnMut(State, State, Option<&'a CStr>)>;
+pub type ControlInfoCallback = Box<dyn for<'a> FnMut(u32, &'a ControlRef)>;
+pub type IOChangedCallback = Box<dyn for<'a> FnMut(IOValue)>;
+pub type ParamChangedCallback = Box<dyn for<'a> FnMut(u32, &'a PodRef)>;
+pub type AddBufferCallback = Box<dyn for<'a> FnMut(&'a BufferRef)>;
+pub type RemoveBufferCallback = Box<dyn for<'a> FnMut(&'a BufferRef)>;
+pub type ProcessCallback = Box<dyn FnMut()>;
+pub type DrainedCallback = Box<dyn FnMut()>;
+pub type CommandCallback = Box<dyn for<'a> FnMut(&'a CommandRef)>;
+pub type TriggerDoneCallback = Box<dyn FnMut()>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct StreamEvents<'p> {
+pub struct StreamEvents {
     #[raw_wrapper]
     ref_: NonNull<StreamEventsRef>,
 
@@ -52,30 +52,30 @@ pub struct StreamEvents<'p> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    destroy: Option<DestroyCallback<'p>>,
+    destroy: Option<DestroyCallback>,
     #[builder(setter)]
-    state_changed: Option<StateChangedCallback<'p>>,
+    state_changed: Option<StateChangedCallback>,
     #[builder(setter)]
-    control_info: Option<ControlInfoCallback<'p>>,
+    control_info: Option<ControlInfoCallback>,
     #[builder(setter)]
-    io_changed: Option<IOChangedCallback<'p>>,
+    io_changed: Option<IOChangedCallback>,
     #[builder(setter)]
-    param_changed: Option<ParamChangedCallback<'p>>,
+    param_changed: Option<ParamChangedCallback>,
     #[builder(setter)]
-    add_buffer: Option<AddBufferCallback<'p>>,
+    add_buffer: Option<AddBufferCallback>,
     #[builder(setter)]
-    remove_buffer: Option<RemoveBufferCallback<'p>>,
+    remove_buffer: Option<RemoveBufferCallback>,
     #[builder(setter)]
-    process: Option<ProcessCallback<'p>>,
+    process: Option<ProcessCallback>,
     #[builder(setter)]
-    drained: Option<DrainedCallback<'p>>,
+    drained: Option<DrainedCallback>,
     #[builder(setter)]
-    command: Option<CommandCallback<'p>>,
+    command: Option<CommandCallback>,
     #[builder(setter)]
-    trigger_done: Option<TriggerDoneCallback<'p>>,
+    trigger_done: Option<TriggerDoneCallback>,
 }
 
-impl<'p> StreamEvents<'p> {
+impl StreamEvents {
     unsafe extern "C" fn destroy_call(data: *mut ::std::os::raw::c_void) {
         if let Some(events) = (data as *mut StreamEvents).as_mut() {
             if let Some(callback) = &mut events.destroy {
@@ -212,9 +212,9 @@ impl<'p> StreamEvents<'p> {
     }
 }
 
-impl<'p> StreamEventsBuilder<'p> {
+impl StreamEventsBuilder {
     events_builder_build! {
-        StreamEvents<'p>,
+        StreamEvents,
         pw_stream_events,
         destroy => destroy_call,
         state_changed => state_changed_call,
@@ -230,7 +230,7 @@ impl<'p> StreamEventsBuilder<'p> {
     }
 }
 
-impl Debug for StreamEvents<'_> {
+impl Debug for StreamEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("StreamEvents")
             .field("raw", &self.raw)

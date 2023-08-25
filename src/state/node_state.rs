@@ -25,7 +25,7 @@ pub enum NodeMessage {
     Props(u32),
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn subscribe_node_changes(&self, id: u32) {
         if let Some(node) = self.nodes.lock().unwrap().get_mut(&id) {
             let listener = NodeEventsBuilder::default()

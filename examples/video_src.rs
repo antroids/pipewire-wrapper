@@ -13,7 +13,7 @@ mod video_src {
     use std::time::Duration;
 
     use pipewire_wrapper::core_api::core::Core;
-    use pipewire_wrapper::core_api::loop_::LoopRef;
+    use pipewire_wrapper::core_api::loop_::Loop;
     use pipewire_wrapper::core_api::main_loop::MainLoop;
     use pipewire_wrapper::listeners::OwnListeners;
     use pipewire_wrapper::spa::buffers::meta::{
@@ -39,10 +39,10 @@ mod video_src {
     use pipewire_wrapper::stream::{Stream, StreamFlags};
     use pipewire_wrapper::{properties_new, stream};
 
-    struct State<'a> {
+    struct State {
         loop_: MainLoop,
         size: Option<RectangleRef>,
-        timeout_timer: TimerSource<'a, LoopRef>,
+        timeout_timer: TimerSource<'static, MainLoop>,
 
         seq: u64,
         counter: u32,
@@ -50,7 +50,7 @@ mod video_src {
         accumulator: f64,
     }
 
-    impl State<'_> {
+    impl State {
         pub fn stride(&self) -> Option<u32> {
             self.size.map(|size| ((size.width() * BPP) + 3) & !3)
         }
@@ -70,15 +70,15 @@ mod video_src {
         let core = Rc::new(Core::default());
         let main_loop = core.context().main_loop();
 
-        let quit_main_loop = Box::new(|_| {
-            main_loop.quit().unwrap();
-        });
-        let _sigint_handler = main_loop
-            .get_loop()
-            .add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
-        let _sigterm_handler = main_loop
-            .get_loop()
-            .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+        let quit_main_loop = {
+            let main_loop = main_loop.clone();
+            move |_| {
+                main_loop.quit().unwrap();
+            }
+        };
+        let _sigint_handler =
+            main_loop.add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
+        let _sigterm_handler = main_loop.add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
         let stream = Rc::new(
             Stream::new(
@@ -89,7 +89,6 @@ mod video_src {
             .unwrap(),
         );
         let timeout_timer = main_loop
-            .get_loop()
             .add_timer(Box::new({
                 let stream = stream.clone();
                 move |_| {
@@ -256,20 +255,10 @@ mod video_src {
         println!("Video source status updated to {:?}", to);
         match to {
             stream::State::ERROR | stream::State::UNCONNECTED => state.loop_.quit().unwrap(),
-            stream::State::PAUSED => state
-                .loop_
-                .get_loop()
-                .disable_timer(&state.timeout_timer)
-                .unwrap(),
+            stream::State::PAUSED => state.timeout_timer.disable().unwrap(),
             stream::State::STREAMING => state
-                .loop_
-                .get_loop()
-                .update_timer(
-                    &state.timeout_timer,
-                    Duration::from_nanos(1),
-                    Duration::from_millis(40),
-                    false,
-                )
+                .timeout_timer
+                .update(Duration::from_nanos(1), Duration::from_millis(40), false)
                 .unwrap(),
             _ => {}
         }

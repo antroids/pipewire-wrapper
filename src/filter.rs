@@ -327,8 +327,8 @@ impl<T> FilterRef<T> {
     }
 }
 
-impl<'a, T: 'a> AddListener<'a> for FilterRef<T> {
-    type Events = FilterEvents<'a, T>;
+impl<T> AddListener for FilterRef<T> {
+    type Events = FilterEvents<T>;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -345,18 +345,18 @@ impl<'a, T: 'a> AddListener<'a> for FilterRef<T> {
 }
 
 #[derive(Wrapper, Debug)]
-pub struct Filter<'a, T> {
+pub struct Filter<T> {
     #[raw_wrapper]
     ref_: NonNull<FilterRef<T>>,
 
-    core: &'a Core,
-    listeners: Listeners<Pin<Box<FilterEvents<'a, T>>>>,
+    core: Core,
+    listeners: Listeners<Pin<Box<FilterEvents<T>>>>,
     ports: HashMap<FilterPortId<T>, Pin<Box<T>>>,
 }
 
-impl<'a, T> Filter<'a, T> {
+impl<T> Filter<T> {
     /// Create an unconnected filter
-    pub fn new(core: &'a Core, name: &'a CStr, properties: Properties) -> crate::Result<Self> {
+    pub fn new(core: Core, name: &CStr, properties: Properties) -> crate::Result<Self> {
         let result = unsafe {
             pw_sys::pw_filter_new(core.as_raw_ptr(), name.as_ptr(), properties.into_raw())
         };
@@ -483,16 +483,16 @@ impl<'a, T> Filter<'a, T> {
     }
 }
 
-impl<'a, T> Drop for Filter<'a, T> {
+impl<T> Drop for Filter<T> {
     fn drop(&mut self) {
         unsafe { pw_sys::pw_filter_destroy(self.as_raw_ptr()) }
     }
 }
 
-impl<'a, T: 'a> OwnListeners<'a> for Filter<'a, T> {
+impl<T> OwnListeners for Filter<T> {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }

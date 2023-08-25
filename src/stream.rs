@@ -220,8 +220,8 @@ impl StreamRef {
     }
 }
 
-impl<'a> AddListener<'a> for StreamRef {
-    type Events = StreamEvents<'a>;
+impl AddListener for StreamRef {
+    type Events = StreamEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -238,14 +238,14 @@ impl<'a> AddListener<'a> for StreamRef {
 }
 
 #[derive(Wrapper, Debug)]
-pub struct Stream<'a> {
+pub struct Stream {
     #[raw_wrapper]
     ref_: NonNull<StreamRef>,
 
-    listeners: Listeners<Pin<Box<StreamEvents<'a>>>>,
+    listeners: Listeners<Pin<Box<StreamEvents>>>,
 }
 
-impl<'a> Stream<'a> {
+impl Stream {
     pub fn new(core: &CoreRef, name: &CStr, props: Properties) -> crate::Result<Self> {
         unsafe {
             let result = pw_sys::pw_stream_new(core.as_raw_ptr(), name.as_ptr(), props.into_raw());
@@ -260,15 +260,15 @@ impl<'a> Stream<'a> {
     // todo new_simple
 }
 
-impl<'a> OwnListeners<'a> for Stream<'a> {
+impl OwnListeners for Stream {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }
 
-impl Drop for Stream<'_> {
+impl Drop for Stream {
     fn drop(&mut self) {
         unsafe { pw_sys::pw_stream_destroy(self.as_raw_ptr()) }
     }

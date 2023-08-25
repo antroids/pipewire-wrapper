@@ -17,7 +17,7 @@ pub enum LinkMessage {
     Props(u32),
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn subscribe_link_changes(&self, id: u32) {
         if let Some(link) = self.links.lock().unwrap().get_mut(&id) {
             let listener = LinkEventsBuilder::default()

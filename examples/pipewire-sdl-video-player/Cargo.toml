@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 pipewire-wrapper = { path = "../.." }
-sdl2 = "0.35.2"
+sdl2 = { version = "0.35.2", features = ["unsafe_textures"] }
 pw_sys = { package = "pipewire-sys", version = "0.6.0" }

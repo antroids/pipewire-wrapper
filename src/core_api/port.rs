@@ -67,8 +67,8 @@ impl PortRef {
     }
 }
 
-impl<'a> AddListener<'a> for PortRef {
-    type Events = PortEvents<'a>;
+impl AddListener for PortRef {
+    type Events = PortEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -87,13 +87,13 @@ impl<'a> AddListener<'a> for PortRef {
 
 #[derive(Clone, Debug)]
 #[proxy_wrapper(PortRef)]
-pub struct Port<'c> {
+pub struct Port {
     ref_: Proxy,
 
-    listeners: Listeners<Pin<Box<PortEvents<'c>>>>,
+    listeners: Listeners<Pin<Box<PortEvents>>>,
 }
 
-impl<'c> RegistryBind<'c> for Port<'c> {
+impl RegistryBind for Port {
     fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
@@ -102,10 +102,10 @@ impl<'c> RegistryBind<'c> for Port<'c> {
     }
 }
 
-impl<'a> OwnListeners<'a> for Port<'a> {
+impl OwnListeners for Port {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }

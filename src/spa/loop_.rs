@@ -41,42 +41,42 @@ pub struct SourceRef {
 }
 
 #[derive(Wrapper)]
-pub struct IOSource<'l, T: AsLoopRef> {
+pub struct IOSource<'l, T: AsLoopRef + 'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
-    pub(crate) loop_: &'l T,
+    pub(crate) loop_: T,
     callback: Box<dyn FnMut(RawFd, u32) + 'l>,
 }
 
 #[derive(Wrapper)]
-pub struct IdleSource<'l, T: AsLoopRef> {
+pub struct IdleSource<'l, T: AsLoopRef + 'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
-    pub(crate) loop_: &'l T,
+    pub(crate) loop_: T,
     callback: Box<dyn FnMut() + 'l>,
 }
 
 #[derive(Wrapper)]
-pub struct EventSource<'l, T: AsLoopRef> {
+pub struct EventSource<'l, T: AsLoopRef + 'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
-    pub(crate) loop_: &'l T,
+    pub(crate) loop_: T,
     callback: Box<dyn FnMut(u64) + 'l>,
 }
 
 #[derive(Wrapper)]
-pub struct TimerSource<'l, T: AsLoopRef> {
+pub struct TimerSource<'l, T: AsLoopRef + 'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
-    pub(crate) loop_: &'l T,
+    pub(crate) loop_: T,
     callback: Box<dyn FnMut(u64) + 'l>,
 }
 
 #[derive(Wrapper)]
-pub struct SignalSource<'l, T: AsLoopRef> {
+pub struct SignalSource<'l, T: AsLoopRef + 'l> {
     #[raw_wrapper]
     ref_: NonNull<SourceRef>,
-    pub(crate) loop_: &'l T,
+    pub(crate) loop_: T,
     callback: Box<dyn FnMut(i32) + 'l>,
 }
 

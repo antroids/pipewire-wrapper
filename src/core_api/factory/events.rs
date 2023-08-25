@@ -23,11 +23,11 @@ pub struct FactoryEventsRef {
     raw: pw_sys::pw_factory_events,
 }
 
-pub type InfoCallback<'f> = Box<dyn for<'a> FnMut(&'a FactoryInfoRef) + 'f>;
+pub type InfoCallback = Box<dyn for<'a> FnMut(&'a FactoryInfoRef)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct FactoryEvents<'f> {
+pub struct FactoryEvents {
     #[raw_wrapper]
     ref_: NonNull<FactoryEventsRef>,
 
@@ -35,10 +35,10 @@ pub struct FactoryEvents<'f> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<InfoCallback<'f>>,
+    info: Option<InfoCallback>,
 }
 
-impl<'f> FactoryEvents<'f> {
+impl FactoryEvents {
     unsafe extern "C" fn info_call(
         data: *mut ::std::os::raw::c_void,
         info: *const pw_factory_info,
@@ -61,15 +61,15 @@ impl<'f> FactoryEvents<'f> {
 
 // todo: channel builder
 
-impl<'f> FactoryEventsBuilder<'f> {
+impl FactoryEventsBuilder {
     events_builder_build! {
-        FactoryEvents<'f>,
+        FactoryEvents,
         pw_factory_events,
         info => info_call,
     }
 }
 
-impl Debug for FactoryEvents<'_> {
+impl Debug for FactoryEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("FactoryEvents")
             .field("raw", &self.raw)

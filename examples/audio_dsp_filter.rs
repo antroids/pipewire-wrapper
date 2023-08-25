@@ -5,6 +5,7 @@ use std::ffi::CString;
 use std::rc::Rc;
 
 use pipewire_wrapper::core_api::core::Core;
+use pipewire_wrapper::core_api::loop_::Loop;
 use pipewire_wrapper::filter::events::FilterEventsBuilder;
 use pipewire_wrapper::filter::{Filter, FilterFlags, PortFlags};
 use pipewire_wrapper::listeners::OwnListeners;
@@ -21,18 +22,17 @@ type AudioDataType = f32;
 struct CustomPort {}
 
 pub fn main() {
-    let core = Rc::new(Core::default());
+    let core = Core::default();
     let main_loop = core.context().main_loop();
 
-    let quit_main_loop = Box::new(|_| {
-        main_loop.quit().unwrap();
-    });
-    let _sigint_handler = main_loop
-        .get_loop()
-        .add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
-    let _sigterm_handler = main_loop
-        .get_loop()
-        .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+    let quit_main_loop = {
+        let main_loop = main_loop.clone();
+        move |_| {
+            main_loop.quit().unwrap();
+        }
+    };
+    let _sigint_handler = main_loop.add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
+    let _sigterm_handler = main_loop.add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
     let latency_param = PodObjectRef::from_id_and_value(
         ParamType::PROCESS_LATENCY,
@@ -48,7 +48,7 @@ pub fn main() {
 
     let filter_name = CString::new("Test filter").unwrap();
     let mut filter = Filter::<CustomPort>::new(
-        &core,
+        core.clone(),
         filter_name.as_ref(),
         properties_new!(
         pw_sys::PW_KEY_MEDIA_TYPE => "Audio\0",

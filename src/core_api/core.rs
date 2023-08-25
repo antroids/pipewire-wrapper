@@ -117,8 +117,8 @@ impl CoreRef {
     // todo destroy
 }
 
-impl<'a> AddListener<'a> for CoreRef {
-    type Events = CoreEvents<'a>;
+impl AddListener for CoreRef {
+    type Events = CoreEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {

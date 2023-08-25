@@ -28,8 +28,8 @@ pub struct ClientRef {
     raw: pw_sys::pw_client,
 }
 
-impl<'a> AddListener<'a> for ClientRef {
-    type Events = ClientEvents<'a>;
+impl AddListener for ClientRef {
+    type Events = ClientEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -49,13 +49,13 @@ impl<'a> AddListener<'a> for ClientRef {
 /// Wrapper for the Client proxy, can be obtained from the [crate::core_api::registry::Registry].
 #[derive(Clone, Debug)]
 #[proxy_wrapper(ClientRef)]
-pub struct Client<'c> {
+pub struct Client {
     ref_: Proxy,
 
-    listeners: Listeners<Pin<Box<ClientEvents<'c>>>>,
+    listeners: Listeners<Pin<Box<ClientEvents>>>,
 }
 
-impl<'c> RegistryBind<'c> for Client<'c> {
+impl RegistryBind for Client {
     fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
@@ -64,10 +64,10 @@ impl<'c> RegistryBind<'c> for Client<'c> {
     }
 }
 
-impl<'a> OwnListeners<'a> for Client<'a> {
+impl OwnListeners for Client {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }

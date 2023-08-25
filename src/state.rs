@@ -52,38 +52,38 @@ type ObjectsInfoMap<T> = ObjectsMap<T>;
 type ObjectsParamsMap = Arc<Mutex<HashMap<u32, HashMap<ParamType, AllocPod<PodObjectRef>>>>>;
 
 #[derive(Debug, Clone)]
-pub struct State<'a> {
+pub struct State {
     core: Core,
-    registry: Registry<'a>,
+    registry: Registry,
 
     subscriptions: Vec<TypeInfo<'static>>,
     params_subscriptions: HashMap<TypeInfo<'static>, Vec<ParamType>>,
 
     messages_sender: Option<crossbeam_channel::Sender<Message>>,
 
-    nodes: ObjectsMap<Node<'a>>,
+    nodes: ObjectsMap<Node>,
     nodes_info: ObjectsInfoMap<NodeInfo>,
     nodes_params: ObjectsParamsMap,
 
-    ports: ObjectsMap<Port<'a>>,
+    ports: ObjectsMap<Port>,
     ports_info: ObjectsInfoMap<PortInfo>,
     ports_params: ObjectsParamsMap,
 
-    links: ObjectsMap<Link<'a>>,
+    links: ObjectsMap<Link>,
     links_info: ObjectsInfoMap<LinkInfo>,
 
-    devices: ObjectsMap<Device<'a>>,
+    devices: ObjectsMap<Device>,
     devices_info: ObjectsInfoMap<DeviceInfo>,
     devices_params: ObjectsParamsMap,
 
-    clients: ObjectsMap<Client<'a>>,
+    clients: ObjectsMap<Client>,
     clients_info: ObjectsInfoMap<ClientInfo>,
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn new(
         core: Core,
-        registry: Registry<'a>,
+        registry: Registry,
         subscriptions: Vec<TypeInfo<'static>>,
         params_subscriptions: HashMap<TypeInfo<'static>, Vec<ParamType>>,
     ) -> Self {
@@ -184,7 +184,7 @@ impl<'a> State<'a> {
             sender.send(message);
         }
     }
-    pub fn nodes(&self) -> &ObjectsMap<Node<'a>> {
+    pub fn nodes(&self) -> &ObjectsMap<Node> {
         &self.nodes
     }
     pub fn nodes_info(&self) -> &ObjectsInfoMap<NodeInfo> {
@@ -193,7 +193,7 @@ impl<'a> State<'a> {
     pub fn nodes_params(&self) -> &ObjectsParamsMap {
         &self.nodes_params
     }
-    pub fn ports(&self) -> &ObjectsMap<Port<'a>> {
+    pub fn ports(&self) -> &ObjectsMap<Port> {
         &self.ports
     }
     pub fn ports_info(&self) -> &ObjectsInfoMap<PortInfo> {
@@ -202,7 +202,7 @@ impl<'a> State<'a> {
     pub fn ports_params(&self) -> &ObjectsParamsMap {
         &self.ports_params
     }
-    pub fn links(&self) -> &ObjectsMap<Link<'a>> {
+    pub fn links(&self) -> &ObjectsMap<Link> {
         &self.links
     }
     pub fn links_info(&self) -> &ObjectsInfoMap<LinkInfo> {

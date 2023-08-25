@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
+
 use std::{rc::Rc, sync::Mutex, time::Duration};
 
 use pipewire_wrapper::{
@@ -14,35 +18,14 @@ use pipewire_wrapper::{
     listeners::OwnListeners,
 };
 
-/*
- * SPDX-License-Identifier: MIT
- */
 #[test]
 fn test_node_events_via_channel() {
-    let core = Rc::new(Core::default());
-    let main_loop = core.context().main_loop();
+    let core = Core::default();
+    let main_loop = core.context().main_loop().clone();
     let nodes = Rc::new(Mutex::new(Vec::<Node>::new()));
     let registry = core.get_registry(0).unwrap();
-    let quit_main_loop = Box::new(|_| {
-        main_loop.quit().unwrap();
-    });
-    let _sigint_handler = main_loop
-        .get_loop()
-        .add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
-    let _sigterm_handler = main_loop
-        .get_loop()
-        .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
-    let main_loop_close_callback = |_expirations| {
-        main_loop.quit().unwrap();
-    };
-    let timer = main_loop
-        .get_loop()
-        .add_timer(Box::new(main_loop_close_callback))
-        .unwrap();
-    timer
-        .update(Duration::from_secs(1), Duration::ZERO, false)
-        .unwrap();
+    let _quit_timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 
     let (node_sender, node_receiver) = LoopChannel::channel::<Node>();
 
@@ -60,8 +43,10 @@ fn test_node_events_via_channel() {
     registry.add_listener(registry_listener);
 
     let _attached_node_receiver = node_receiver.attach(
-        main_loop.get_loop(),
-        Box::new(move |new_nodes| {
+        &main_loop,
+        Box::new({
+            let main_loop = main_loop.clone();
+            move |new_nodes| {
             for node in new_nodes.try_iter() {
                 let (node_listener, node_event_receiver) = NodeEventsChannelBuilder::default()
                     .info()
@@ -70,7 +55,7 @@ fn test_node_events_via_channel() {
                 node.add_listener(node_listener);
                 node_event_receiver
                     .attach(
-                        main_loop.get_loop(),
+                        &main_loop,
                         Box::new({
                             let node = node.clone();
                             move |events| {
@@ -94,7 +79,7 @@ fn test_node_events_via_channel() {
                     .unwrap();
                 nodes.lock().unwrap().push(node);
             }
-        }),
+        }}),
     );
 
     main_loop.run().unwrap();

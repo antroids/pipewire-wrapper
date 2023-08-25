@@ -11,7 +11,7 @@ use std::sync::Mutex;
 use pipewire_wrapper::core_api::core::Core;
 use pipewire_wrapper::core_api::device::events::DeviceEventsBuilder;
 use pipewire_wrapper::core_api::device::{Device, DeviceRef};
-use pipewire_wrapper::core_api::loop_::LoopRef;
+use pipewire_wrapper::core_api::loop_::Loop;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
 use pipewire_wrapper::core_api::proxy::Proxied;
 use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
@@ -36,38 +36,32 @@ fn main() {
     let core = Rc::new(Core::default());
     let devices: Rc<Mutex<HashMap<u32, Device>>> = Rc::new(Mutex::default());
     let device_added_queue = Rc::new(Mutex::new(Vec::<u32>::new()));
-    let main_loop = core.context().main_loop();
+    let main_loop = core.context().main_loop().clone();
     let registry = core.get_registry(0).unwrap();
     let device_added_event = add_device_added_event(
-        main_loop,
+        main_loop.clone(),
         devices.clone(),
         registry.clone(),
         device_added_queue.clone(),
     );
-    let _registry_listener = add_registry_listener(
-        registry,
-        main_loop.clone(),
-        device_added_event,
-        device_added_queue,
-    );
-    let quit_main_loop = Box::new(|_| {
-        main_loop.quit().unwrap();
-    });
-    let _sigint_handler = main_loop
-        .get_loop()
-        .add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
-    let _sigterm_handler = main_loop
-        .get_loop()
-        .add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
+    let _registry_listener =
+        add_registry_listener(registry, device_added_event, device_added_queue);
+    let quit_main_loop = {
+        let main_loop = main_loop.clone();
+        move |_| {
+            main_loop.quit().unwrap();
+        }
+    };
+    let _sigint_handler = main_loop.add_signal(signal_hook::consts::SIGINT, quit_main_loop.clone());
+    let _sigterm_handler = main_loop.add_signal(signal_hook::consts::SIGTERM, quit_main_loop);
 
     println!("Running main loop");
     main_loop.run().unwrap();
 }
 
-fn add_registry_listener<'a>(
-    registry: Registry<'a>,
-    main_loop: MainLoop,
-    device_added_event: EventSource<'a, LoopRef>,
+fn add_registry_listener(
+    registry: Registry,
+    device_added_event: EventSource<'static, MainLoop>,
     device_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> ListenerId {
     let listener = RegistryEventsBuilder::default()
@@ -75,10 +69,7 @@ fn add_registry_listener<'a>(
             move |id, _permissions, type_info, _version, _props| {
                 if type_info == DeviceRef::type_info() {
                     device_added_queue.lock().unwrap().push(id);
-                    main_loop
-                        .get_loop()
-                        .signal_event(&device_added_event)
-                        .unwrap();
+                    let _ = device_added_event.signal().unwrap();
                 }
             },
         ))
@@ -86,14 +77,13 @@ fn add_registry_listener<'a>(
     registry.add_listener(listener)
 }
 
-fn add_device_added_event<'a>(
-    main_loop: &'a MainLoop,
-    devices: Rc<Mutex<HashMap<u32, Device<'a>>>>,
-    registry: Registry<'a>,
+fn add_device_added_event(
+    main_loop: MainLoop,
+    devices: Rc<Mutex<HashMap<u32, Device>>>,
+    registry: Registry,
     device_added_queue: Rc<Mutex<Vec<u32>>>,
-) -> EventSource<'a, LoopRef> {
+) -> EventSource<'static, MainLoop> {
     main_loop
-        .get_loop()
         .add_event(Box::new({
             move |_count| {
                 let devices = &mut devices.lock().unwrap();

@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
+
 use std::time::Duration;
 
 use pipewire_wrapper::{
@@ -11,24 +15,12 @@ use pipewire_wrapper::{
     wrapper::RawWrapper,
 };
 
-/*
- * SPDX-License-Identifier: MIT
- */
 #[test]
 fn test_context_init() {
     let context = Context::default();
+    let main_loop = context.main_loop().clone();
 
-    let timer_callback = |_| {
-        context.main_loop().quit().unwrap();
-    };
-    let timer = context
-        .main_loop()
-        .get_loop()
-        .add_timer(Box::new(timer_callback))
-        .unwrap();
-    timer
-        .update(Duration::from_secs(1), Duration::ZERO, false)
-        .unwrap();
+    let _timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 
     context.main_loop().run().unwrap();
 }
@@ -36,6 +28,7 @@ fn test_context_init() {
 #[test]
 fn test_context_events() {
     let context = Context::default();
+    let main_loop = context.main_loop().clone();
 
     let events = ContextEventsBuilder::default()
         .global_added(Box::new(|global| {
@@ -46,17 +39,7 @@ fn test_context_events() {
 
     let _core = Core::connect(context.clone(), Properties::default()).unwrap();
 
-    let timer_callback = |_| {
-        context.main_loop().quit().unwrap();
-    };
-    let timer = context
-        .main_loop()
-        .get_loop()
-        .add_timer(Box::new(timer_callback))
-        .unwrap();
-    timer
-        .update(Duration::from_secs(1), Duration::ZERO, false)
-        .unwrap();
+    let _timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 
     context.main_loop().run().unwrap();
 }

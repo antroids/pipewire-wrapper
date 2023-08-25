@@ -25,18 +25,18 @@ pub struct CoreEventsRef {
     raw: pw_sys::pw_core_events,
 }
 
-pub type InfoCallback<'c> = Box<dyn FnMut(&'c CoreInfoRef) + 'c>;
-pub type DoneCallback<'c> = Box<dyn FnMut(u32, i32) + 'c>;
-pub type PingCallback<'c> = Box<dyn FnMut(u32, i32) + 'c>;
-pub type ErrorCallback<'c> = Box<dyn FnMut(u32, i32, i32, &CStr) + 'c>;
-pub type RemoveIdCallback<'c> = Box<dyn FnMut(u32) + 'c>;
-pub type BoundIdCallback<'c> = Box<dyn FnMut(u32, u32) + 'c>;
-pub type AddMemCallback<'c> = Box<dyn FnMut(u32, u32, RawFd, u32) + 'c>;
-pub type RemoveMemCallback<'c> = Box<dyn FnMut(u32) + 'c>;
+pub type InfoCallback = Box<dyn for<'a> FnMut(&'a CoreInfoRef)>;
+pub type DoneCallback = Box<dyn FnMut(u32, i32)>;
+pub type PingCallback = Box<dyn FnMut(u32, i32)>;
+pub type ErrorCallback = Box<dyn FnMut(u32, i32, i32, &CStr)>;
+pub type RemoveIdCallback = Box<dyn FnMut(u32)>;
+pub type BoundIdCallback = Box<dyn FnMut(u32, u32)>;
+pub type AddMemCallback = Box<dyn FnMut(u32, u32, RawFd, u32)>;
+pub type RemoveMemCallback = Box<dyn FnMut(u32)>;
 
 #[derive(Wrapper, Builder)]
 #[builder(setter(skip, strip_option), build_fn(skip), pattern = "owned")]
-pub struct CoreEvents<'c> {
+pub struct CoreEvents {
     #[raw_wrapper]
     ref_: NonNull<CoreEventsRef>,
 
@@ -44,24 +44,24 @@ pub struct CoreEvents<'c> {
     hook: Pin<Box<Hook>>,
 
     #[builder(setter)]
-    info: Option<InfoCallback<'c>>,
+    info: Option<InfoCallback>,
     #[builder(setter)]
-    done: Option<DoneCallback<'c>>,
+    done: Option<DoneCallback>,
     #[builder(setter)]
-    ping: Option<PingCallback<'c>>,
+    ping: Option<PingCallback>,
     #[builder(setter)]
-    error: Option<ErrorCallback<'c>>,
+    error: Option<ErrorCallback>,
     #[builder(setter)]
-    remove_id: Option<RemoveIdCallback<'c>>,
+    remove_id: Option<RemoveIdCallback>,
     #[builder(setter)]
-    bound_id: Option<BoundIdCallback<'c>>,
+    bound_id: Option<BoundIdCallback>,
     #[builder(setter)]
-    add_mem: Option<AddMemCallback<'c>>,
+    add_mem: Option<AddMemCallback>,
     #[builder(setter)]
-    remove_mem: Option<RemoveMemCallback<'c>>,
+    remove_mem: Option<RemoveMemCallback>,
 }
 
-impl<'c> CoreEvents<'c> {
+impl CoreEvents {
     unsafe extern "C" fn info_call(data: *mut ::std::os::raw::c_void, info: *const pw_core_info) {
         if let Some(core_events) = (data as *mut CoreEvents).as_mut() {
             if let Some(callback) = &mut core_events.info {
@@ -157,9 +157,9 @@ impl<'c> CoreEvents<'c> {
 
 // todo: channel builder
 
-impl<'c> CoreEventsBuilder<'c> {
+impl CoreEventsBuilder {
     events_builder_build! {
-        CoreEvents<'c>,
+        CoreEvents,
         pw_core_events,
         info => info_call,
         done => done_call,
@@ -172,7 +172,7 @@ impl<'c> CoreEventsBuilder<'c> {
     }
 }
 
-impl Debug for CoreEvents<'_> {
+impl Debug for CoreEvents {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CoreEvents")
             .field("raw", &self.raw)

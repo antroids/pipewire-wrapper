@@ -9,7 +9,7 @@ use std::rc::Rc;
 use std::sync::Mutex;
 
 use pipewire_wrapper::core_api::core::Core;
-use pipewire_wrapper::core_api::loop_::LoopRef;
+use pipewire_wrapper::core_api::loop_::Loop;
 use pipewire_wrapper::core_api::main_loop::MainLoop;
 use pipewire_wrapper::core_api::node::events::NodeEventsBuilder;
 use pipewire_wrapper::core_api::node::{Node, NodeRef};
@@ -37,26 +37,20 @@ fn main() {
     let main_loop = core.context().main_loop();
     let registry = core.get_registry(0).unwrap();
     let node_added_event = add_node_added_event(
-        main_loop,
+        main_loop.clone(),
         nodes.clone(),
         registry.clone(),
         node_added_queue.clone(),
     );
-    let _registry_listener = add_registry_listener(
-        registry,
-        main_loop.clone(),
-        node_added_event,
-        node_added_queue,
-    );
+    let _registry_listener = add_registry_listener(registry, node_added_event, node_added_queue);
 
     println!("Running main loop");
     main_loop.run().unwrap();
 }
 
-fn add_registry_listener<'a>(
-    registry: Registry<'a>,
-    main_loop: MainLoop,
-    node_added_event: EventSource<'a, LoopRef>,
+fn add_registry_listener(
+    registry: Registry,
+    node_added_event: EventSource<'static, MainLoop>,
     node_added_queue: Rc<Mutex<Vec<u32>>>,
 ) -> ListenerId {
     let listener = RegistryEventsBuilder::default()
@@ -64,10 +58,7 @@ fn add_registry_listener<'a>(
             move |id, _permissions, type_info, _version, _props| {
                 if type_info == NodeRef::type_info() {
                     node_added_queue.lock().unwrap().push(id);
-                    main_loop
-                        .get_loop()
-                        .signal_event(&node_added_event)
-                        .unwrap();
+                    let _ = node_added_event.signal().unwrap();
                 }
             },
         ))
@@ -75,14 +66,13 @@ fn add_registry_listener<'a>(
     registry.add_listener(listener)
 }
 
-fn add_node_added_event<'a>(
-    main_loop: &'a MainLoop,
-    nodes: Rc<Mutex<HashMap<u32, Node<'a>>>>,
-    registry: Registry<'a>,
+fn add_node_added_event(
+    main_loop: MainLoop,
+    nodes: Rc<Mutex<HashMap<u32, Node>>>,
+    registry: Registry,
     node_added_queue: Rc<Mutex<Vec<u32>>>,
-) -> EventSource<'a, LoopRef> {
+) -> EventSource<'static, MainLoop> {
     main_loop
-        .get_loop()
         .add_event(Box::new({
             move |_count| {
                 let nodes = &mut nodes.lock().unwrap();

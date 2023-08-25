@@ -68,8 +68,8 @@ impl NodeRef {
     }
 }
 
-impl<'a> AddListener<'a> for NodeRef {
-    type Events = NodeEvents<'a>;
+impl AddListener for NodeRef {
+    type Events = NodeEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {
@@ -88,13 +88,13 @@ impl<'a> AddListener<'a> for NodeRef {
 
 #[derive(Clone, Debug)]
 #[proxy_wrapper(NodeRef)]
-pub struct Node<'c> {
+pub struct Node {
     ref_: Proxy,
 
-    listeners: Listeners<Pin<Box<NodeEvents<'c>>>>,
+    listeners: Listeners<Pin<Box<NodeEvents>>>,
 }
 
-impl<'c> RegistryBind<'c> for Node<'c> {
+impl RegistryBind for Node {
     fn from_ref(core: Core, ref_: &ProxyRef) -> Self {
         Self {
             ref_: Proxy::from_ref(core, ref_),
@@ -103,10 +103,10 @@ impl<'c> RegistryBind<'c> for Node<'c> {
     }
 }
 
-impl<'a> OwnListeners<'a> for Node<'a> {
+impl OwnListeners for Node {
     fn listeners(
         &self,
-    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener<'a>>::Events>>> {
+    ) -> &Listeners<Pin<Box<<<Self as Wrapper>::RawWrapperType as AddListener>::Events>>> {
         &self.listeners
     }
 }

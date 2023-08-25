@@ -192,8 +192,8 @@ impl ProxyRef {
     }
 }
 
-impl<'a> AddListener<'a> for ProxyRef {
-    type Events = ProxyEvents<'a>;
+impl AddListener for ProxyRef {
+    type Events = ProxyEvents;
 
     fn add_listener(&self, events: Pin<Box<Self::Events>>) -> Pin<Box<Self::Events>> {
         unsafe {

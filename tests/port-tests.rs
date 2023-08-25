@@ -26,7 +26,7 @@ use pipewire_wrapper::{
 fn test_port_params() {
     let core = Rc::new(Core::default());
     let registry = core.get_registry(0).unwrap();
-    let main_loop = core.context().main_loop();
+    let main_loop = core.context().main_loop().clone();
     let ports: Mutex<Vec<Port>> = Mutex::default();
 
     let (port_sender, port_receiver) = LoopChannel::channel::<Port>();
@@ -44,20 +44,11 @@ fn test_port_params() {
             .build(),
     );
 
-    let main_loop_close_callback = |_expirations| {
-        main_loop.quit().unwrap();
-    };
-    let timer = main_loop
-        .get_loop()
-        .add_timer(Box::new(main_loop_close_callback))
-        .unwrap();
-    timer
-        .update(Duration::from_secs(1), Duration::ZERO, false)
-        .unwrap();
+    let _timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 
     port_receiver
         .attach(
-            main_loop.get_loop(),
+            &main_loop,
             Box::new(move |new_ports| {
                 for port in new_ports.try_iter() {
                     let port_param_callback = |seq, id, index, next, param: &PodRef| {
@@ -110,7 +101,7 @@ fn test_port_params_as_object_info() {
 
     let core = Rc::new(Core::default());
     let registry = core.get_registry(0).unwrap();
-    let main_loop = core.context().main_loop();
+    let main_loop = core.context().main_loop().clone();
     let ports: Mutex<Vec<Port>> = Mutex::default();
 
     let (port_sender, port_receiver) = LoopChannel::channel::<Port>();
@@ -128,21 +119,11 @@ fn test_port_params_as_object_info() {
             .build(),
     );
 
-    let main_loop_close_callback = |_expirations| {
-        main_loop.quit().unwrap();
-    };
-    let timer = main_loop
-        .get_loop()
-        .add_timer(Box::new(main_loop_close_callback))
-        .unwrap();
-    main_loop
-        .get_loop()
-        .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
-        .unwrap();
+    let _timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 
     port_receiver
         .attach(
-            main_loop.get_loop(),
+            &main_loop,
             Box::new(move |new_ports| {
                 for port in new_ports.try_iter() {
                     let port_param_callback = |_seq, id, _index, _next, param: &PodRef| {
