@@ -46,6 +46,7 @@ pub mod events;
 /// use pipewire_wrapper::core_api::registry::events::RegistryEventsBuilder;
 /// use pipewire_wrapper::listeners::OwnListeners;
 /// use std::time::Duration;
+/// use pipewire_wrapper::core_api::loop_::Loop;
 ///
 /// let core = Core::default();
 /// let context = core.context();
@@ -65,17 +66,7 @@ pub mod events;
 ///         .build(),
 ///  );
 ///
-/// let timer_callback = |_| {
-///     core.context().main_loop().quit().unwrap();
-/// };
-/// let timer = main_loop
-///      .get_loop()
-///      .add_timer(Box::new(timer_callback))
-///     .unwrap();
-/// main_loop
-///     .get_loop()
-///     .update_timer(&timer, Duration::from_secs(1), Duration::ZERO, false)
-///     .unwrap();
+/// let _timer = main_loop.quit_after(Duration::from_secs(1)).unwrap();
 ///
 /// main_loop.run().unwrap();
 /// ```

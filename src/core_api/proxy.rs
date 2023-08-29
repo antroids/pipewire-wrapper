@@ -130,7 +130,7 @@ impl ProxyRef {
     }
 
     pub fn is_bound(&self) -> bool {
-        self.get_id() != SPA_ID_INVALID
+        self.get_bound_id().is_some()
     }
 
     pub fn get_type_and_version(&self) -> (TypeInfo, u32) {

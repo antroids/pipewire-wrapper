@@ -15,8 +15,12 @@ use pipewire_wrapper_proc_macro::{interface, RawWrapper, Wrapper};
 use crate::core_api::context::Context;
 use crate::core_api::core::events::CoreEvents;
 use crate::core_api::properties::Properties;
+use crate::core_api::proxy::{Proxied, ProxyRef};
+use crate::core_api::registry::restricted::RegistryBind;
 use crate::core_api::registry::{Registry, RegistryRef};
+use crate::core_api::type_info::TypeInfo;
 use crate::listeners::{AddListener, OwnListeners};
+use crate::spa::dict::DictRef;
 use crate::spa_interface_call;
 use crate::wrapper::{RawWrapper, Wrapper};
 use crate::{i32_as_void_result, new_instance_raw_wrapper, raw_wrapper};
@@ -113,7 +117,25 @@ impl CoreRef {
         raw_wrapper(ptr)
     }
 
-    // todo create_object
+    fn create_object(
+        &self,
+        factory_name: &CStr,
+        type_info: &TypeInfo,
+        version: u32,
+        props: &DictRef,
+    ) -> crate::Result<&ProxyRef> {
+        let ptr = spa_interface_call!(
+            self,
+            create_object,
+            factory_name.as_ptr(),
+            type_info.as_ptr(),
+            version,
+            props.as_raw_ptr(),
+            0
+        )?;
+        raw_wrapper(ptr.cast())
+    }
+
     // todo destroy
 }
 
@@ -168,5 +190,23 @@ impl Core {
         use crate::core_api::registry::restricted::RegistryBind;
         let ref_: &RegistryRef = self.as_ref().get_registry(version, 0)?;
         Ok(Registry::from_ref(self.clone(), ref_.as_proxy()))
+    }
+
+    pub fn create_object<T: RegistryBind>(
+        &self,
+        factory_name: &CStr,
+        version: u32,
+        props: &DictRef,
+    ) -> crate::Result<T>
+    where
+        <T as Wrapper>::RawWrapperType: Proxied,
+    {
+        let proxy = self.as_ref().create_object(
+            factory_name,
+            &T::RawWrapperType::type_info(),
+            version,
+            props,
+        )?;
+        Ok(T::from_ref(self.clone(), proxy))
     }
 }

@@ -107,7 +107,6 @@ impl Deref for MainLoop {
     }
 }
 
-//#[cfg(test)]
 impl MainLoop {
     pub fn quit_after(&self, after: Duration) -> crate::Result<TimerSource<Self>> {
         use crate::core_api::loop_::Loop;
